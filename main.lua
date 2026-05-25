@@ -1,12 +1,3188 @@
---[[
- .____                  ________ ___.    _____                           __                
- |    |    __ _______   \_____  \\_ |___/ ____\_ __  ______ ____ _____ _/  |_  ___________ 
- |    |   |  |  \__  \   /   |   \| __ \   __\  |  \/  ___// ___\\__  \\   __\/  _ \_  __ \
- |    |___|  |  // __ \_/    |    \ \_\ \  | |  |  /\___ \\  \___ / __ \|  | (  <_> )  | \/
- |_______ \____/(____  /\_______  /___  /__| |____//____  >\___  >____  /__|  \____/|__|   
-         \/          \/         \/    \/                \/     \/     \/                   
-          \_Welcome to LuaObfuscator.com   (Alpha 0.10.9) ~  Much Love, Ferib 
+-- Polar HUB | loadstring ready
+-- Subir a GitHub como archivo raw y usar este comando en tu ejecutor:
+-- loadstring(game:HttpGet("AQUI_TU_LINK_RAW_DE_GITHUB"))()
 
-]]--
+-- Esperar a que el juego cargue completamente antes de inyectar
+repeat task.wait() until game:IsLoaded()
 
-repeat task.wait();until game:IsLoaded() local v0,v1=pcall(function() return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))();end);if ( not v0 or  not v1) then local v266=0;while true do if (v266==(0 -0)) then warn("Error: No se pudo cargar WindUI.");return;end end end local v2=v1:CreateWindow({Title="❄️ POLAR HUB | Modo Dios",Icon="snowflake",Folder="PolarHub",Size=UDim2.fromOffset(1519 -939 ,460),Transparent=true,Theme="Dark",OpenButton={Title="❄️ POLAR HUB",CornerRadius=UDim.new(0 -0 ,1 + 7 ),StrokeThickness=2,Enabled=true,Draggable=true,Scale=3 -2 ,OnlyMobile=false}});local v3=game:GetService("Players");local v4=game:GetService("ReplicatedStorage");local v5=game:GetService("UserInputService");local v6=game:GetService("RunService");local v7=game:GetService("HttpService");local v8=game:GetService("TeleportService");local v9=game:GetService("VirtualUser");local v10=game:GetService("TweenService");local v11=v3.LocalPlayer;v11.Idled:Connect(function() local v124=0 + 0 ;while true do if (v124==(0 + 0)) then v9:CaptureController();v9:ClickButton2(Vector2.new());break;end end end);local v12=v4:WaitForChild("Remotes",14 -9 );local v13=v12 and v12:WaitForChild("CommF_",5) ;local v14=v4:WaitForChild("Modules",3 + 2 ) and v4.Modules:WaitForChild("Net",5) ;local v15=v14 and pcall(function() return v14["RE/RegisterHit"];end) and v14["RE/RegisterHit"] ;local v16=v14 and pcall(function() return v14["RE/RegisterAttack"];end) and v14["RE/RegisterAttack"] ;local v17=workspace:FindFirstChild("Enemies");local v18={{lvl=1 + 0 ,q="BanditQuest1",ql=1 + 0 ,name="Bandit",giver="Bandit Quest Giver",island="Town"},{lvl=8 + 2 ,q="JungleQuest",ql=1 + 0 ,name="Monkey",giver="Adventurer",island="Jungle"},{lvl=448 -(153 + 280) ,q="JungleQuest",ql=5 -3 ,name="Gorilla",giver="Adventurer",island="Jungle"},{lvl=8 + 12 ,q="JungleQuest",ql=3,name="Gorilla King",giver="Adventurer",island="Jungle",isBoss=true},{lvl=28 + 2 ,q="BuggyQuest1",ql=1 + 0 ,name="Pirate",giver="Pirate Adventurer",island="Pirate"},{lvl=40,q="BuggyQuest1",ql=2,name="Brute",giver="Pirate Adventurer",island="Pirate"},{lvl=722 -(89 + 578) ,q="BuggyQuest1",ql=3 + 0 ,name="Bobby",giver="Pirate Adventurer",island="Pirate",isBoss=true},{lvl=60,q="DesertQuest",ql=1050 -(572 + 477) ,name="Desert Bandit",giver="Desert Adventurer",island="Desert"},{lvl=11 + 64 ,q="DesertQuest",ql=2 + 0 ,name="Desert Officer",giver="Desert Adventurer",island="Desert"},{lvl=90,q="SnowQuest",ql=1 + 0 ,name="Snow Bandit",giver="Villager",island="Snow"},{lvl=100,q="SnowQuest",ql=88 -(84 + 2) ,name="Snowman",giver="Villager",island="Snow"},{lvl=76 + 29 ,q="SnowQuest",ql=845 -(497 + 345) ,name="Yeti",giver="Villager",island="Snow",isBoss=true},{lvl=21 + 99 ,q="MarineQuest2",ql=1334 -(605 + 728) ,name="Chief Petty Officer",giver="Marine",island="Marine"},{lvl=130,q="MarineQuest2",ql=2 + 0 ,name="Vice Admiral",giver="Marine",island="Marine",isBoss=true},{lvl=333 -183 ,q="SkyQuest",ql=1,name="Sky Bandit",giver="Sky Adventurer",island="Sky"},{lvl=646 -471 ,q="SkyQuest",ql=2,name="Dark Master",giver="Sky Adventurer",island="Sky"},{lvl=172 + 18 ,q="PrisonerQuest",ql=1,name="Prisoner",giver="Jail Keeper",island="Prison"},{lvl=210,q="PrisonerQuest",ql=2 + 0 ,name="Dangerous Prisoner",giver="Jail Keeper",island="Prison"},{lvl=220,q="ImpelQuest",ql=1,name="Warden",giver="Head Jailer",island="Prison",isBoss=true},{lvl=98 + 132 ,q="ImpelQuest",ql=1404 -(832 + 570) ,name="Chief Warden",giver="Head Jailer",island="Prison",isBoss=true},{lvl=227 + 13 ,q="ImpelQuest",ql=3,name="Swan",giver="Head Jailer",island="Prison",isBoss=true},{lvl=66 + 184 ,q="ColosseumQuest",ql=3 -2 ,name="Toga Warrior",giver="Colosseum Quest Giver",island="Colosseum"},{lvl=1071 -(588 + 208) ,q="ColosseumQuest",ql=5 -3 ,name="Gladiator",giver="Colosseum Quest Giver",island="Colosseum"},{lvl=628 -328 ,q="MagmaQuest",ql=1 + 0 ,name="Military Soldier",giver="The Mayor",island="Magma"},{lvl=325,q="MagmaQuest",ql=2,name="Military Spy",giver="The Mayor",island="Magma"},{lvl=375,q="FishmanQuest",ql=1 + 0 ,name="Fishman Warrior",giver="Neptune",island="Fishman"},{lvl=400,q="FishmanQuest",ql=2,name="Fishman Commando",giver="Neptune",island="Fishman"},{lvl=1030 -(316 + 289) ,q="FishmanQuest",ql=7 -4 ,name="Fishman Lord",giver="Neptune",island="Fishman",isBoss=true},{lvl=21 + 429 ,q="SkyExp1Quest",ql=1454 -(666 + 787) ,name="God's Guard",giver="Mole",island="Sky"},{lvl=475,q="SkyExp1Quest",ql=2,name="Shanda",giver="Mole",island="Sky"},{lvl=500,q="SkyExp1Quest",ql=3 + 0 ,name="Wysper",giver="Mole",island="Sky",isBoss=true},{lvl=525,q="SkyExp2Quest",ql=1,name="Royal Squad",giver="Sky Quest Giver 2",island="Upper Sky"},{lvl=550,q="SkyExp2Quest",ql=2 + 0 ,name="Royal Soldier",giver="Sky Quest Giver 2",island="Upper Sky"},{lvl=575,q="SkyExp2Quest",ql=8 -5 ,name="Thunder God",giver="Sky Quest Giver 2",island="Upper Sky",isBoss=true},{lvl=1524 -(503 + 396) ,q="FountainQuest",ql=182 -(92 + 89) ,name="Galley Pirate",giver="Freezeburg Quest Giver",island="Fountain"},{lvl=334 + 316 ,q="FountainQuest",ql=2,name="Galley Captain",giver="Freezeburg Quest Giver",island="Fountain"},{lvl=2643 -1968 ,q="FountainQuest",ql=1 + 2 ,name="Cyborg",giver="Freezeburg Quest Giver",island="Fountain",isBoss=true}};local v19={{name="Gorilla King",q="JungleQuest",ql=6 -3 ,giver="Adventurer",island="Jungle",lvl=18 + 2 },{name="Bobby",q="BuggyQuest1",ql=8 -5 ,giver="Pirate Adventurer",island="Pirate",lvl=7 + 48 },{name="Yeti",q="SnowQuest",ql=1247 -(485 + 759) ,giver="Villager",island="Snow",lvl=242 -137 },{name="Mob Leader",q=nil,ql=nil,giver=nil,island="Pirate",lvl=1255 -(832 + 303) },{name="Vice Admiral",q="MarineQuest2",ql=1 + 1 ,giver="Marine",island="Marine",lvl=108 + 22 },{name="Warden",q="ImpelQuest",ql=1,giver="Head Jailer",island="Prison",lvl=1009 -(766 + 23) },{name="Chief Warden",q="ImpelQuest",ql=2 -0 ,giver="Head Jailer",island="Prison",lvl=605 -375 },{name="Swan",q="ImpelQuest",ql=3,giver="Head Jailer",island="Prison",lvl=1313 -(1036 + 37) },{name="Magma Admiral",q="MagmaQuest",ql=3,giver="The Mayor",island="Magma",lvl=681 -331 },{name="Fishman Lord",q="FishmanQuest",ql=1483 -(641 + 839) ,giver="Neptune",island="Fishman",lvl=1338 -(910 + 3) },{name="Wysper",q="SkyExp1Quest",ql=1687 -(1466 + 218) ,giver="Sky Adventurer",island="Sky",lvl=230 + 270 },{name="Thunder God",q="SkyExp2Quest",ql=3,giver="Sky Adventurer",island="Sky",lvl=205 + 370 },{name="Cyborg",q="FountainQuest",ql=3,giver="Fountain Quest Giver",island="Fountain",lvl=1483 -(329 + 479) },{name="Saber Expert",q=nil,ql=nil,giver=nil,island="Jungle",lvl=200},{name="The Saw",q=nil,ql=nil,giver=nil,island="Town",lvl=100},{name="Greybeard",q=nil,ql=nil,giver=nil,island="Marine",lvl=1554 -804 }};local v20="Gorilla King";local v21=false;local v22=false;local v23=false;local v24=nil;local v25=1 + 0 ;local v26=739 -(396 + 343) ;local function v27() local v125=game.PlaceId;local v126={};local v127="https://games.roblox.com/v1/games/"   .. v125   .. "/servers/Public?sortOrder=Asc&limit=100" ;local v128,v129=pcall(function() return v7:JSONDecode(game:HttpGet(v127));end);if (v128 and v129 and v129.data) then for v405,v406 in ipairs(v129.data) do if ((type(v406)=="table") and v406.playing and v406.maxPlayers and (v406.playing<(v406.maxPlayers-(1 + 0))) and (v406.id~=game.JobId)) then table.insert(v126,v406.id);end end end if ( #v126>(1477 -(29 + 1448))) then v8:TeleportToPlaceInstance(v125,v126[math.random(1390 -(135 + 1254) , #v126)],v11);end end local function v28(v130) local v131=v11.Character;local v132=v131 and v131:FindFirstChild("HumanoidRootPart") ;if  not v132 then return;end if ((v130.Position.X>(188361 -138361)) and (v132.Position.X<(233456 -183456))) then local v313=workspace.Map:FindFirstChild("Whirlpool",true) or workspace:FindFirstChild("Whirlpool",true) ;local v314=(v313 and ((v313:IsA("Model") and v313:GetModelCFrame().Position) or v313.Position)) or Vector3.new(2576.68 + 1288 ,1533.73 -(389 + 1138) , -1926.92) ;local v315=Vector2.new(v132.Position.X-v314.X ,v132.Position.Z-v314.Z ).Magnitude;if (v315>(674 -(102 + 472))) then v130=CFrame.new(v314.X,math.max(v132.Position.Y,142 + 8 ),v314.Z);else v130=CFrame.new(v314);end end local v133=(v132.Position-v130.Position).Magnitude;if (v133<50) then v131:PivotTo(v130);else local v316=Instance.new("BodyVelocity",v132);v316.Velocity=Vector3.new(0 + 0 ,0 + 0 ,1545 -(320 + 1225) );v316.MaxForce=Vector3.new(math.huge,math.huge,math.huge);local v319=v6.Stepped:Connect(function() for v504,v505 in ipairs(v131:GetChildren()) do if v505:IsA("BasePart") then v505.CanCollide=false;end end end);local v320=350;local function v321(v407) local v408=(v132.Position-v407.Position).Magnitude;if (v408<(8 -3)) then return;end local v409=TweenInfo.new(v408/v320 ,Enum.EasingStyle.Linear);local v410=v10:Create(v132,v409,{CFrame=v407});local v411=v132.Position;local v412=v6.Stepped:Connect(function() if ((v132.Position-v411).Magnitude>(1836 + 1164)) then v410:Cancel();end end);v410:Play();v410.Completed:Wait();if v412 then v412:Disconnect();end end if ((v133>200) or (math.abs(v132.Position.Y-v130.Y )>100)) then local v506=1464 -(157 + 1307) ;local v507;local v508;local v509;while true do if ((1860 -(821 + 1038))==v506) then v509=CFrame.new(v130.X,v507,v130.Z);v321(v508);v506=4 -2 ;end if (v506==(0 + 0)) then v507=math.max(v132.Position.Y,v130.Y) + 300 ;v508=CFrame.new(v132.Position.X,v507,v132.Position.Z);v506=1 -0 ;end if (v506==(1 + 1)) then v321(v509);v321(v130);break;end end else v321(v130);end v316:Destroy();v319:Disconnect();end end local v29=false;local function v30() local v134=0;while true do if (v134==(0 -0)) then if v29 then return;end pcall(function() local v510;v510=hookmetamethod(game,"__namecall",function(v576,...) local v577=getnamecallmethod();if ( not checkcaller() and (v577=="DistanceFromCharacter")) then return 1026 -(834 + 192) ;end return v510(v576,...);end);v29=true;end);break;end end end local function v31(v135,v136,v137,v138) v30();task.spawn(function() local v267=0 + 0 ;local v268;local v269;local v270;local v271;local v272;local v273;while true do if (v267==(2 + 2)) then if v271 then local v625=0 + 0 ;while true do if (v625==(0 -0)) then pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="Polar Hub | Compra",Text=(v272 and "Compra inyectada. Volviendo...") or "Hubo un error. Volviendo..." ,Duration=306 -(300 + 4) });end);task.wait(0.5 + 0 );v625=2 -1 ;end if (v625==(363 -(112 + 250))) then v28(v270);break;end end else pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="Polar Hub | Aviso",Text="NPC no encontrado, compra remota inyectada.",Duration=1 + 1 });end);end break;end if (v267==(7 -4)) then if v271 then pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="Polar Hub | Viajando",Text="Bypass activo: Volando hacia "   .. v138   .. "..." ,Duration=2 + 0 });end);local v626=v271.HumanoidRootPart.CFrame * CFrame.new(0 + 0 ,0,3 + 0 ) ;v28(v626);task.wait(0.5 + 0 );for v679,v680 in ipairs(v271:GetDescendants()) do if (v680:IsA("ProximityPrompt") and fireproximityprompt) then pcall(function() fireproximityprompt(v680);end);end end task.wait(0.5);end v272,v273=pcall(function() if v137 then return v13:InvokeServer(v135,v136,v137);elseif v136 then return v13:InvokeServer(v135,v136);else return v13:InvokeServer(v135);end end);v267=3 + 1 ;end if (v267==0) then v268=v11.Character;v269=v268 and v268:FindFirstChild("HumanoidRootPart") ;v267=1;end if (v267==2) then v271=nil;if v138 then for v681,v682 in ipairs(workspace:GetDescendants()) do if (v682:IsA("Model") and string.find(string.lower(v682.Name),string.lower(v138)) and v682:FindFirstChild("HumanoidRootPart")) then v271=v682;break;end end end v267=1417 -(1001 + 413) ;end if (v267==(2 -1)) then if  not v269 then return;end v270=v269.CFrame;v267=884 -(244 + 638) ;end end end);end local function v32() local v139=0;local v140;while true do if (v139==(694 -(627 + 66))) then return false;end if ((0 -0)==v139) then v140=v11:FindFirstChild("PlayerGui");if (v140 and v140:FindFirstChild("Main") and v140.Main:FindFirstChild("Quest")) then if v140.Main.Quest.Visible then local v683=602 -(512 + 90) ;local v684;while true do if (v683==(1906 -(1665 + 241))) then v684=v140.Main.Quest:FindFirstChild("Container") and v140.Main.Quest.Container:FindFirstChild("QuestTitle") and v140.Main.Quest.Container.QuestTitle:FindFirstChild("Title") ;if (v684 and v684.Text) then local v889=717 -(373 + 344) ;local v890;while true do if (0==v889) then if (string.find(string.lower(v684.Text),"completed") or string.find(string.lower(v684.Text),"completada")) then return false;end v890=nil;v889=1;end if (v889==(1 + 0)) then for v985,v986 in ipairs(v18) do if string.find(string.lower(v684.Text),string.lower(v986.name)) then v890=v986.name;break;end end if v890 then return true;end break;end end end v683=1;end if (v683==1) then return true;end end end end v139=1 + 0 ;end end end local function v33() local v141=v11:FindFirstChild("PlayerGui");if (v141 and v141:FindFirstChild("Main") and v141.Main:FindFirstChild("Quest")) then if v141.Main.Quest.Visible then local v513=0 -0 ;local v514;while true do if (v513==0) then v514=v141.Main.Quest:FindFirstChild("Container") and v141.Main.Quest.Container:FindFirstChild("QuestTitle") and v141.Main.Quest.Container.QuestTitle:FindFirstChild("Title") ;if (v514 and v514.Text) then local v800=0 -0 ;local v801;local v802;local v803;while true do if (v800==2) then for v932,v933 in ipairs(v19) do if string.find(string.lower(v801),string.lower(v933.name)) then if ( #v933.name>v803) then local v993=1099 -(35 + 1064) ;while true do if (v993==(0 + 0)) then v803= #v933.name;v802=v933.name;break;end end end end end if v17 then for v966,v967 in ipairs(v17:GetChildren()) do if string.find(string.lower(v801),string.lower(v967.Name)) then if ( #v967.Name>v803) then v803= #v967.Name;v802=v967.Name;end end end end v800=6 -3 ;end if (v800==0) then v801=v514.Text;v802=nil;v800=1;end if (v800==(1 + 2)) then return v802;end if (v800==1) then v803=1236 -(298 + 938) ;for v934,v935 in ipairs(v18) do if string.find(string.lower(v801),string.lower(v935.name)) then if ( #v935.name>v803) then local v994=0;while true do if (v994==(1259 -(233 + 1026))) then v803= #v935.name;v802=v935.name;break;end end end end end v800=2;end end end break;end end end end return nil;end local function v34(v142) local v143=1666 -(636 + 1030) ;while true do if (v143==(0 + 0)) then if v17 then for v627,v628 in ipairs(v17:GetChildren()) do if (string.find(string.lower(v628.Name),string.lower(v142)) and v628:FindFirstChild("Humanoid") and (v628.Humanoid.Health>0)) then return true;end end end return false;end end end local function v35() local v144=0 + 0 ;local v145;local v146;local v147;while true do if (v144==(0 + 0)) then v145=v11:FindFirstChild("Data");v146=(v145 and v145:FindFirstChild("Level") and v145.Level.Value) or (1 + 0) ;v144=1;end if (v144==2) then return v147;end if (v144==(222 -(55 + 166))) then v147=v18[1];for v515=1 + 0 , #v18 do local v516=v18[v515];if (v146>=v516.lvl) then if v516.isBoss then if v34(v516.name) then v147=v516;end else v147=v516;end else break;end end v144=1 + 1 ;end end end local function v36(v148) local v149=0 -0 ;local v150;local v151;while true do if (v149==(298 -(36 + 261))) then v151=v150 and v150:FindFirstChild("Locations") ;if v151 then for v629,v630 in ipairs(v151:GetChildren()) do if string.find(string.lower(v630.Name),string.lower(v148)) then return v630.Position;end end end v149=3 -1 ;end if (v149==2) then if (string.lower(v148)=="upper sky") then return Vector3.new( -(9272 -(34 + 1334)),2166 + 3468 , -(1275 + 365));end return nil;end if (v149==(1283 -(1035 + 248))) then if (string.lower(v148)=="fishman") then v148="Underwater City";end v150=workspace:FindFirstChild("_WorldOrigin");v149=22 -(20 + 1) ;end end end local v37={};local function v38(v152) if (v37[v152] and (v37[v152].Y>(0 + 0))) then return v37[v152];end if (string.lower(v152)=="mob leader") then local v322=319 -(134 + 185) ;local v323;local v324;local v325;local v326;while true do if (v322==(1133 -(549 + 584))) then v323=game:GetService("ReplicatedStorage");v324=workspace:FindFirstChild("_WorldOrigin");v322=686 -(314 + 371) ;end if (v322==2) then for v631,v632 in ipairs(v326) do if v632 then if v632:IsA("BasePart") then local v844=0 -0 ;while true do if (v844==(968 -(478 + 490))) then v37[v152]=v632.Position;return v632.Position;end end else local v845=0 + 0 ;local v846;while true do if ((1172 -(786 + 386))==v845) then v846=v632:FindFirstChildWhichIsA("BasePart",true);if v846 then v37[v152]=v846.Position;return v846.Position;end break;end end end end end return Vector3.new( -(9328.71 -6448),1385.44 -(1055 + 324) ,5430.85);end if (v322==(1341 -(1093 + 247))) then v325=v324 and v324:FindFirstChild("EnemySpawns") ;v326={v325 and v325:FindFirstChild("Mob Leader [Lv. 120] [Boss]") ,v323:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and v323.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Mob Leader") ,v323:FindFirstChild("Mob Leader"),workspace.Map:FindFirstChild("MobBoss")};v322=6 -4 ;end end elseif (string.lower(v152)=="saber expert") then local v517=0;local v518;local v519;local v520;local v521;while true do if ((2 -1)==v517) then v520=v519 and v519:FindFirstChild("EnemySpawns") ;v521={v520 and v520:FindFirstChild("Saber Expert [Lv. 200] [Boss]") ,v518:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and v518.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Saber Expert") ,v518:FindFirstChild("Saber Expert")};v517=2;end if ((0 -0)==v517) then v518=game:GetService("ReplicatedStorage");v519=workspace:FindFirstChild("_WorldOrigin");v517=3 -2 ;end if (v517==2) then for v741,v742 in ipairs(v521) do if v742 then if v742:IsA("BasePart") then local v892=0 + 0 ;while true do if (v892==0) then v37[v152]=v742.Position;return v742.Position;end end else local v893=v742:FindFirstChildWhichIsA("BasePart",true);if v893 then local v955=0 -0 ;while true do if (v955==(688 -(364 + 324))) then v37[v152]=v893.Position;return v893.Position;end end end end end end return Vector3.new( -(4004 -2543),71 -41 , -(17 + 34));end end end local v153=workspace:FindFirstChild("_WorldOrigin");local v154=v153 and v153:FindFirstChild("EnemySpawns") ;if v154 then local v327=nil;local v328=math.huge;for v414,v415 in ipairs(v154:GetChildren()) do if string.find(string.lower(v415.Name),string.lower(v152)) then if (v415.Position.Y>(0 -0)) then local v685=0 -0 ;local v686;while true do if (v685==(0 -0)) then v686=math.abs( #v415.Name-#v152 );if (v686<v328) then local v894=1268 -(1249 + 19) ;while true do if (v894==0) then v328=v686;v327=v415.Position;break;end end end break;end end end end end if v327 then v37[v152]=v327;return v327;end end if v17 then local v329=nil;local v330=math.huge;for v416,v417 in ipairs(v17:GetChildren()) do if (string.find(string.lower(v417.Name),string.lower(v152)) and v417:FindFirstChild("HumanoidRootPart")) then local v578=v417.HumanoidRootPart.Position;if (v578.Y>(0 + 0)) then local v687=0 -0 ;local v688;while true do if (v687==(1086 -(686 + 400))) then v688=math.abs( #v417.Name-#v152 );if (v688<v330) then local v895=0;while true do if (v895==(0 + 0)) then v330=v688;v329=v578;break;end end end break;end end end end end if v329 then v37[v152]=v329;return v329;end end return nil;end local v39={["Freezeburg Quest Giver"]=CFrame.new(5259.771,266.713 -(73 + 156) ,4050.025)};local function v40(v155) if ( not v155 or  not v155.giver) then return nil;end if v39[v155.giver] then return v39[v155.giver];end local v156=nil;local v157=math.huge;local v158=v38(v155.name) or v36(v155.island) ;local function v159(v274) return v274:FindFirstChild("HumanoidRootPart") or v274:FindFirstChild("Head") or v274:FindFirstChild("Torso") ;end if workspace:FindFirstChild("NPCs") then for v418,v419 in ipairs(workspace.NPCs:GetChildren()) do local v420=v159(v419);if (string.find(string.lower(v419.Name),string.lower(v155.giver)) and v420) then local v579=0 + 0 ;local v580;while true do if (v579==(811 -(721 + 90))) then v580=(v158 and (v420.Position-v158).Magnitude) or 0 ;if (v580<v157) then v157=v580;v156=v419;end break;end end end end if ( not v156 and v158) then local v524=math.huge;for v581,v582 in ipairs(workspace.NPCs:GetChildren()) do local v583=0;local v584;while true do if (v583==0) then v584=v159(v582);if (string.find(string.lower(v582.Name),"quest") and v584) then local v847=0 + 0 ;local v848;while true do if ((0 -0)==v847) then v848=(v584.Position-v158).Magnitude;if (v848<v524) then local v973=470 -(224 + 246) ;while true do if (v973==(0 -0)) then v524=v848;v156=v582;break;end end end break;end end end break;end end end end end if v156 then local v331=0 -0 ;local v332;while true do if (v331==(0 + 0)) then v332=v159(v156);if v332 then return v332.CFrame;end break;end end end return nil;end local v41=false;local function v42(v160,v161) local v162=0 + 0 ;local v163;local v164;while true do if (v162==(4 + 1)) then v164.TextStrokeTransparency=0.5 -0 ;v164.Parent=v163;break;end if (v162==(6 -4)) then v163.AlwaysOnTop=true;v163.Parent=v160.Head;v164=Instance.new("TextLabel");v162=3;end if (3==v162) then v164.BackgroundTransparency=514 -(203 + 310) ;v164.Size=UDim2.new(1994 -(1238 + 755) ,0,1 + 0 ,0);v164.Text=v161 or v160.Name ;v162=1538 -(709 + 825) ;end if (v162==0) then if ( not v160:FindFirstChild("Head") or v160.Head:FindFirstChild("Polar_ESP")) then return;end v163=Instance.new("BillboardGui");v163.Name="Polar_ESP";v162=1 -0 ;end if (v162==4) then v164.Font=Enum.Font.GothamBold;v164.TextSize=20 -6 ;v164.TextColor3=Color3.new(0,1,865 -(196 + 668) );v162=5;end if (v162==1) then v163.Adornee=v160:WaitForChild("Head");v163.Size=UDim2.new(0,394 -294 ,0,103 -53 );v163.StudsOffset=Vector3.new(833 -(171 + 662) ,95 -(4 + 89) ,0 -0 );v162=1 + 1 ;end end end local function v43() local v165=0 -0 ;while true do if (v165==(0 + 0)) then for v525,v526 in ipairs(v3:GetPlayers()) do if (v526.Character and v526.Character:FindFirstChild("Head")) then local v633=1486 -(35 + 1451) ;local v634;while true do if (v633==(1453 -(28 + 1425))) then v634=v526.Character.Head:FindFirstChild("Polar_ESP");if v634 then v634:Destroy();end break;end end end end if v17 then for v635,v636 in ipairs(v17:GetChildren()) do if v636:FindFirstChild("Head") then local v743=1993 -(941 + 1052) ;local v744;while true do if (v743==(0 + 0)) then v744=v636.Head:FindFirstChild("Polar_ESP");if v744 then v744:Destroy();end break;end end end end end break;end end end local function v44() if  not v41 then return v43();end for v275,v276 in ipairs(v3:GetPlayers()) do if ((v276~=v11) and v276.Character) then v42(v276.Character,v276.Name);end end if v17 then for v437,v438 in ipairs(v17:GetChildren()) do v42(v438,v438.Name);end end end v3.PlayerAdded:Connect(function(v166) v166.CharacterAdded:Connect(function(v277) if v41 then local v439=0;while true do if (v439==(1514 -(822 + 692))) then task.wait(1);v42(v277,v166.Name);break;end end end end);end);for v167,v168 in ipairs(v3:GetPlayers()) do v168.CharacterAdded:Connect(function(v278) if v41 then local v440=0 -0 ;while true do if (v440==0) then task.wait(1);v42(v278,v168.Name);break;end end end end);end if v17 then v17.ChildAdded:Connect(function(v333) if v41 then task.wait(0.5 + 0 );v42(v333,v333.Name);end end);end local v45="Melee";local v46=false;local v47="Sword";local v48=false;local function v49(v169) local v170=297 -(45 + 252) ;local v171;local v172;local v173;local v174;while true do if (v170==0) then v171=v11.Character;if  not v171 then return;end v170=1 + 0 ;end if (v170==(1 + 1)) then v173=v171:FindFirstChildOfClass("Tool");if (v173 and (v173.ToolTip==v172)) then return;end v170=7 -4 ;end if (v170==(434 -(114 + 319))) then v172=v45;if (v46 and v169 and (v169<20)) then v172=v47;end v170=2;end if (v170==(3 -0)) then v174=v11:FindFirstChild("Backpack");if v174 then for v637,v638 in ipairs(v174:GetChildren()) do if (v638:IsA("Tool") and (v638.ToolTip==v172)) then v171.Humanoid:EquipTool(v638);task.wait(0.1 -0 );break;end end end break;end end end local v50="IDLE";local v51="GETTING_QUEST";local v52="FARMING";local v53="WAITING";local v54=v50;local v55=nil;local v56=nil;local v57=false;local v58=false;local v59=false;local v60=false;local v61=false;local function v62(v175,v176) local v177=0;local v178;local v179;while true do if (v177==1) then v179=string.lower(v176);if string.find(v178,v179) then local v585=0 + 0 ;while true do if (v585==(0 -0)) then if ((v179=="gorilla") and string.find(v178,"king")) then return false;end if ((v179=="bandit") and string.find(v178,"desert")) then return false;end v585=1;end if (v585==2) then return true;end if (v585==(1 -0)) then if ((v179=="bandit") and string.find(v178,"snow")) then return false;end if ((v179=="bandit") and string.find(v178,"sky")) then return false;end v585=2;end end end v177=1965 -(556 + 1407) ;end if (v177==0) then if (v175==v176) then return true;end v178=string.lower(v175);v177=1207 -(741 + 465) ;end if (v177==(467 -(170 + 295))) then return false;end end end local function v63() if v61 then return "Saber Expert";end if v60 then return "Mob Leader";end if v59 then return "NearestNPC";end if v22 then local v334=0;while true do if (v334==(1 + 0)) then return v19[v25].name;end if (0==v334) then for v639,v640 in ipairs(v19) do if v34(v640.name) then return v640.name;end end if (v25> #v19) then local v689=0 + 0 ;while true do if (v689==(0 -0)) then v27();return "Buscando Jefes...";end end end v334=1 + 0 ;end end end if v21 then return v20;end return v33() or v35().name ;end task.spawn(function() while true do task.wait(0.1);local v279=v11.Character;local v280=v279 and v279:FindFirstChild("HumanoidRootPart") ;local v281=v279 and v279:FindFirstChild("Humanoid") ;if  not v280 then continue;end local v282=v57 or v21 or v22 or v61 or v60 or v59 ;if  not v282 then local v442=0;local v443;while true do if (v442==(0 + 0)) then v54=v50;v443=workspace:FindFirstChild("PolarFarmPlat");v442=1;end if (v442==2) then continue;break;end if (v442==(1 + 0)) then if v443 then v443:Destroy();end task.wait(1231 -(957 + 273) );v442=1 + 1 ;end end end if (v282 and v279 and v280 and v281 and (v281.Health>(0 + 0))) then local v444=workspace:FindFirstChild("PolarFarmPlat");if  not v444 then local v586=0;while true do if (v586==0) then v444=Instance.new("Part",workspace);v444.Name="PolarFarmPlat";v586=3 -2 ;end if (v586==(5 -3)) then v444.Transparency=2 -1 ;v444.CFrame=v280.CFrame * CFrame.new(0 -0 , -(1783.5 -(389 + 1391)),0) ;break;end if (v586==1) then v444.Size=Vector3.new(10 + 5 ,1,15);v444.Anchored=true;v586=1 + 1 ;end end end local v445=v63();local v446=v35();local v447=nil;local v448=v22 or v21 or v61 or v60 ;if v59 then local v587=math.huge;local v588=nil;if v17 then for v750,v751 in ipairs(v17:GetChildren()) do local v752=0 -0 ;local v753;local v754;while true do if (v752==(951 -(783 + 168))) then v753=v751:FindFirstChild("HumanoidRootPart");v754=v751:FindFirstChild("Humanoid");v752=3 -2 ;end if (v752==(1 + 0)) then if (v753 and v754 and (v754.Health>(311 -(309 + 2))) and (v753.Position.Y>(0 -0))) then local v939=1212 -(1090 + 122) ;local v940;while true do if (v939==0) then v940=(v753.Position-v280.Position).Magnitude;if (v940<v587) then local v1018=0 + 0 ;while true do if ((0 -0)==v1018) then v587=v940;v588=v751.Name;break;end end end break;end end end break;end end end end v445=v588 or "Buscando Enemigos..." ;end if (v22 or v21 or v60 or v61) then for v641,v642 in ipairs(v19) do if (v642.name==v445) then v447=v642;break;end end end local v449= not (v61 or v60 or v59);if (v22 or v21) then if  not v23 then v449=false;elseif (v447 and  not v447.q) then v449=false;end end if (v445=="Buscando Jefes...") then v54=v50;task.wait(1 + 0 );continue;end if (v54==v50) then v26=0;if (v449 and  not v32()) then v54=v51;else v54=v52;end end if (v54==v51) then local v589=1118 -(628 + 490) ;local v590;local v591;local v592;while true do if (v589==(1 + 2)) then if v592 then if ((v280.Position-v592.Position).Magnitude>15) then v28(v592);else v280.CFrame=v592;task.wait(0.2 -0 );pcall(function() v13:InvokeServer("StartQuest",v590.q,v590.ql);end);v26=v26 + (4 -3) ;if (v26>10) then v54=v52;end task.wait(0.5);end else local v849=774 -(431 + 343) ;local v850;while true do if (v849==(0 -0)) then v850=v36(v590.island) or v38(v590.name) ;if v850 then local v974=0 -0 ;local v975;while true do if (v974==(0 + 0)) then v975=CFrame.new(v850) * CFrame.new(0 + 0 ,1725 -(556 + 1139) ,0) ;if ((v280.Position-v975.Position).Magnitude>(65 -(6 + 9))) then v28(v975);else v280.CFrame=v975;v280.AssemblyLinearVelocity=Vector3.new(0,0 + 0 ,0);task.wait(1 + 0 );end break;end end else v54=v52;end break;end end end continue;break;end if (v589==(170 -(28 + 141))) then v591=(v11:FindFirstChild("Data") and v11.Data:FindFirstChild("Level") and v11.Data.Level.Value) or 1 ;if (v22 or v21) then if ( not v23 or  not v590.q or (v590.lvl and (v591<v590.lvl))) then local v897=0 + 0 ;while true do if (v897==0) then v54=v52;continue;break;end end end end v589=2 -0 ;end if ((2 + 0)==v589) then v24=v590.name;v592=v40(v590);v589=1320 -(486 + 831) ;end if (v589==0) then if v32() then local v851=0 -0 ;while true do if (v851==0) then v54=v52;continue;break;end end end v590=v447 or v446 ;v589=1;end end end if (v54==v52) then if (v449 and v32()) then local v690=v33();local v691=(v447 and v447.name) or v446.name ;if (v690 and (v690~=v691) and  not v62(v690,v691) and  not v62(v691,v690)) then local v804=0;local v805;while true do if (v804==2) then pcall(function() v13:InvokeServer("AbandonQuest");end);v24=nil;v54=v51;v26=0;v804=10 -7 ;end if (v804==(0 + 0)) then warn("==================================================");warn("[Polar DEBUG EXTREMO] ⚠️ ABANDONANDO MISIÓN ⚠️");warn("-> Misión que deberíamos tener (expectedTarget):",tostring(v691));warn("-> Misión detectada en pantalla (currentQuestTarget):",tostring(v690));v804=3 -2 ;end if (v804==(1264 -(668 + 595))) then warn("-> MatchEnemyName devolvió FALSE para ambos casos.");v805=v11:FindFirstChild("PlayerGui");if (v805 and v805:FindFirstChild("Main") and v805.Main:FindFirstChild("Quest")) then local v956=0;local v957;while true do if (v956==0) then v957=v805.Main.Quest:FindFirstChild("Container") and v805.Main.Quest.Container:FindFirstChild("QuestTitle") and v805.Main.Quest.Container.QuestTitle:FindFirstChild("Title") ;if (v957 and v957.Text) then warn("-> TEXTO REAL EN LA UI DE ROBLOX:",tostring(v957.Text));end break;end end end warn("==================================================");v804=2;end if (v804==(3 + 0)) then task.wait(1 + 0 );continue;break;end end end elseif (v449 and  not v32()) then local v806=0;while true do if (v806==(0 -0)) then if (v24~=nil) then warn("[Polar DEBUG EXTREMO] ❓ HasQuest() se volvió FALSE de repente! (La UI de la misión desapareció)");end v54=v51;v806=1;end if ((291 -(23 + 267))==v806) then v26=1944 -(1129 + 815) ;continue;break;end end end local v593=v24 or v445 ;if ((v445=="NearestNPC") or v59) then v593=v445;end local v594=nil;local v595=math.huge;if v17 then for v756,v757 in ipairs(v17:GetChildren()) do if (v62(v757.Name,v593) or (v59 and (v593==v757.Name))) then local v852=387 -(371 + 16) ;local v853;local v854;while true do if ((1751 -(1326 + 424))==v852) then if (v853 and v854 and (v854.Health>0) and (v853.Position.Y>(0 -0))) then local v976=(v853.Position-v280.Position).Magnitude;if (v976<v595) then local v997=0;while true do if ((0 -0)==v997) then v595=v976;v594=v757;break;end end end end break;end if (v852==0) then v853=v757:FindFirstChild("HumanoidRootPart");v854=v757:FindFirstChild("Humanoid");v852=119 -(88 + 30) ;end end end end end if v594 then local v692=v594:FindFirstChild("HumanoidRootPart");local v693;if v448 then v693=v692.CFrame * CFrame.new(771 -(720 + 51) ,18,0 -0 ) ;else v693=v692.CFrame * CFrame.new(1776 -(421 + 1355) ,19 -7 ,0 + 0 ) ;end v693=CFrame.new(v693.Position);v444.CFrame=v693;if ((v280.Position-v444.Position).Magnitude>(1098 -(286 + 797))) then v28(v444.CFrame * CFrame.new(0,10.5 -7 ,0) );end v280.AssemblyLinearVelocity=Vector3.new(0 -0 ,0,0);local v696=v594:FindFirstChild("Humanoid");if v696 then local v807=439 -(397 + 42) ;while true do if (v807==(0 + 0)) then v696.WalkSpeed=0;v696.JumpPower=0;break;end end end local v697=v692:FindFirstChild("Polar_AntiGlitch");if  not v697 then local v808=800 -(24 + 776) ;while true do if (v808==(1 -0)) then v697.MaxForce=Vector3.new(math.huge,math.huge,math.huge);v697.Velocity=Vector3.new(785 -(222 + 563) ,0,0);v808=3 -1 ;end if (v808==(2 + 0)) then v697.Parent=v692;break;end if (v808==0) then v697=Instance.new("BodyVelocity");v697.Name="Polar_AntiGlitch";v808=1;end end end if  not v448 then local v809=191 -(23 + 167) ;for v855,v856 in ipairs(v17:GetChildren()) do if ((v856~=v594) and (v62(v856.Name,v593) or (v59 and (v593==v856.Name)))) then local v904=1798 -(690 + 1108) ;local v905;local v906;while true do if (v904==0) then v905=v856:FindFirstChild("HumanoidRootPart");v906=v856:FindFirstChild("Humanoid");v904=1 + 0 ;end if (v904==1) then if (v905 and v906 and (v906.Health>0)) then local v998=0;while true do if (v998==0) then pcall(function() if setsimulationradius then setsimulationradius(math.huge,math.huge);elseif sethiddenproperty then sethiddenproperty(v11,"SimulationRadius",math.huge);end end);if ((v905.Position-v692.Position).Magnitude<=350) then if (v809<(5 + 1)) then local v1044=0;local v1045;while true do if ((848 -(40 + 808))==v1044) then v809=v809 + 1 ;v1045=v905:FindFirstChild("Polar_AntiGlitch");v1044=1;end if (v1044==4) then v906.PlatformStand=true;break;end if (v1044==(1 + 0)) then if  not v1045 then local v1060=0 -0 ;while true do if (v1060==2) then v1045.Parent=v905;break;end if (v1060==(1 + 0)) then v1045.MaxForce=Vector3.new(math.huge,math.huge,math.huge);v1045.Velocity=Vector3.new(0,0,0 + 0 );v1060=2 + 0 ;end if (v1060==0) then v1045=Instance.new("BodyVelocity");v1045.Name="Polar_AntiGlitch";v1060=572 -(47 + 524) ;end end end for v1058,v1059 in ipairs(v856:GetDescendants()) do if v1059:IsA("BasePart") then v1059.CanCollide=false;end end v1044=2 + 0 ;end if (v1044==(5 -3)) then v905.CFrame=v692.CFrame;v905.AssemblyLinearVelocity=Vector3.new(0,0 -0 ,0);v1044=3;end if ((6 -3)==v1044) then v906.WalkSpeed=1726 -(1165 + 561) ;v906.JumpPower=0 + 0 ;v1044=4;end end end end break;end end end break;end end end end end else v54=v53;end end if (v54==v53) then local v596=0 -0 ;local v597;local v598;while true do if (v596==2) then if v598 then v54=v52;else local v857=v38(v597);if v857 then local v907=0 + 0 ;local v908;while true do if (v907==(480 -(341 + 138))) then if ((v280.Position-v908.Position).Magnitude>(6 + 14)) then v28(v908 * CFrame.new(0,3.5,0 -0 ) );else local v999=326 -(89 + 237) ;while true do if (v999==(0 -0)) then v280.AssemblyLinearVelocity=Vector3.new(0,0 -0 ,0);task.wait(882 -(581 + 300) );v999=1221 -(855 + 365) ;end if (v999==(2 -1)) then if v22 then if  not v34(v597) then local v1046=0 + 0 ;while true do if (v1046==(1235 -(1030 + 205))) then v25=v25 + 1 ;v54=v50;break;end end end end break;end end end break;end if (v907==(0 + 0)) then v908=CFrame.new(v857) * CFrame.new(0 + 0 ,316 -(156 + 130) ,0) ;v444.CFrame=v908;v907=2 -1 ;end end else local v909=0 -0 ;local v910;while true do if (v909==1) then if v910 then local v1000=0 -0 ;while true do if (v1000==(0 + 0)) then v910=v910 * CFrame.new(0,30,0 + 0 ) ;v444.CFrame=v910;v1000=1;end if (v1000==1) then if ((v280.Position-v910.Position).Magnitude>50) then v28(v910 * CFrame.new(0,3.5,0) );else local v1039=0;while true do if (v1039==(70 -(10 + 59))) then if v22 then task.wait(1 + 0 );if  not v34(v597) then local v1061=0 -0 ;while true do if ((1163 -(671 + 492))==v1061) then v25=v25 + 1 + 0 ;v54=v50;break;end end end end break;end if (v1039==(1215 -(369 + 846))) then v280.CFrame=v910 * CFrame.new(0 + 0 ,3.5,0 + 0 ) ;v280.AssemblyLinearVelocity=Vector3.new(1945 -(1036 + 909) ,0 + 0 ,0);v1039=1 -0 ;end end end break;end end end break;end if (v909==(203 -(11 + 192))) then v910=nil;if v59 then local v1001=math.huge;local v1002=nil;for v1019,v1020 in ipairs(v18) do local v1021=v36(v1020.island);if v1021 then local v1035=0 + 0 ;local v1036;while true do if (v1035==(175 -(135 + 40))) then v1036=(v280.Position-v1021).Magnitude;if (v1036<v1001) then local v1051=0 -0 ;while true do if (v1051==0) then v1001=v1036;v1002=v1021;break;end end end break;end end end end if v1002 then v910=CFrame.new(v1002);end else local v1003=0 + 0 ;local v1004;local v1005;local v1006;local v1007;while true do if (2==v1003) then if v1005 then v910=CFrame.new(v1005);elseif v1006 then v910=v1006;elseif v1007 then v910=CFrame.new(v1007);end break;end if (v1003==(0 -0)) then v1004=v447 or v446 ;v1005=v38(v1004.name);v1003=1 -0 ;end if (v1003==(177 -(50 + 126))) then v1006=v40(v1004);v1007=v36(v1004.island);v1003=5 -3 ;end end end v909=1;end end end end break;end if (v596==(1 + 0)) then v598=false;if v17 then for v878,v879 in ipairs(v17:GetChildren()) do if (v62(v879.Name,v597) or (v59 and (v597==v879.Name))) then local v941=v879:FindFirstChild("HumanoidRootPart");local v942=v879:FindFirstChild("Humanoid");if (v941 and v942 and (v942.Health>(1413 -(1233 + 180))) and (v941.Position.Y>(969 -(522 + 447)))) then v598=true;break;end end end end v596=1423 -(107 + 1314) ;end if (v596==(0 + 0)) then v597=v24 or v445 ;if ((v445=="NearestNPC") or v59) then v597=v445;end v596=1;end end end else local v450=0;local v451;while true do if (v450==(0 -0)) then v54=v50;v451=workspace:FindFirstChild("PolarFarmPlat");v450=1 + 0 ;end if ((1 -0)==v450) then if v451 then v451:Destroy();end break;end end end end end);local v64=237 -177 ;task.spawn(function() while true do local v283=v58 and (v57 or v21 or v22 or v61 or v60 or v59) ;if  not v283 then local v452=1910 -(716 + 1194) ;while true do if (v452==0) then task.wait(1 + 0 );continue;break;end end end task.wait(0.05);if (v283 and v15 and v16) then local v453=0 + 0 ;local v454;local v455;local v456;local v457;local v458;local v459;local v460;local v461;while true do if (3==v453) then if (v17 and v456) then for v810,v811 in ipairs(v17:GetChildren()) do if ( not v59 and  not v62(v811.Name,v456)) then continue;end local v812=v811:FindFirstChild("HumanoidRootPart");local v813=v811:FindFirstChild("Humanoid");local v814=v811:FindFirstChildOfClass("ForceField");if (v812 and v812.Parent and v813 and v813.Parent and (v813.Health>(503 -(74 + 429))) and  not v814 and ((v812.Position-v455.Position).Magnitude<=v64)) then local v880=v811:FindFirstChild("HumanoidRootPart") or v811:FindFirstChild("Head") ;if (v880 and v880.Parent) then table.insert(v458,{v811,v880});if  not v459 then v459=v880;end if ( #v458>=8) then break;end end end end end v460=v454:FindFirstChildOfClass("Tool");v461={Melee=true,Sword=true,["Blox Fruit"]=true,Gun=true};v453=4;end if (v453==(4 -2)) then v49(v457);v458={};v459=nil;v453=3 + 0 ;end if (v453==(12 -8)) then if (v460 and v461[v460.ToolTip] and ( #v458>0) and v459 and v459.Parent) then pcall(function() for v858=2 -1 ,3 do v16:FireServer(0);v15:FireServer(v459,v458);end end);end break;end if (v453==(434 -(279 + 154))) then v456=v63();v457=nil;if (v17 and v456) then for v815,v816 in ipairs(v17:GetChildren()) do local v817=778 -(454 + 324) ;local v818;local v819;while true do if (v817==(1 + 0)) then v819=v816:FindFirstChild("Humanoid");if (v818 and v819 and (v819.Health>(17 -(12 + 5))) and ((v818.Position-v455.Position).Magnitude<=v64)) then local v958=0 + 0 ;local v959;while true do if ((0 -0)==v958) then v959=(v819.Health/v819.MaxHealth) * (37 + 63) ;if ( not v457 or (v959<v457)) then v457=v959;end break;end end end break;end if (v817==0) then if ( not v59 and  not v62(v816.Name,v456)) then continue;end v818=v816:FindFirstChild("HumanoidRootPart");v817=1094 -(277 + 816) ;end end end end v453=8 -6 ;end if (v453==(1183 -(1058 + 125))) then v454=v11.Character;v455=v454 and v454:FindFirstChild("HumanoidRootPart") ;if  not v455 then continue;end v453=1 + 0 ;end end end end end);local v65=false;task.spawn(function() while true do if  not v65 then local v462=0;while true do if (v462==(975 -(815 + 160))) then task.wait(4 -3 );continue;break;end end end task.wait(2 -1 );if v65 then local v463=0 + 0 ;local v464;local v465;while true do if (v463==(0 -0)) then v464=v11.Character;v465=v464 and v464:FindFirstChild("HumanoidRootPart") ;v463=1899 -(41 + 1857) ;end if (v463==1) then if v465 then local v758=0;local v759;while true do if (v758==1) then if ( #v759>(1893 -(1222 + 671))) then local v943=0 -0 ;while true do if (v943==0) then table.sort(v759,function(v1008,v1009) return (v465.Position-v1008.Position).Magnitude<(v465.Position-v1009.Position).Magnitude ;end);for v1010,v1011 in ipairs(v759) do if  not v65 then break;end if (v1011 and v1011.Parent and v1011:FindFirstChild("TouchInterest")) then local v1025=0 -0 ;local v1026;local v1027;while true do if (v1025==(1183 -(229 + 953))) then if (v1027>(1789 -(1111 + 663))) then v28(v1026);else v465.CFrame=v1026;end task.wait(0.2);v1025=1581 -(874 + 705) ;end if (v1025==2) then if (firetouchinterest and v1011:FindFirstChild("TouchInterest")) then local v1048=0 + 0 ;while true do if (v1048==1) then firetouchinterest(v465,v1011,1 + 0 );break;end if ((0 -0)==v1048) then firetouchinterest(v465,v1011,0 + 0 );task.wait(679.01 -(642 + 37) );v1048=1;end end end task.wait(0.2);break;end if (v1025==(0 + 0)) then v1026=v1011.CFrame;v1027=(v465.Position-v1026.Position).Magnitude;v1025=1;end end end end break;end end end break;end if (v758==(0 + 0)) then v759={};for v911,v912 in ipairs(workspace:GetDescendants()) do if (string.find(v912.Name,"Chest") and v912:IsA("BasePart") and v912:FindFirstChild("TouchInterest")) then table.insert(v759,v912);end end v758=2 -1 ;end end end break;end end end end end);local v66=false;local v67={};task.spawn(function() while true do local v284=454 -(233 + 221) ;while true do if (v284==(2 -1)) then if (v66 and v13 and ( #v67>(0 + 0))) then local v645=1541 -(718 + 823) ;local v646;local v647;while true do if (v645==(0 + 0)) then v646=v11:FindFirstChild("Data");v647=v646 and v646:FindFirstChild("Points") ;v645=1;end if (v645==(806 -(266 + 539))) then if (v647 and (v647.Value>(0 -0))) then local v881=0;local v882;local v883;local v884;local v885;while true do if (v881==(1225 -(636 + 589))) then v882=v647.Value;v883= #v67;v881=1;end if (v881==(4 -2)) then for v978,v979 in ipairs(v67) do local v980=0 -0 ;local v981;while true do if (v980==(1 + 0)) then if (v981>(0 + 0)) then local v1037=1015 -(657 + 358) ;while true do if (v1037==(0 -0)) then pcall(function() v13:InvokeServer("AddPoint",v979,v981);end);task.wait(0.2 -0 );break;end end end break;end if (v980==(1187 -(1151 + 36))) then v981=v884;if (v978<=v885) then v981=v981 + 1 ;end v980=1 + 0 ;end end end break;end if (v881==1) then v884=math.floor(v882/v883 );v885=v882%v883 ;v881=2;end end end break;end end end break;end if (v284==(0 + 0)) then if  not v66 then local v648=0 -0 ;while true do if ((1832 -(1552 + 280))==v648) then task.wait(835 -(64 + 770) );continue;break;end end end task.wait(1 + 0 );v284=1;end end end end);local v68=false;local v69=false;local v70=2 -1 ;local function v71() if v68 then return;end v68=true;task.spawn(function() local v285=v11:FindFirstChild("Data");local v286=v285 and v285:FindFirstChild("Level") ;if ( not v286 or (v286.Value<(36 + 164))) then local v466=0;while true do if (v466==(1244 -(157 + 1086))) then return;end if (v466==(0 -0)) then warn("❌ Polar Hub [Error Inicial]: Necesitas Nivel 200+ para el Saber Puzzle o Datos no cargados.");v68=false;v466=1;end end end v57=false;v21=false;v22=false;v59=false;print("✅ Polar Hub: Iniciando Auto Saber Puzzle (V7.2 Extreme)...");local function v287(v335) local v336=0;while true do if (0==v336) then pcall(function() game:GetService("StarterGui"):SetCore("SendNotification",{Title="👑 Polar Hub",Text=v335,Duration=21 -16 });end);print("Polar Hub: "   .. v335 );break;end end end local function v288(v337) local v338=workspace:FindFirstChild("Map");if  not v338 then return nil;end return v338:FindFirstChild(v337);end local function v289() local v339=0;local v340;while true do if (v339==(0 -0)) then v340=v11.Character;return v340 and v340:FindFirstChild("HumanoidRootPart") ;end end end local function v290(v341) local v342=v11:FindFirstChild("Backpack");if (v342 and v342:FindFirstChild(v341)) then return true;end local v343=v11.Character;if (v343 and v343:FindFirstChild(v341)) then return true;end return false;end local function v291(v344) local v345=0;local v346;local v347;local v348;while true do if (v345==(2 -0)) then if (v348 and (v348.Parent==v346)) then local v698=819 -(599 + 220) ;local v699;while true do if (v698==(0 -0)) then v699=v347:FindFirstChild("Humanoid");if v699 then v699:EquipTool(v348);return true;end break;end end end return v348 and (v348.Parent==v347) ;end if (v345==1) then if ( not v346 or  not v347) then return false;end v348=v346:FindFirstChild(v344) or v347:FindFirstChild(v344) ;v345=1933 -(1813 + 118) ;end if (v345==(0 + 0)) then v346=v11:FindFirstChild("Backpack");v347=v11.Character;v345=1218 -(841 + 376) ;end end end local function v292(v349) if (typeof(v349)=="CFrame") then return v349;end if  not v349 then return nil;end if v349:IsA("BasePart") then return v349.CFrame;end if v349:IsA("Model") then return (v349.PrimaryPart and v349.PrimaryPart.CFrame) or (v349:FindFirstChild("Handle",true) and v349:FindFirstChild("Handle",true).CFrame) or (v349:FindFirstChildWhichIsA("BasePart",true) and v349:FindFirstChildWhichIsA("BasePart",true).CFrame) ;end return nil;end local function v293(v350,v351) if  not v350 then return;end local v352=v289();if  not v352 then return;end local v353=(v352.Position-v350.Position).Magnitude;local function v354(v467) local v468=0;local v469;local v470;local v471;local v472;local v473;local v474;while true do if (v468==(0 -0)) then v469=v289();if  not v469 then return;end v470=(v469.Position-v467.Position).Magnitude;v468=1 + 0 ;end if (v468==(2 -1)) then v471=TweenInfo.new(v470/(1159 -(464 + 395)) ,Enum.EasingStyle.Linear);v472=game:GetService("TweenService"):Create(v469,v471,{CFrame=v467});v473=Instance.new("BodyVelocity",v469);v468=5 -3 ;end if (v468==(2 + 1)) then v472:Play();v472.Completed:Wait();v473:Destroy();v468=841 -(467 + 370) ;end if (v468==2) then v473.Velocity=Vector3.new(0 -0 ,0,0 + 0 );v473.MaxForce=Vector3.new(math.huge,math.huge,math.huge);v474=game:GetService("RunService").Stepped:Connect(function() local v700=0;local v701;while true do if ((0 -0)==v700) then v701=v11.Character;if v701 then for v944,v945 in ipairs(v701:GetChildren()) do if v945:IsA("BasePart") then v945.CanCollide=false;end end end break;end end end);v468=1 + 2 ;end if (v468==(8 -4)) then v474:Disconnect();break;end end end local v355=v352.Position;if ((v355.Y<(535 -(150 + 370))) and (v355.X>1000) and (v355.Z>(5282 -(74 + 1208)))) then local v527=0 -0 ;while true do if (v527==0) then v354(CFrame.new(5278 -4165 ,4 + 1 ,4740 -(14 + 376) ));v354(CFrame.new(1896 -802 ,20,4344));break;end end elseif ((v355.Y<(33 + 17)) and (v355.X>(1142 + 158)) and (v355.Z< -(1145 + 55))) then local v652=0 -0 ;while true do if (v652==0) then v354(CFrame.new(1031 + 339 ,87, -(1398 -(23 + 55))));v354(CFrame.new(1384,213 -123 , -(868 + 432)));break;end end end v352=v289();if  not v352 then return;end v353=(v352.Position-v350.Position).Magnitude;if ((v353<50) and  not v351) then local v528=0 + 0 ;local v529;while true do if ((0 -0)==v528) then v529=v11.Character;if v529 then v529:PivotTo(v350);end break;end end else local v530=0 + 0 ;while true do if (v530==0) then if (v353>500) then local v820=CFrame.new(v352.Position.X,1401 -(652 + 249) ,v352.Position.Z);v354(v820);local v821=CFrame.new(v350.Position.X,500,v350.Position.Z);v354(v821);end v354(v350);break;end end end end local function v294(v357,v358) local v359=0 -0 ;local v360;local v361;local v362;while true do if (v359==0) then v360=v292(v357) or v358 ;if  not v360 then return false;end v359=1869 -(708 + 1160) ;end if ((5 -3)==v359) then while v68 and v289() and (v361<(91 -41))  do local v653=v289();local v654=(v653.Position-v360.Position).Magnitude;if (v654<(42 -(10 + 17))) then break;end if ((v361>0) and ((v361%10)==0)) then local v760=v11.Character;if v760 then v760:PivotTo(v360);end end task.wait(0.2 + 0 );v361=v361 + (1733 -(1400 + 332)) ;end v362=v289();v359=5 -2 ;end if (v359==(1911 -(242 + 1666))) then if v362 then local v703=0 + 0 ;local v704;while true do if (v703==(1 + 0)) then if (v704 and firetouchinterest) then task.wait(0.2 + 0 );firetouchinterest(v362,v357,940 -(850 + 90) );task.wait(0.1);firetouchinterest(v362,v357,1);end return true;end if (v703==(0 -0)) then v362.CFrame=v360;v704=(typeof(v357)~="CFrame") and v357 and v357:IsA("BasePart") ;v703=1391 -(360 + 1030) ;end end end return false;end if ((1 + 0)==v359) then v293(v360,false);v361=0;v359=2;end end end local function v295(v363,v364,v365) local function v366(v475) local v476=workspace:FindFirstChild("NPCs");if v476 then local v601=0 -0 ;local v602;while true do if ((0 -0)==v601) then v602=v476:FindFirstChild(v475);if (v602 and v602:FindFirstChild("HumanoidRootPart")) then return v602;end break;end end end for v531,v532 in ipairs(workspace:GetDescendants()) do if ((v532.Name==v475) and v532:IsA("Model") and v532:FindFirstChild("HumanoidRootPart")) then return v532;end end return nil;end local v367=v366(v363);if  not v367 then local v533=1661 -(909 + 752) ;while true do if (v533==(1223 -(109 + 1114))) then v294(nil,v364);task.wait(2);v533=1 -0 ;end if (v533==(1 + 0)) then v367=v366(v363);if  not v367 then warn("Polar Hub [Error TalkToNPCV7]: NPC '"   .. v363   .. "' no se encontró en workspace" );return false;end break;end end end v294(v367.HumanoidRootPart,v364);task.wait(243 -(6 + 236) );for v477=1,2 + 1  do local v478=0 + 0 ;while true do if ((2 -1)==v478) then task.wait(0.5);break;end if (v478==(0 -0)) then task.spawn(function() pcall(function() v13:InvokeServer("ProQuestProgress",v365);end);end);if v367 then for v822,v823 in ipairs(v367:GetDescendants()) do if v823:IsA("ProximityPrompt") then task.spawn(function() pcall(function() fireproximityprompt(v823);end);end);end end end v478=1134 -(1076 + 57) ;end end end return true;end local function v296() if v290("Saber") then v70=2 + 7 ;return 698 -(579 + 110) ;end if (v70>=5) then return v70;end local function v368() local v479=0 + 0 ;local v480;local v481;local v482;local v483;local v484;local v485;local v486;while true do if ((3 + 0)==v479) then v484=v483 and v483:FindFirstChild("Burn") ;if (v483 and  not v484) then return 2 + 1 ;end v485=v288("Jungle");v479=4;end if (v479==5) then return 1;end if (v479==(407 -(174 + 233))) then if v290("Saber") then return 25 -16 ;end v480,v481=pcall(function() return v13:InvokeServer("ProQuestProgress","RichMan");end);if ( not v480 or ((type(v481)=="string") and (v481=="Unknown"))) then return  -(1 -0);end v479=1 + 0 ;end if (v479==(1178 -(663 + 511))) then v486=v485 and v485:FindFirstChild("QuestDoor") ;if (v486 and (v486.Transparency>(0.5 + 0))) then return 2;end if v69 then return 2;end v479=2 + 3 ;end if (v479==1) then v482=v290("Relic") or (v481=="Relic") or ((type(v481)=="table") and v481.Relic) ;if v482 then return 7;end if ((type(v481)=="table") and v481.RichMan) then return 18 -12 ;end v479=2 + 0 ;end if (v479==2) then if (v290("Cup") or v290("FilledCup")) then return 9 -5 ;end if v290("Torch") then return 7 -4 ;end v483=v288("Desert");v479=3;end end end local v369=v368();if (v369== -(1 + 0)) then if v290("Relic") then local v655=0;while true do if (v655==0) then v70=math.max(v70,13 -6 );return v70;end end end if (v290("Cup") or v290("FilledCup")) then local v656=0 + 0 ;while true do if (0==v656) then v70=math.max(v70,1 + 3 );return v70;end end end if v290("Torch") then local v657=722 -(478 + 244) ;while true do if (v657==(517 -(440 + 77))) then v70=math.max(v70,2 + 1 );return v70;end end end warn("Polar Hub [DetectPhase]: Remoto sin respuesta. Forzando memoria Anti-Regresión: Fase "   .. v70 );return v70;end if (v369>v70) then v70=v369;end return v70;end local function v297(v370,v371) local v372=0 -0 ;local v373;while true do if (v372==(1557 -(655 + 901))) then return false;end if (v372==0) then v373=0 + 0 ;while (v373<v371) and v68  do local v658=0 + 0 ;while true do if (v658==1) then v373=v373 + 1 + 0 ;break;end if (v658==(0 -0)) then if v290(v370) then return true;end task.wait(1446 -(695 + 750) );v658=3 -2 ;end end end v372=1 -0 ;end end end local function v298(v374,v375,v376) v49();local v377=v58;local v378=v61;local v379=v60;v58=true;if string.find(string.lower(v375),"saber") then v61=true;end if string.find(string.lower(v375),"mob") then v60=true;end local v380=0;local v381=0;local v382=math.huge;local v383=0 -0 ;while v68 and (v380<v376)  do if  not v34(v375) then v381=v381 + 1 ;if (v381>(356 -(285 + 66))) then break;end else v381=0;end task.wait(0.5);local v487=v289();local v488=workspace:FindFirstChild("Enemies");local v489=nil;if v488 then for v659,v660 in ipairs(v488:GetChildren()) do if (v62(v660.Name,v375) and v660:FindFirstChild("Humanoid") and (v660.Humanoid.Health>(0 -0))) then v489=v660;break;end end end if (v489 and v489:FindFirstChild("HumanoidRootPart") and v487) then local v603=1310 -(682 + 628) ;local v604;while true do if (v603==1) then v382=v604;if ((v487.Position-v489.HumanoidRootPart.Position).Magnitude>(49 + 251)) then v293(v489.HumanoidRootPart.CFrame,true);else v487.CFrame=v489.HumanoidRootPart.CFrame * CFrame.new(299 -(176 + 123) ,3 + 2 ,0 + 0 ) ;end v603=2;end if (v603==(269 -(239 + 30))) then v604=(v489:FindFirstChild("Humanoid") and v489.Humanoid.Health) or 0 ;if (v604>=v382) then v383=v383 + 1 + 0 ;if (v383>(20 + 0)) then local v913=0 -0 ;while true do if (v913==(0 -0)) then warn("Polar Hub [ExclusiveTargetLock]: HP de '"   .. v375   .. "' no baja. Re-equipando arma..." );v49();v913=1;end if (v913==(316 -(306 + 9))) then v383=0;break;end end end else v383=0 -0 ;end v603=1 + 0 ;end if (v603==(2 + 0)) then if (v15 and v16) then local v862=0;local v863;while true do if (v862==(0 + 0)) then v863=v489:FindFirstChild("HumanoidRootPart") or v489:FindFirstChild("Head") ;if v863 then pcall(function() local v988=0 -0 ;while true do if (v988==(1375 -(1140 + 235))) then v16:FireServer(0 + 0 );v15:FireServer(v863,{{v489,v863}});break;end end end);end break;end end end break;end end elseif (v487 and ((v487.Position-v374.Position).Magnitude>(352 -(33 + 19)))) then v293(v374,true);end v380=v380 + 1 + 0 ;end v58=v377;v61=v378;v60=v379;end local v299={[2 -1 ]=0 + 0 ,[2]=0,[5 -2 ]=0 + 0 ,[4]=689 -(586 + 103) ,[5]=0 + 0 ,[18 -12 ]=1488 -(1309 + 179) ,[11 -4 ]=0 + 0 ,[21 -13 ]=0};local function v300(v384) local v385=0 + 0 ;while true do if (v385==0) then warn("Polar Hub [Error Crítico]: Atascado en Fase "   .. v384   .. " tras múltiples intentos." );v287("⚠️ Atascado en Fase "   .. v384   .. ". Retrocediendo para re-validar..." );v385=1 -0 ;end if (v385==(1 -0)) then if (v70>(610 -(295 + 314))) then v70=v70-1 ;else v70=2 -1 ;v69=false;end for v661=1963 -(1300 + 662) ,24 -16  do v299[v661]=0;end v385=1757 -(1178 + 577) ;end if (v385==(2 + 0)) then task.wait(8 -5 );break;end end end while v68 do task.wait(1406 -(851 + 554) );local v386=v11.Character;local v387=v386 and v386:FindFirstChild("HumanoidRootPart") ;local v388=v386 and v386:FindFirstChild("Humanoid") ;if ( not v387 or  not v388 or (v388.Health<=(0 + 0))) then continue;end local v389=v296();if (v389==(2 -1)) then local v534,v535=pcall(function() if  not v69 then v299[1 -0 ]=v299[1] + 1 ;if (v299[303 -(115 + 187) ]>5) then local v824=0 + 0 ;while true do if (v824==(0 + 0)) then v287("⚠️ 5 intentos alcanzados. ¡Forzando avance a Fase 2 (Antorcha)!");v69=true;v824=1;end if (v824==(3 -2)) then v70=math.max(v70,1163 -(160 + 1001) );v299[1]=0 + 0 ;v824=2;end if (v824==2) then return;end end end v287("Fase 1: Activando Placas (Intento "   .. v299[1 + 0 ]   .. "/5)" );local v706=v289();local v707=CFrame.new( -1610,22,162);if (v706 and ((v706.Position-v707.Position).Magnitude>300)) then local v825=0 -0 ;while true do if (v825==(359 -(237 + 121))) then task.wait(899 -(525 + 372) );break;end if (v825==(0 -0)) then v287("✈️ Volando a la Jungla para cargar el mapa...");v293(v707,false);v825=3 -2 ;end end end local v708=v288("Jungle");local v709=v708 and v708:FindFirstChild("QuestPlates") ;if v709 then for v864,v865 in ipairs(v709:GetDescendants()) do if  not v68 then break;end if (v865:IsA("BasePart") and (string.find(string.lower(v865.Name),"button") or string.find(string.lower(v865.Name),"plate"))) then local v915=0;while true do if (v915==(142 -(96 + 46))) then v294(v865,v865.CFrame);task.wait(0.5);break;end end end end else warn("Polar Hub [Error Fase 1]: Carpeta 'QuestPlates' no renderizada aún.");end task.wait(2);local v710=v708 and v708:FindFirstChild("QuestDoor") ;if (v710 and (v710.Transparency>0.5)) then v287("✅ ¡Placas activadas! Puerta abierta de forma natural.");v69=true;v70=math.max(v70,779 -(643 + 134) );v299[1]=0 + 0 ;elseif (v299[1]>=3) then local v886=0 -0 ;while true do if (v886==(0 -0)) then v287("⚠️ Las placas resisten. Cooldown táctico (3s)...");task.wait(3);break;end end end end end);if  not v534 then warn("Polar Hub [Error Crítico Fase 1]: "   .. tostring(v535) );end continue;end if (v389==(2 + 0)) then local v536=0 -0 ;local v537;local v538;while true do if ((1 -0)==v536) then continue;break;end if ((719 -(316 + 403))==v536) then v537,v538=pcall(function() local v761=0 + 0 ;local v762;local v763;local v764;while true do if ((2 -1)==v761) then v287("Fase 2: Recogiendo Antorcha (Intento "   .. v299[1 + 1 ]   .. "/5)..." );v762=CFrame.new( -(4054.15 -2444),9.18 + 3 ,162.72);v761=2;end if (v761==(2 + 2)) then if v297("Torch",5) then v287("✅ ¡Antorcha obtenida!");v299[6 -4 ]=0;end break;end if (0==v761) then v299[2]=v299[2] + 1 ;if (v299[2]>5) then local v947=0;while true do if (v947==(0 -0)) then v287("⚠️ 5 intentos en Antorcha. ¡Forzando avance a Fase 3 (Desierto)!");v70=math.max(v70,5 -2 );v947=1 + 0 ;end if ((1 -0)==v947) then v299[1 + 1 ]=0;return;end end end v761=1;end if (v761==(5 -3)) then v763=v288("Jungle");v764=v763 and v763:FindFirstChild("Torch") ;v761=20 -(12 + 5) ;end if (v761==(11 -8)) then if  not v764 then warn("Polar Hub [Error Fase 2]: Objeto 'Torch' no renderizado en Map/Jungle.");end v294(v764,v762);v761=8 -4 ;end end end);if  not v537 then warn("Polar Hub [Error Crítico Fase 2]: "   .. tostring(v538) );end v536=1 -0 ;end end end if (v389==(7 -4)) then local v539=0;local v540;local v541;while true do if (v539==0) then v540,v541=pcall(function() v299[3]=v299[3] + 1 ;if (v299[3]>(2 + 3)) then local v866=1973 -(1656 + 317) ;while true do if (v866==(1 + 0)) then v299[3 + 0 ]=0 -0 ;return;end if (v866==(0 -0)) then v287("⚠️ 5 intentos en Desierto. ¡Forzando avance a Fase 4 (Nieve)!");v70=math.max(v70,358 -(5 + 349) );v866=4 -3 ;end end end v287("Fase 3: Desierto (Puerta y Copa) - Intento "   .. v299[3]   .. "/5" );local v766=v288("Desert");local v767=v766 and v766:FindFirstChild("Burn") ;if v767 then if v290("Torch") then v291("Torch");v294(v767,v767.CFrame);task.wait(1274 -(266 + 1005) );else warn("Polar Hub [Fase 3]: Intentando avanzar sin Antorcha física...");end else v287("Fase 3: Puerta ya quemada o no existe.");end local v768=CFrame.new(1114.26,3.17 + 1 ,14897.15 -10531 );local v769=v766 and v766:FindFirstChild("Cup") ;v294(v769,v768);if v297("Cup",6 -1 ) then local v867=1696 -(561 + 1135) ;while true do if (v867==(0 -0)) then v287("✅ ¡Copa obtenida exitosamente!");v299[9 -6 ]=1066 -(507 + 559) ;break;end end else warn("Polar Hub [Fase 3]: Fallo al obtener Copa. Se forzará en próximos intentos.");end end);if  not v540 then warn("Polar Hub [Error Crítico Fase 3]: "   .. tostring(v541) );end v539=2 -1 ;end if (v539==(3 -2)) then continue;break;end end end if (v389==(392 -(212 + 176))) then local v542=905 -(250 + 655) ;local v543;local v544;while true do if (v542==(0 -0)) then v543,v544=pcall(function() local v770=0 -0 ;local v771;while true do if (v770==3) then task.wait(5 -1 );if v290("FilledCup") then v287("Fase 4: Copa llena. Entregando a Sick Man...");v295("Sick Man",CFrame.new(3351.4 -(1869 + 87) ,128.3 -91 , -(3223.5 -(484 + 1417))),nil);task.wait(2);if ( not v290("FilledCup") and  not v290("Cup")) then local v983=0;while true do if (v983==(2 -1)) then v299[6 -2 ]=773 -(48 + 725) ;break;end if (v983==(0 -0)) then v287("✅ ¡Sick Man ayudado! Avanzando a Fase 5...");v70=5;v983=2 -1 ;end end else warn("Polar Hub [Error Fase 4]: Sick Man no tomó la copa. Reintentando...");end else warn("Polar Hub [Error Fase 4]: La copa no se llenó con agua.");end break;end if (v770==0) then v299[3 + 1 ]=v299[10 -6 ] + 1 + 0 ;if (v299[2 + 2 ]>5) then local v950=853 -(152 + 701) ;while true do if (v950==1) then v299[4]=0;return;end if (v950==0) then v287("⚠️ 5 intentos en Sick Man. ¡Forzando avance a Fase 5!");v70=1316 -(430 + 881) ;v950=1;end end end v770=1 + 0 ;end if ((896 -(557 + 338))==v770) then v287("Fase 4: Llenando Copa en la Nieve (Intento "   .. v299[4]   .. "/5)" );v771=CFrame.new(413.1199999999999 + 981 ,37.38, -(3719.83 -2399));v770=2;end if ((6 -4)==v770) then if v290("FilledCup") then v291("FilledCup");elseif v290("Cup") then v291("Cup");end v294(nil,v771);v770=3;end end end);if  not v543 then warn("Polar Hub [Error Crítico Fase 4]: "   .. tostring(v544) );end v542=2 -1 ;end if (v542==1) then continue;break;end end end if (v389==(10 -5)) then local v545,v546=pcall(function() v299[806 -(499 + 302) ]=v299[871 -(39 + 827) ] + (2 -1) ;if (v299[11 -6 ]>(19 -14)) then local v711=0 -0 ;while true do if (v711==1) then v299[1 + 4 ]=0;return;end if (0==v711) then v287("⚠️ 5 intentos en Rich Man. ¡Forzando avance a Fase 6!");v70=17 -11 ;v711=1 + 0 ;end end end v287("Fase 5: Volando hacia Rich Man (Intento "   .. v299[5]   .. "/5)..." );v295("Rich Man",CFrame.new( -(1811 -666),108.7 -(103 + 1) ,4382.6 -(475 + 79) ),"RichMan");task.wait(6 -3 );v287("✅ ¡Hablamos con Rich Man! Avanzando a cazar al Mob Leader...");v70=19 -13 ;v299[1 + 4 ]=0 + 0 ;end);if  not v545 then warn("Polar Hub [Error Crítico Fase 5]: "   .. tostring(v546) );end continue;end if (v389==(1509 -(1395 + 108))) then local v547,v548=pcall(function() local v607=0;local v608;local v609;while true do if (v607==(2 -1)) then v608=CFrame.new( -(4084.71 -(7 + 1197)),7 + 8 ,1895.8500000000004 + 3535 );v609=CFrame.new( -1145,4.7,4147.6 -(27 + 292) );v607=5 -3 ;end if (v607==(2 -0)) then if ((v299[6]==1) or ((v299[25 -19 ]%(7 -3))==(0 -0))) then local v869=0;while true do if (0==v869) then v287("Fase 6: Verificando estado con Rich Man...");v295("Rich Man",v609,"RichMan");v869=1;end if (v869==(140 -(43 + 96))) then task.wait(12 -9 );if v290("Relic") then local v984=0;while true do if (v984==(0 -0)) then v287("✅ ¡Reliquia obtenida! Avanzando a Fase 7...");v70=6 + 1 ;v984=1 + 0 ;end if (v984==(1 -0)) then v299[6]=0 + 0 ;return;end end end break;end end end if v34("Mob Leader") then local v870=0 -0 ;while true do if ((1 + 0)==v870) then v287("✅ ¡Mob Leader derrotado! Yendo a reclamar recompensa...");task.wait(1 + 2 );v870=1753 -(1414 + 337) ;end if (v870==2) then for v961=1941 -(1642 + 298) ,7 -4  do local v962=0 -0 ;while true do if ((0 -0)==v962) then v295("Rich Man",v609,"RichMan");task.wait(3);v962=1;end if (v962==(1 + 0)) then if v290("Relic") then local v1028=0 + 0 ;while true do if (v1028==(972 -(357 + 615))) then v287("✅ ¡Reliquia obtenida! Avanzando a Fase 7...");v70=5 + 2 ;v1028=2 -1 ;end if (v1028==1) then v299[6 + 0 ]=0;return;end end end break;end end end v287("⚠️ No se recibió la reliquia. Se reintentará en el próximo ciclo...");break;end if (v870==(0 -0)) then v287("🎯 ¡Mob Leader encontrado! Entrando en combate...");v298(v608,"Mob Leader",480 + 120 );v870=1 + 0 ;end end else v287("⏳ Mob Leader no spawneado. Esperando en isla (Intento "   .. v299[4 + 2 ]   .. "/40)..." );local v871=v289();if (v871 and ((v871.Position-v608.Position).Magnitude>(1401 -(384 + 917)))) then v293(v608,false);end task.wait(702 -(128 + 569) );end break;end if (v607==(1543 -(1407 + 136))) then v299[6]=v299[6] + (1888 -(687 + 1200)) ;if (v299[1716 -(556 + 1154) ]>(140 -100)) then v300(101 -(9 + 86) );return;end v607=1;end end end);if  not v547 then warn("Polar Hub [Error Crítico Fase 6]: "   .. tostring(v548) );end continue;end if (v389==(428 -(275 + 146))) then local v549=0 + 0 ;local v550;local v551;while true do if (v549==1) then continue;break;end if (v549==(64 -(29 + 35))) then v550,v551=pcall(function() v299[30 -23 ]=v299[20 -13 ] + 1 ;if (v299[7]>5) then local v872=0 -0 ;while true do if (v872==1) then v299[5 + 2 ]=0;return;end if (v872==(1012 -(53 + 959))) then v287("⚠️ 5 intentos con Relic. ¡Forzando avance a Fase 8 (Saber Expert)!");v70=416 -(312 + 96) ;v872=1 -0 ;end end end v287("Fase 7: Abriendo bóveda con Relic (Intento "   .. v299[292 -(147 + 138) ]   .. "/5)..." );v291("Relic");local v774=CFrame.new( -(2305.8 -(813 + 86)),29.8,3.8 + 0 );local v775=v288("Jungle");local v776=v775 and v775:FindFirstChild("Relic",true) ;if  not v776 then warn("Polar Hub [Error Fase 7]: Puerta 'Relic' no encontrada en Map/Jungle.");end v294(v776,v774);task.wait(3);v287("✅ ¡Reliquia colocada! Avanzando a Fase 8...");v70=14 -6 ;v299[499 -(18 + 474) ]=0 + 0 ;end);if  not v550 then warn("Polar Hub [Error Crítico Fase 7]: "   .. tostring(v551) );end v549=3 -2 ;end end end if ((v389==8) or (v389==9)) then local v552,v553=pcall(function() if (v290("Saber") or (v389==9)) then local v712=1086 -(860 + 226) ;while true do if (v712==(304 -(121 + 182))) then v54=v50;return;end if (v712==0) then v287("🎉 ¡ÉXITO TOTAL! Ya tienes la espada Saber.");v68=false;v712=1;end end end v287("Fase 8: Validando Saber Expert...");local v610=CFrame.new( -(180 + 1281),1270 -(988 + 252) , -(6 + 45));v294(nil,v610);task.wait(1);if  not v34("Saber Expert") then v299[8]=v299[3 + 5 ] + (1971 -(49 + 1921)) ;if (v299[8]>(1010 -(223 + 667))) then local v827=52 -(51 + 1) ;while true do if (v827==0) then v287("⚠️ Saber Expert no ha spawneado en 20 min. Reiniciando contador...");v299[13 -5 ]=0 -0 ;v827=1;end if (v827==(1126 -(146 + 979))) then return;end end end if ((v299[3 + 5 ]%(611 -(311 + 294)))==1) then local v828=0 -0 ;local v829;while true do if (v828==(0 + 0)) then v829=math.floor((v299[1451 -(496 + 947) ] * (1368 -(1233 + 125)))/(25 + 35) );v287("⏳ Esperando spawn de Saber Expert... ("   .. v829   .. " min)" );break;end end end local v714=v289();if (v714 and ((v714.Position-v610.Position).Magnitude>(90 + 10))) then v293(v610,false);end task.wait(10);return;end v49();v299[8]=0;v287("⚔️ ¡Matando a Shanks (Saber Expert)!");v298(v610,"Saber Expert",114 + 486 );v297("Saber",10);end);if  not v552 then warn("Polar Hub [Error Crítico Fase 8]: "   .. tostring(v553) );end if  not v68 then break;end continue;end warn("Polar Hub [Loop Principal]: Fase "   .. tostring(v389)   .. " no tiene handler definido. MaxPhase="   .. tostring(v70) );end v68=false;v54=v50;end);end local v72=true;task.spawn(function() while true do local v301=1645 -(963 + 682) ;while true do if (v301==(0 + 0)) then if  not v72 then local v663=0;while true do if (v663==(1504 -(504 + 1000))) then task.wait(1 + 0 );continue;break;end end end task.wait(0.5 + 0 );v301=1 + 0 ;end if (v301==1) then if (v72 and v13) then local v664=0;local v665;while true do if (v664==(0 -0)) then v665=v11.Character;if (v665 and  not v665:FindFirstChild("HasBuso")) then pcall(function() v13:InvokeServer("Buso");end);end break;end end end break;end end end end);local function v73() local v180=0 + 0 ;local v181;local v182;local v183;local v184;while true do if (v180==(1 + 0)) then v183=workspace:FindFirstChild("_WorldOrigin");v184=v183 and v183:FindFirstChild("Locations") ;v180=2;end if (v180==(184 -(156 + 26))) then if v184 then for v666,v667 in ipairs(v184:GetChildren()) do if  not v182[v667.Name] then table.insert(v181,v667.Name);v182[v667.Name]=true;end end end if ( #v181==0) then table.insert(v181,"None");end v180=3;end if (v180==(2 + 1)) then table.sort(v181);return v181;end if (v180==(0 -0)) then v181={};v182={};v180=165 -(149 + 15) ;end end end local v74,v75,v76,v77,v78=false,976 -(890 + 70) ,false,false,false;v6.Heartbeat:Connect(function() if v74 then local v390=v11.Character;local v391=v390 and v390:FindFirstChild("Humanoid") ;if (v391 and (v391.MoveDirection.Magnitude>0)) then v390:TranslateBy(v391.MoveDirection * (v75/(172 -(39 + 78))) );end end end);v5.JumpRequest:Connect(function() if v76 then local v392=482 -(14 + 468) ;local v393;local v394;while true do if ((0 -0)==v392) then v393=v11.Character;v394=v393 and v393:FindFirstChild("Humanoid") ;v392=2 -1 ;end if (v392==1) then if v394 then v394:ChangeState(Enum.HumanoidStateType.Jumping);end break;end end end end);v6.Stepped:Connect(function() if v77 then local v395=0 + 0 ;local v396;while true do if (v395==(0 + 0)) then v396=v11.Character;if v396 then for v779,v780 in ipairs(v396:GetChildren()) do if v780:IsA("BasePart") then v780.CanCollide=false;end end end break;end end end end);local v79=nil;v6.RenderStepped:Connect(function() if v78 then local v397=v11.Character;local v398=v397 and v397:FindFirstChild("HumanoidRootPart") ;if (v398 and (v398.Position.Y>=9.5) and (v398.AssemblyLinearVelocity.Y<=0)) then local v554=0;while true do if (v554==(0 + 0)) then if  not v79 then v79=Instance.new("Part",workspace);v79.Name="Polar_Water";v79.Size,v79.Transparency,v79.Anchored,v79.CanQuery=Vector3.new(14 + 16 ,1 + 0 ,57 -27 ),1,true,false;end v79.CFrame=CFrame.new(v398.Position.X,9.2 + 0 ,v398.Position.Z);break;end end elseif v79 then v79.CFrame=CFrame.new(0, -5000,0);end elseif v79 then local v555=0;while true do if (v555==0) then v79:Destroy();v79=nil;break;end end end end);local v80=v2:Tab({Title="Farm",Icon="swords"});local v81=v2:Tab({Title="Stats",Icon="user"});local v82=v2:Tab({Title="Status",Icon="activity"});local v83=v2:Tab({Title="Shop",Icon="shopping-cart"});local v84=v2:Tab({Title="Quest Farm",Icon="map"});local v85=v2:Tab({Title="Teleport",Icon="globe"});local v86=v2:Tab({Title="Combat PvP",Icon="crosshair"});local v87=v2:Tab({Title="Misc",Icon="settings"});v80:Section({Title="Configuración de Combate"});v80:Dropdown({Title="Farm Tool (Arma)",Values={"Melee","Sword","Blox Fruit","Gun"},Value="Melee",Callback=function(v185) v45=v185;end});v80:Toggle({Title="Auto Mastery Inteligente",Desc="Baja la vida con tu Farm Tool, y remata (cuando le quede < 20%) con el arma que elijas abajo.",Callback=function(v186) v46=v186;end});v80:Dropdown({Title="Arma a Masterizar (Auto Mastery)",Values={"Melee","Sword","Blox Fruit","Gun"},Value="Sword",Callback=function(v187) v47=v187;end});v80:Toggle({Title="Auto Skills",Desc="Usa las habilidades Z, X, C, V, F automáticamente mientras farmeas.",Callback=function(v188) v48=v188;end});v80:Section({Title="Auto Farm Automático"});v80:Toggle({Title="Auto Farm Nivel (100% Automático)",Desc="Detecta nivel, vuela a la isla, toma misión y ataca.",Callback=function(v189) local v190=0 -0 ;while true do if (0==v190) then v57=v189;v58=v189;break;end end end});v80:Toggle({Title="Auto Chest (Farm Beli)",Callback=function(v191) v65=v191;end});v80:Toggle({Title="Auto Farm Nearest (Masacre Total)",Desc="Ignora misiones y niveles. Aniquila al NPC más cercano en la isla actual. Exterminio masivo.",Callback=function(v192) local v193=0 -0 ;while true do if (v193==(0 + 0)) then v59=v192;v58=v192;break;end end end});v80:Section({Title="Cazador de Jefes (Bosses)"});local v88={};for v194,v195 in ipairs(v19) do table.insert(v88,v195.name);end v80:Dropdown({Title="Seleccionar Jefe",Values=v88,Value="Gorilla King",Callback=function(v196) v20=v196;end});v80:Toggle({Title="Auto Farm Boss Seleccionado",Desc="Caza exclusivamente al jefe seleccionado arriba.",Callback=function(v197) local v198=0;while true do if ((0 + 0)==v198) then v21=v197;v58=v197;break;end end end});v80:Toggle({Title="Auto Farm ALL Bosses",Desc="Modo Exterminio: Escanea el servidor y caza a TODOS los jefes vivos.",Callback=function(v199) local v200=0;while true do if (v200==0) then v22=v199;v58=v199;v200=1;end if (v200==(2 -1)) then v25=1;break;end end end});v80:Toggle({Title="Tomar Misión del Jefe",Desc="Si está desactivado, los cazará a sangre fría ignorando requisitos de nivel.",Callback=function(v201) v23=v201;end});v81:Section({Title="Mejoras de Jugador"});v81:Toggle({Title="Player & NPC ESP",Callback=function(v202) local v203=0 + 0 ;while true do if (v203==0) then v41=v202;v44();break;end end end});v81:Toggle({Title="Auto Haki (Buso)",Default=true,Callback=function(v204) v72=v204;end});v81:Section({Title="Auto Stats Equitativo"});local function v89(v205,v206) if v206 then if  not table.find(v67,v205) then table.insert(v67,v205);end else local v399=table.find(v67,v205);if v399 then table.remove(v67,v399);end end end v81:Toggle({Title="Melee",Callback=function(v207) v89("Melee",v207);end});v81:Toggle({Title="Defense",Callback=function(v208) v89("Defense",v208);end});v81:Toggle({Title="Sword",Callback=function(v209) v89("Sword",v209);end});v81:Toggle({Title="Gun",Callback=function(v210) v89("Gun",v210);end});v81:Toggle({Title="Demon Fruit",Callback=function(v211) v89("Demon Fruit",v211);end});v81:Toggle({Title="Activar Auto Stats",Desc="Divide tus puntos equitativamente.",Callback=function(v212) v66=v212;end});v82:Section({Title="Telemetría del Servidor"});local v90=v82:Paragraph({Title="Tiempo de Vida del Servidor",Desc="Calculando..."});local v91=v82:Paragraph({Title="Tiempo en Sesión (Jugador)",Desc="Calculando..."});v82:Section({Title="Radar de Jefes Especiales (Sea 1)"});local v92=v82:Paragraph({Title="The Saw (Nvl 100) - Middle Town",Desc="Estado: Calculando..."});local v93=v82:Paragraph({Title="Greybeard (Nvl 750) - Marine Fortress",Desc="Estado: Calculando..."});local v94=os.time();local function v95(v213) local v214=0 -0 ;local v215;local v216;local v217;while true do if (v214==0) then v215=math.floor(v213/(5310 -(1596 + 114)) );v216=math.floor((v213%(9399 -5799))/60 );v214=1;end if (v214==(714 -(164 + 549))) then v217=math.floor(v213%60 );return string.format("%02d:%02d:%02d",v215,v216,v217);end end end local function v96(v218,v219) if  not v218 then return;end pcall(function() if v218.SetDesc then v218:SetDesc(v219);elseif v218.Set then v218:Set({Desc=v219});end end);end local function v97(v220) local v221=1438 -(1059 + 379) ;local v222;while true do if (v221==(1 -0)) then return v222;end if (v221==0) then v222=nil;for v556,v557 in ipairs(workspace:GetDescendants()) do if (v557:IsA("BillboardGui") or v557:IsA("SurfaceGui")) then local v669=0 + 0 ;local v670;local v671;while true do if ((1 + 0)==v669) then for v874,v875 in ipairs(v557:GetDescendants()) do if (v875:IsA("TextLabel") and v875.Text) then local v917=392 -(145 + 247) ;local v918;local v919;while true do if (v917==(0 + 0)) then v918=string.lower(v875.Text);if string.find(v918,string.lower(v220)) then v670=true;end v917=1 + 0 ;end if (v917==(2 -1)) then v919=string.match(v875.Text,"%[(%d+:%d+:%d+)%]") or string.match(v875.Text,"%[(%d+:%d+)%]") ;if v919 then v671=v919;end break;end end end end if (v670 and v671) then v222=v671;end break;end if (v669==(0 + 0)) then v670=false;v671=nil;v669=1;end end end end v221=1 + 0 ;end end end task.spawn(function() while true do local v302=0 -0 ;while true do if (v302==(720 -(254 + 466))) then task.wait(565 -(544 + 16) );pcall(function() local v614=workspace.DistributedGameTime;v96(v90,v95(v614));local v615=os.time() -v94 ;v96(v91,v95(v615));local v616=workspace:FindFirstChild("Enemies");local v617=false;if (v616 and v616:FindFirstChild("The Saw")) then v617=true;end if v617 then v96(v92,"🟢 SPAWNEADO! (¡Ve a matarlo!)");else local v716=v97("The Saw");if v716 then v96(v92,"🔴 MUERTO\nPróximo Spawn (Holograma Oficial): "   .. v716 );else v96(v92,"🔴 MUERTO\nPróximo Spawn: Esperando sincronización...");end end local v618=false;if (v616 and v616:FindFirstChild("Greybeard")) then v618=true;end if v618 then v96(v93,"🟢 SPAWNEADO! (¡Ve a matarlo!)");else local v717=0;local v718;while true do if (v717==(0 -0)) then v718=v97("Greybeard");if v718 then v96(v93,"🔴 MUERTO\nPróximo Spawn (Holograma Oficial): "   .. v718 );else v96(v93,"🔴 MUERTO\nPróximo Spawn: Esperando sincronización...");end break;end end end end);break;end end end end);v83:Section({Title="Habilidades (Bypass Distancia)"});v83:Button({Title="Comprar Geppo (Skyjump) - $10k",Callback=function() v31("BuyHaki","Geppo",nil,"Ability Teacher");end});v83:Button({Title="Comprar Buso (Aura) - $25k",Callback=function() v31("BuyHaki","Buso",nil,"Ability Teacher");end});v83:Button({Title="Comprar Soru (Flash Step) - $100k",Callback=function() v31("BuyHaki","Soru",nil,"Ability Teacher");end});v83:Button({Title="Comprar Ken Haki (Observation) - $750k",Callback=function() v31("KenTalk","Buy",nil,"Instinct Teacher");end});v83:Section({Title="Estilos de Pelea (Ghost TP Bypass)"});v83:Button({Title="Dark Step (Teacher) - $150k",Callback=function() v31("BuyBlackLeg",nil,nil,"Dark Step Teacher");end});v83:Button({Title="Electro (Mad Scientist) - $500k",Callback=function() v31("BuyElectro",nil,nil,"Mad Scientist");end});v83:Button({Title="Water Kung Fu (Teacher) - $750k",Callback=function() v31("BuyFishmanKarate",nil,nil,"Water Kung Fu Teacher");end});v83:Section({Title="Espadas Avanzadas (Sword Dealer)"});v83:Button({Title="Katana Clásica - $1k",Callback=function() v31("BuyItem","Katana",nil,"Sword Dealer");end});v83:Button({Title="Dual Katana - $12k",Callback=function() v31("BuyItem","Dual Katana",nil,"Sword Dealer");end});v83:Button({Title="Iron Mace - $25k",Callback=function() v31("BuyItem","Iron Mace",nil,"Sword Dealer");end});v83:Button({Title="Triple Katana - $60k",Callback=function() v31("BuyItem","Triple Katana",nil,"Sword Dealer");end});v83:Button({Title="Pipe (Tubería) - $100k",Callback=function() v31("BuyItem","Pipe",nil,"Sword Dealer");end});v83:Button({Title="Soul Cane (Bastón) - $750k",Callback=function() v31("BuyItem","Soul Cane",nil,"Living Skeleton");end});v83:Button({Title="Bisento (Barbablanca) - $1M",Callback=function() v31("BuyItem","Bisento",nil,"Master Sword Dealer");end});v83:Section({Title="Armas de Fuego (Weapon Dealer)"});v83:Button({Title="Slingshot (Resortera) - $5k",Callback=function() v31("BuyItem","Slingshot",nil,"Weapon Dealer");end});v83:Button({Title="Musket (Mosquete) - $8k",Callback=function() v31("BuyItem","Musket",nil,"Weapon Dealer");end});v83:Button({Title="Flintlock (Pistola) - $10k",Callback=function() v31("BuyItem","Flintlock",nil,"Weapon Dealer");end});v84:Section({Title="Habilidades Especiales"});v84:Button({Title="Auto Desbloquear Ken Haki (Visión) - $750k",Callback=function() local v223=628 -(294 + 334) ;local v224;local v225;while true do if (v223==(253 -(236 + 17))) then v224=v11:FindFirstChild("Data");v225=(v224 and v224:FindFirstChild("Level") and v224.Level.Value) or (1 + 0) ;v223=1 + 0 ;end if (v223==(3 -2)) then if (v225>=(1420 -1120)) then v31("KenTalk","Buy");else warn("❌ Error Polar Hub: Necesitas Nivel 300 para el Ken Haki.");end break;end end end});v84:Section({Title="Saber Puzzle (100% Automático)"});v84:Paragraph({Title="Auto Saber Definitivo",Desc="Presiona INICIAR y el bot viajará por 4 islas, presionará los botones secretos, tomará la antorcha, quemará paredes, y masacrará a los jefes de la mafia y a Shanks de forma autónoma."});v84:Button({Title="▶ Iniciar Auto Saber Puzzle",Callback=function() if  not v68 then v71();end end});v84:Button({Title="⏹ Detener Auto Saber",Callback=function() local v226=0 + 0 ;while true do if (v226==1) then v61=false;break;end if (v226==(0 + 0)) then v68=false;v60=false;v226=795 -(413 + 381) ;end end end});v84:Section({Title="Caza de Jefes (Modo Manual)"});v84:Toggle({Title="Auto Matar Mob Leader (Nvl 120)",Default=false,Callback=function(v227) local v228=0 + 0 ;while true do if (v228==0) then v60=v227;v58=v227;break;end end end});v84:Toggle({Title="Auto Matar Saber Expert / Shanks (Nvl 200)",Default=false,Callback=function(v229) local v230=0 -0 ;while true do if (v230==(0 -0)) then v61=v229;v58=v229;break;end end end});v85:Section({Title="Viajes Dinámicos"});local v98="";v85:Dropdown({Title="Isla a Volar",Values=v73(),Callback=function(v231) v98=v231;end});v85:Button({Title="Volar Hacia Isla (Tween)",Callback=function() local v232=1970 -(582 + 1388) ;local v233;local v234;while true do if (v232==(0 -0)) then v233=workspace:FindFirstChild("_WorldOrigin");v234=v233 and v233:FindFirstChild("Locations") ;v232=1 + 0 ;end if (v232==(365 -(326 + 38))) then if (v234 and (v98~="") and (v98~="None")) then local v619=0 -0 ;local v620;while true do if (v619==0) then v620=v234:FindFirstChild(v98);if v620 then v28(v620.CFrame * CFrame.new(0,114 -34 ,620 -(47 + 573) ) );end break;end end end break;end end end});v86:Section({Title="Bounty Hunter Tracker"});local v99=nil;local v100="Esperando objetivo...";local v101=v86:Dropdown({Title="Seleccionar Víctima",Values={"Nadie"},Callback=function(v235) if (v235~="Nadie") then v99=v3:FindFirstChild(v235);else v99=nil;end end});local function v102() local v236=0 -0 ;local v237;while true do if (v236==1) then pcall(function() if v101.SetValues then v101:SetValues(v237);elseif v101.Refresh then v101:Refresh(v237);elseif v101.UpdateValues then v101:UpdateValues(v237);elseif v101.Set then v101:Set({Values=v237});end end);break;end if ((0 -0)==v236) then v237={"Nadie"};for v558,v559 in ipairs(v3:GetPlayers()) do if (v559~=v11) then table.insert(v237,v559.Name);end end v236=1;end end end task.delay(494 -(76 + 416) ,v102);v86:Button({Title="🔄 Actualizar Lista del Servidor",Callback=function() v102();end});local v103=v86:Paragraph({Title="Inspección Táctica (Set & Stats)",Desc=v100});v3.PlayerAdded:Connect(function() task.delay(444 -(319 + 124) ,v102);end);v3.PlayerRemoving:Connect(function(v238) local v239=0 -0 ;while true do if (v239==(1007 -(564 + 443))) then if (v99==v238) then v99=nil;end task.delay(0.5 -0 ,v102);break;end end end);task.spawn(function() while task.wait(1.5) do if (v99 and v99.Parent and v99.Character) then local v490=0;local v491;local v492;local v493;local v494;while true do if (v490==(458 -(337 + 121))) then v491="Oculto";pcall(function() local v719=v99:FindFirstChild("Data");if (v719 and v719:FindFirstChild("Bounty")) then v491=tostring(v719.Bounty.Value);elseif (v99:FindFirstChild("leaderstats") and v99.leaderstats:FindFirstChild("Bounty")) then v491=tostring(v99.leaderstats.Bounty.Value);end end);v490=2 -1 ;end if (v490==3) then pcall(function() local v720=v99.Character:FindFirstChild("Humanoid");if v720 then v493=string.format("\n❤️ HP: %d/%d",math.floor(v720.Health),math.floor(v720.MaxHealth));end local v721=v99:FindFirstChild("Data");if v721 then local v836=0;local v837;local v838;while true do if (v836==(0 -0)) then v837=v721:FindFirstChild("Level");if v837 then v493=v493   .. "\n📊 Nivel: "   .. tostring(v837.Value) ;end v836=1912 -(1261 + 650) ;end if (v836==(1 + 0)) then v838=v721:FindFirstChild("BloxFruit");if (v838 and (v838.Value~="")) then v493=v493   .. "\n🍎 Fruta: "   .. tostring(v838.Value) ;end break;end end end end);v494=string.format("🎯 Objetivo: %s\n💰 Bounty: %s\n⚔️ Inventario/Armas: %s%s",v99.Name,v491,v492,v493);v490=6 -2 ;end if (v490==2) then if (v492=="") then v492="Manos vacías";else v492=string.sub(v492,1818 -(772 + 1045) , -3);end v493="";v490=1 + 2 ;end if (v490==4) then pcall(function() if v103.SetDesc then v103:SetDesc(v494);elseif v103.Set then v103:Set({Desc=v494});end end);break;end if (v490==(145 -(102 + 42))) then v492="";pcall(function() for v781,v782 in ipairs(v99.Character:GetChildren()) do if v782:IsA("Tool") then v492=v492   .. v782.Name   .. ", " ;end end local v722=v99:FindFirstChild("Backpack");if v722 then for v876,v877 in ipairs(v722:GetChildren()) do if v877:IsA("Tool") then v492=v492   .. v877.Name   .. ", " ;end end end end);v490=1846 -(1524 + 320) ;end end else pcall(function() if v103.SetDesc then v103:SetDesc("Selecciona un jugador válido...");elseif v103.Set then v103:Set({Desc="Selecciona un jugador válido..."});end end);end end end);v86:Button({Title="🚀 Teletransportarse al Objetivo",Callback=function() if (v99 and v99.Character and v99.Character:FindFirstChild("HumanoidRootPart")) then v28(v99.Character.HumanoidRootPart.CFrame * CFrame.new(1270 -(1049 + 221) ,10,156 -(18 + 138) ) );end end});v86:Section({Title="⚡ Modo Combate (Anti-Lag)"});local v104=false;local v105=false;v86:Toggle({Title="⚡ Activar Modo Combate",Desc="ACTIVA ESTO PRIMERO. Sin esto, Hitbox y Silent Aim no funcionarán. Desactívalo cuando no hagas PvP para eliminar lag.",Callback=function(v240) local v241=0 -0 ;while true do if (v241==0) then v104=v240;if (v240 and  not v105) then v105=true;end break;end end end});v86:Section({Title="Aimbot & Hitbox"});local v106=false;local v107=1117 -(67 + 1035) ;local v108=Vector3.new(2,2,1);local v109=0;local function v110() for v303,v304 in ipairs(v3:GetPlayers()) do pcall(function() if ((v304~=v11) and v304.Character and v304.Character:FindFirstChild("HumanoidRootPart")) then local v560=0;while true do if (v560==0) then v304.Character.HumanoidRootPart.Size=v108;v304.Character.HumanoidRootPart.Transparency=1;v560=1;end if (v560==1) then v304.Character.HumanoidRootPart.CanCollide=true;v304.Character.HumanoidRootPart.Material=Enum.Material.Plastic;break;end end end end);end end v86:Toggle({Title="Activar Hitbox Expander",Desc="Aumenta la caja de colisión de los enemigos. Requiere Modo Combate activado. (15-25 es óptimo)",Callback=function(v242) v106=v242;if  not v242 then v110();end end});v86:Slider({Title="Tamaño de Hitbox",Value={Min=5,Max=388 -(136 + 212) ,Default=15},Callback=function(v243) v107=v243;end});for v244,v245 in ipairs(v3:GetPlayers()) do if (v245~=v11) then v245.CharacterRemoving:Connect(function(v495) pcall(function() if v495:FindFirstChild("HumanoidRootPart") then local v672=0 -0 ;while true do if (v672==0) then v495.HumanoidRootPart.Size=v108;v495.HumanoidRootPart.Transparency=1;break;end end end end);end);end end v3.PlayerAdded:Connect(function(v246) v246.CharacterRemoving:Connect(function(v305) pcall(function() if v305:FindFirstChild("HumanoidRootPart") then local v561=0 + 0 ;while true do if (v561==(0 + 0)) then v305.HumanoidRootPart.Size=v108;v305.HumanoidRootPart.Transparency=1605 -(240 + 1364) ;break;end end end end);end);end);v6.Heartbeat:Connect(function() if (v104 and v106 and ((tick() -v109)>0.05)) then local v400=0;while true do if (v400==(1082 -(1050 + 32))) then v109=tick();for v673,v674 in ipairs(v3:GetPlayers()) do if ((v674~=v11) and v674.Character and v674.Character:FindFirstChild("HumanoidRootPart")) then pcall(function() local v841=0;local v842;while true do if (v841==(3 -2)) then v842.Transparency=0.6;v842.Color=Color3.fromRGB(151 + 104 ,1055 -(331 + 724) ,0);v841=1 + 1 ;end if (v841==(646 -(269 + 375))) then v842.Material=Enum.Material.Neon;v842.CanCollide=false;break;end if (v841==(725 -(267 + 458))) then v842=v674.Character.HumanoidRootPart;v842.Size=Vector3.new(v107,v107,v107);v841=1 + 0 ;end end end);end end break;end end end end);local v111=false;local v112=false;v86:Toggle({Title="Silent Aim (Full Aimbot)",Desc="Redirige Mouse.Hit, remotos y skills al objetivo. Armas como Tirachinas apuntan solas. Requiere Modo Combate.",Callback=function(v247) v111=v247;end});v86:Toggle({Title="Bring Target (Atraer Víctima)",Desc="Teletransporta la víctima frente a ti. Combo letal con Silent Aim. Requiere Modo Combate.",Callback=function(v248) v112=v248;end});v86:Section({Title="Combate Extremo"});local v113=false;v86:Toggle({Title="Kill Aura (Destrucción Total)",Desc="Daña a todos los enemigos o jugadores a tu alrededor automáticamente sin apuntar.",Callback=function(v249) v113=v249;end});task.spawn(function() while true do local v306=0 -0 ;while true do if (v306==0) then task.wait(818.1 -(667 + 151) );if (v104 and v112) then pcall(function() local v730=0;local v731;local v732;while true do if (v730==(1498 -(1410 + 87))) then if (v731 and v732) then v732.CFrame=v731.CFrame * CFrame.new(0,0, -(1902 -(1504 + 393))) ;v732.AssemblyLinearVelocity=Vector3.new(0 -0 ,0 -0 ,796 -(461 + 335) );end break;end if (v730==(0 + 0)) then v731=v11.Character and v11.Character:FindFirstChild("HumanoidRootPart") ;v732=v99 and v99.Character and v99.Character:FindFirstChild("HumanoidRootPart") ;v730=1762 -(1730 + 31) ;end end end);end break;end end end end);local v114={["RE/RegisterHit"]=true,["RE/RegisterAttack"]=true,["RE/AttackTarget"]=true,["RE/DealDamage"]=true,["RE/CombatEvent"]=true,["RE/UseSkill"]=true,["RE/Shoot"]=true,["RE/ShootGun"]=true,["RE/Projectile"]=true,["RE/GunEvent"]=true};local v115={"hit","attack","damage","shoot","skill","combat","projectile","gun"};pcall(function() local v250=0 + 0 ;local v251;while true do if (v250==(0 + 0)) then v251=nil;v251=hookmetamethod(game,"__newindex",newcclosure(function(v562,v563,v564) local v565=0;while true do if (v565==(0 + 0)) then if  not checkcaller() then if (((v562.Name=="PlayerGui") or (v562==v11)) and (v563=="Parent") and (v564==nil)) then return;end end return v251(v562,v563,v564);end end end));break;end end end);pcall(function() local v252;v252=hookmetamethod(game,"__namecall",newcclosure(function(v307,...) local v308=getnamecallmethod();if  not checkcaller() then if ((v308=="Destroy") or (v308=="ClearAllChildren") or (v308=="Remove")) then if ((v307.Name=="PlayerGui") or (v307==v11)) then return;end elseif ((v308=="Kick") or (v308=="kick")) then if (v307==v11) then return;end end end if ( not v104 or  not v111) then return v252(v307,...);end if (checkcaller and checkcaller()) then return v252(v307,...);end local v308=getnamecallmethod();if ((v308~="FireServer") and (v308~="InvokeServer")) then return v252(v307,...);end if (typeof(v307)~="Instance") then return v252(v307,...);end if ( not v307:IsA("RemoteEvent") and  not v307:IsA("RemoteFunction")) then return v252(v307,...);end local v309=v307.Name;local v310=v114[v309];if (v310==nil) then local v496=0 -0 ;local v497;while true do if (v496==(1767 -(459 + 1307))) then if ( not v310 and v307.Parent) then local v783=v307.Parent.Name;if ((v783=="Net") or (v783=="Remotes")) then v310=true;end end v114[v309]=v310 or false ;break;end if (v496==(1870 -(474 + 1396))) then v497=string.lower(v309);for v733,v734 in ipairs(v115) do if string.find(v497,v734) then v310=true;break;end end v496=1 -0 ;end end end if  not v310 then return v252(v307,...);end if (v99 and v99.Parent and v99.Character) then local v498=0 + 0 ;local v499;while true do if (v498==0) then v499=v99.Character:FindFirstChild("HumanoidRootPart");if v499 then local v784=0 + 0 ;local v785;while true do if (v784==(0 -0)) then v785={...};for v929,v930 in pairs(v785) do if (typeof(v930)=="CFrame") then v785[v929]=v499.CFrame;elseif (typeof(v930)=="Vector3") then v785[v929]=v499.Position;end end v784=3 -2 ;end if (v784==(4 -3)) then return v252(v307,unpack(v785));end end end break;end end end return v252(v307,...);end));end);pcall(function() local v253=0;local v254;while true do if (v253==0) then v254=nil;v254=hookmetamethod(game,"__index",newcclosure(function(v566,v567) local v568=0;local v569;local v570;while true do if (v568==(592 -(562 + 29))) then v569=false;pcall(function() v569=v566==v11:GetMouse() ;end);if  not v569 then return v254(v566,v567);end v570=nil;v568=2;end if (v568==(2 + 0)) then pcall(function() v570=v99.Character.HumanoidRootPart;end);if  not v570 then return v254(v566,v567);end if (v567=="Hit") then return v570.CFrame;elseif (v567=="Target") then return v570;end return v254(v566,v567);end if (v568==(1419 -(374 + 1045))) then if ( not checkcaller or checkcaller()) then return v254(v566,v567);end if ( not v104 or  not v111) then return v254(v566,v567);end if ((v567~="Hit") and (v567~="Target")) then return v254(v566,v567);end if ( not v99 or  not v99.Parent) then return v254(v566,v567);end v568=1 + 0 ;end end end));break;end end end);v87:Section({Title="Utilidades Extra"});local v116=false;local v117={};v87:Toggle({Title="Buscador de Frutas (Fruit Finder)",Desc="Notifica si aparece una fruta en el mapa.",Callback=function(v255) v116=v255;end});local v118=false;local v119=50;local v120=nil;v87:Toggle({Title="Modo Fly Libre",Desc="Vuela usando W A S D y tu cámara.",Callback=function(v256) local v257=0 -0 ;local v258;local v259;while true do if (v257==0) then v118=v256;v258=v11.Character;v257=639 -(448 + 190) ;end if ((1 + 0)==v257) then v259=v258 and v258:FindFirstChild("HumanoidRootPart") ;if (v256 and v259) then local v621=0 + 0 ;local v622;local v623;while true do if (v621==(1 + 0)) then v622.Velocity=Vector3.new(0 -0 ,0 -0 ,0);v120=v622;v621=1496 -(1307 + 187) ;end if ((15 -11)==v621) then v120.Name="Polar_Fly";v623.Name="Polar_FlyG";break;end if (v621==(0 -0)) then v622=Instance.new("BodyVelocity",v259);v622.MaxForce=Vector3.new(math.huge,math.huge,math.huge);v621=2 -1 ;end if (v621==(686 -(232 + 451))) then v623.D=10 + 0 ;v623.CFrame=v259.CFrame;v621=4 + 0 ;end if (v621==(566 -(510 + 54))) then v623=Instance.new("BodyGyro",v259);v623.MaxTorque=Vector3.new(math.huge,math.huge,math.huge);v621=5 -2 ;end end else if v259 then local v735=36 -(13 + 23) ;local v736;local v737;while true do if (v735==(0 -0)) then v736=v259:FindFirstChild("Polar_Fly");v737=v259:FindFirstChild("Polar_FlyG");v735=1 -0 ;end if (v735==(1 -0)) then if v736 then v736:Destroy();end if v737 then v737:Destroy();end break;end end end v120=nil;end break;end end end});local v121=false;v87:Toggle({Title="Auto Rejoin",Desc="Te reconecta al instante si eres expulsado.",Callback=function(v260) v121=v260;end});v87:Section({Title="Movimiento"});v87:Slider({Title="Nivel de Velocidad",Value={Min=1104 -(830 + 258) ,Max=1763 -1263 ,Default=11 + 5 },Callback=function(v261) v75=v261;end});v87:Toggle({Title="Control de Velocidad",Callback=function(v262) v74=v262;end});v87:Toggle({Title="Salto Infinito",Callback=function(v263) v76=v263;end});v87:Toggle({Title="Atravesar Paredes (NoClip)",Callback=function(v264) v77=v264;end});v87:Toggle({Title="Caminar sobre el Agua",Callback=function(v265) v78=v265;end});v87:Section({Title="Sistema"});v87:Button({Title="Server Hop (Saltar Servidor)",Callback=function() v27();end});task.spawn(function() while true do local v311=0;while true do if (v311==(0 + 0)) then task.wait(1442 -(860 + 581) );if (v48 and (v57 or v21 or v22 or v61 or v60 or v59)) then pcall(function() local v738=0 -0 ;while true do if (v738==(2 + 0)) then task.wait(0.1);v9:SetKeyUp("X");task.wait(241.1 -(237 + 4) );v738=6 -3 ;end if ((12 -7)==v738) then v9:SetKeyUp("V");task.wait(0.1);v9:SetKeyDown("F");v738=6;end if (v738==3) then v9:SetKeyDown("C");task.wait(0.1 -0 );v9:SetKeyUp("C");v738=4;end if ((5 + 1)==v738) then task.wait(0.1);v9:SetKeyUp("F");break;end if (v738==(0 + 0)) then v9:CaptureController();v9:SetKeyDown("Z");task.wait(0.1);v738=3 -2 ;end if (v738==(2 + 2)) then task.wait(0.1 + 0 );v9:SetKeyDown("V");task.wait(1426.1 -(85 + 1341) );v738=8 -3 ;end if (v738==(2 -1)) then v9:SetKeyUp("Z");task.wait(372.1 -(45 + 327) );v9:SetKeyDown("X");v738=3 -1 ;end end end);end break;end end end end);task.spawn(function() while true do local v312=502 -(444 + 58) ;while true do if ((0 + 0)==v312) then task.wait(1 + 1 );if v116 then for v739,v740 in ipairs(workspace:GetDescendants()) do if (v740:IsA("Tool") and string.find(string.lower(v740.Name),"fruit") and  not v117[v740]) then local v843=0 + 0 ;while true do if (v843==0) then v117[v740]=true;game:GetService("StarterGui"):SetCore("SendNotification",{Title="🍎 ¡FRUTA ENCONTRADA!",Text="Se ha encontrado: "   .. v740.Name ,Duration=28 -18 });break;end end end end end break;end end end end);task.spawn(function() while true do task.wait(1732.15 -(64 + 1668) );if (v113 and v15 and v16) then local v501=1973 -(1227 + 746) ;local v502;local v503;while true do if (v501==1) then if v503 then local v795=0 -0 ;local v796;local v797;local v798;local v799;while true do if (v795==2) then v799={Melee=true,Sword=true,["Blox Fruit"]=true,Gun=true};if (v798 and v799[v798.ToolTip] and ( #v796>(0 -0)) and v797 and v797.Parent) then pcall(function() local v965=494 -(415 + 79) ;while true do if (v965==0) then v16:FireServer(0 + 0 );v15:FireServer(v797,v796);break;end end end);end break;end if (v795==(491 -(142 + 349))) then v796={};v797=nil;v795=1 + 0 ;end if (v795==(1 -0)) then if v17 then local v952=0 + 0 ;local v953;local v954;while true do if (v952==(0 + 0)) then v953=v63();v954=v59 or v21 or v22 or v61 or v60 or (v54~=v50) ;v952=1;end if (v952==(2 -1)) then for v1012,v1013 in ipairs(v17:GetChildren()) do if (v954 and v953 and (v953~="NearestNPC") and (v953~="Buscando Jefes...") and  not v62(v1013.Name,v953)) then continue;end local v1014=v1013:FindFirstChild("HumanoidRootPart");local v1015=v1013:FindFirstChild("Humanoid");local v1016=v1013:FindFirstChildOfClass("ForceField");if (v1014 and v1014.Parent and v1015 and v1015.Parent and (v1015.Health>(1864 -(1710 + 154))) and  not v1016 and ((v1014.Position-v503.Position).Magnitude<(378 -(200 + 118)))) then table.insert(v796,{v1013,v1014});if  not v797 then v797=v1014;end if ( #v796>=(13 -5)) then break;end end end break;end end end v798=v502:FindFirstChildOfClass("Tool");v795=2 -0 ;end end end break;end if (v501==(0 + 0)) then v502=v11.Character;v503=v502 and v502:FindFirstChild("HumanoidRootPart") ;v501=1 + 0 ;end end end end end);v6.RenderStepped:Connect(function() if (v118 and v120) then local v401=v11.Character;local v402=v401 and v401:FindFirstChild("HumanoidRootPart") ;local v403=v401 and v401:FindFirstChild("Humanoid") ;if (v402 and v403) then local v571=Vector3.new();local v572=workspace.CurrentCamera;if v5:IsKeyDown(Enum.KeyCode.W) then v571=v571 + v572.CFrame.LookVector ;end if v5:IsKeyDown(Enum.KeyCode.S) then v571=v571-v572.CFrame.LookVector ;end if v5:IsKeyDown(Enum.KeyCode.A) then v571=v571-v572.CFrame.RightVector ;end if v5:IsKeyDown(Enum.KeyCode.D) then v571=v571 + v572.CFrame.RightVector ;end v120.Velocity=v571 * v119 ;local v574=v402:FindFirstChild("Polar_FlyG");if v574 then v574.CFrame=v572.CFrame;end end end end);local v122=game:GetService("CoreGui");local v123=v122:FindFirstChild("RobloxPromptGui") and v122.RobloxPromptGui:FindFirstChild("promptOverlay") ;if v123 then v123.ChildAdded:Connect(function(v404) if ((v404.Name=="ErrorPrompt") and v121) then local v575=0 + 0 ;while true do if (v575==(0 + 0)) then task.wait(4 -2 );v8:TeleportToPlaceInstance(game.PlaceId,game.JobId,v11);break;end end end end);end print("✅ Polar Hub cargado exitosamente.");
+-- ==================== WIND UI LIBRARY ====================
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+end)
+
+if not success or not WindUI then
+    warn("Error: No se pudo cargar WindUI.")
+    return
+end
+
+local Window = WindUI:CreateWindow({
+    Title = "❄️ POLAR HUB | Modo Dios",
+    Icon = "snowflake",
+    Folder = "PolarHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    OpenButton = {
+		Title = "❄️ POLAR HUB",
+		CornerRadius = UDim.new(0, 8),
+		StrokeThickness = 2,
+		Enabled = true,
+		Draggable = true,
+		Scale = 1,
+        OnlyMobile = false
+	}
+})
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+local VirtualUser = game:GetService("VirtualUser")
+local TweenService = game:GetService("TweenService")
+local LocalPlayer = Players.LocalPlayer
+
+-- ==================== ANTI-AFK ====================
+LocalPlayer.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
+
+-- ==================== BLOX FRUITS REMOTES ====================
+local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
+local CommF = Remotes and Remotes:WaitForChild("CommF_", 5)
+local Net = ReplicatedStorage:WaitForChild("Modules", 5) and ReplicatedStorage.Modules:WaitForChild("Net", 5)
+local RegisterHit = Net and pcall(function() return Net["RE/RegisterHit"] end) and Net["RE/RegisterHit"]
+local RegisterAttack = Net and pcall(function() return Net["RE/RegisterAttack"] end) and Net["RE/RegisterAttack"]
+local enemiesFolder = workspace:FindFirstChild("Enemies")
+
+-- ==================== BASE DE DATOS DE MISIONES (SEA 1 INTELIGENTE) ====================
+local LevelQuests = {
+    {lvl = 1, q = "BanditQuest1", ql = 1, name = "Bandit", giver = "Bandit Quest Giver", island = "Town"},
+    {lvl = 10, q = "JungleQuest", ql = 1, name = "Monkey", giver = "Adventurer", island = "Jungle"},
+    {lvl = 15, q = "JungleQuest", ql = 2, name = "Gorilla", giver = "Adventurer", island = "Jungle"},
+    {lvl = 20, q = "JungleQuest", ql = 3, name = "Gorilla King", giver = "Adventurer", island = "Jungle", isBoss = true},
+    {lvl = 30, q = "BuggyQuest1", ql = 1, name = "Pirate", giver = "Pirate Adventurer", island = "Pirate"},
+    {lvl = 40, q = "BuggyQuest1", ql = 2, name = "Brute", giver = "Pirate Adventurer", island = "Pirate"},
+    {lvl = 55, q = "BuggyQuest1", ql = 3, name = "Bobby", giver = "Pirate Adventurer", island = "Pirate", isBoss = true},
+    {lvl = 60, q = "DesertQuest", ql = 1, name = "Desert Bandit", giver = "Desert Adventurer", island = "Desert"},
+    {lvl = 75, q = "DesertQuest", ql = 2, name = "Desert Officer", giver = "Desert Adventurer", island = "Desert"},
+    {lvl = 90, q = "SnowQuest", ql = 1, name = "Snow Bandit", giver = "Villager", island = "Snow"},
+    {lvl = 100, q = "SnowQuest", ql = 2, name = "Snowman", giver = "Villager", island = "Snow"},
+    {lvl = 105, q = "SnowQuest", ql = 3, name = "Yeti", giver = "Villager", island = "Snow", isBoss = true},
+    {lvl = 120, q = "MarineQuest2", ql = 1, name = "Chief Petty Officer", giver = "Marine", island = "Marine"},
+    {lvl = 130, q = "MarineQuest2", ql = 2, name = "Vice Admiral", giver = "Marine", island = "Marine", isBoss = true},
+    {lvl = 150, q = "SkyQuest", ql = 1, name = "Sky Bandit", giver = "Sky Adventurer", island = "Sky"},
+    {lvl = 175, q = "SkyQuest", ql = 2, name = "Dark Master", giver = "Sky Adventurer", island = "Sky"},
+    {lvl = 190, q = "PrisonerQuest", ql = 1, name = "Prisoner", giver = "Jail Keeper", island = "Prison"},
+    {lvl = 210, q = "PrisonerQuest", ql = 2, name = "Dangerous Prisoner", giver = "Jail Keeper", island = "Prison"},
+    {lvl = 220, q = "ImpelQuest", ql = 1, name = "Warden", giver = "Head Jailer", island = "Prison", isBoss = true},
+    {lvl = 230, q = "ImpelQuest", ql = 2, name = "Chief Warden", giver = "Head Jailer", island = "Prison", isBoss = true},
+    {lvl = 240, q = "ImpelQuest", ql = 3, name = "Swan", giver = "Head Jailer", island = "Prison", isBoss = true},
+    {lvl = 250, q = "ColosseumQuest", ql = 1, name = "Toga Warrior", giver = "Colosseum Quest Giver", island = "Colosseum"},
+    {lvl = 275, q = "ColosseumQuest", ql = 2, name = "Gladiator", giver = "Colosseum Quest Giver", island = "Colosseum"},
+    {lvl = 300, q = "MagmaQuest", ql = 1, name = "Military Soldier", giver = "The Mayor", island = "Magma"},
+    {lvl = 325, q = "MagmaQuest", ql = 2, name = "Military Spy", giver = "The Mayor", island = "Magma"},
+    {lvl = 375, q = "FishmanQuest", ql = 1, name = "Fishman Warrior", giver = "Neptune", island = "Fishman"},
+    {lvl = 400, q = "FishmanQuest", ql = 2, name = "Fishman Commando", giver = "Neptune", island = "Fishman"},
+    {lvl = 425, q = "FishmanQuest", ql = 3, name = "Fishman Lord", giver = "Neptune", island = "Fishman", isBoss = true},
+    {lvl = 450, q = "SkyExp1Quest", ql = 1, name = "God's Guard", giver = "Mole", island = "Sky"},
+    {lvl = 475, q = "SkyExp1Quest", ql = 2, name = "Shanda", giver = "Mole", island = "Sky"},
+    {lvl = 500, q = "SkyExp1Quest", ql = 3, name = "Wysper", giver = "Mole", island = "Sky", isBoss = true},
+    {lvl = 525, q = "SkyExp2Quest", ql = 1, name = "Royal Squad", giver = "Sky Quest Giver 2", island = "Upper Sky"},
+    {lvl = 550, q = "SkyExp2Quest", ql = 2, name = "Royal Soldier", giver = "Sky Quest Giver 2", island = "Upper Sky"},
+    {lvl = 575, q = "SkyExp2Quest", ql = 3, name = "Thunder God", giver = "Sky Quest Giver 2", island = "Upper Sky", isBoss = true},
+    {lvl = 625, q = "FountainQuest", ql = 1, name = "Galley Pirate", giver = "Freezeburg Quest Giver", island = "Fountain"},
+    {lvl = 650, q = "FountainQuest", ql = 2, name = "Galley Captain", giver = "Freezeburg Quest Giver", island = "Fountain"},
+    {lvl = 675, q = "FountainQuest", ql = 3, name = "Cyborg", giver = "Freezeburg Quest Giver", island = "Fountain", isBoss = true}
+}
+
+-- ==================== BASE DE DATOS DE JEFES (SEA 1) ====================
+local Sea1Bosses = {
+    {name = "Gorilla King", q = "JungleQuest", ql = 3, giver = "Adventurer", island = "Jungle", lvl = 20},
+    {name = "Bobby", q = "BuggyQuest1", ql = 3, giver = "Pirate Adventurer", island = "Pirate", lvl = 55},
+    {name = "Yeti", q = "SnowQuest", ql = 3, giver = "Villager", island = "Snow", lvl = 105},
+    {name = "Mob Leader", q = nil, ql = nil, giver = nil, island = "Pirate", lvl = 120},
+    {name = "Vice Admiral", q = "MarineQuest2", ql = 2, giver = "Marine", island = "Marine", lvl = 130},
+    {name = "Warden", q = "ImpelQuest", ql = 1, giver = "Head Jailer", island = "Prison", lvl = 220},
+    {name = "Chief Warden", q = "ImpelQuest", ql = 2, giver = "Head Jailer", island = "Prison", lvl = 230},
+    {name = "Swan", q = "ImpelQuest", ql = 3, giver = "Head Jailer", island = "Prison", lvl = 240},
+    {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350},
+    {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "Neptune", island = "Fishman", lvl = 425},
+    {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 500},
+    {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 575},
+    {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Fountain Quest Giver", island = "Fountain", lvl = 675},
+    {name = "Saber Expert", q = nil, ql = nil, giver = nil, island = "Jungle", lvl = 200},
+    {name = "The Saw", q = nil, ql = nil, giver = nil, island = "Town", lvl = 100},
+    {name = "Greybeard", q = nil, ql = nil, giver = nil, island = "Marine", lvl = 750}
+}
+
+local SelectedBossToFarm = "Gorilla King"
+local AutoFarmBossEnabled = false
+local AutoFarmAllBossesEnabled = false
+local BossWithQuest = false
+local BotActiveQuest = nil
+local lastBossCheckedIndex = 1
+local QuestTryCount = 0
+
+local function ServerHop()
+    local placeId = game.PlaceId
+    local servers = {}
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        for _, v in ipairs(result.data) do
+            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
+                table.insert(servers, v.id)
+            end
+        end
+    end
+    if #servers > 0 then
+        TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+    end
+end
+
+-- ==================== HYBRID SAFE TELEPORT ====================
+local function BypassTeleport(targetCFrame)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    -- === OPTIMIZACION: TP a Isla Submarina mediante Remolino ===
+    if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
+        local whirlpool = workspace.Map:FindFirstChild("Whirlpool", true) or workspace:FindFirstChild("Whirlpool", true)
+        local wpPos = whirlpool and (whirlpool:IsA("Model") and whirlpool:GetModelCFrame().Position or whirlpool.Position) or Vector3.new(3864.68, 6.73, -1926.92)
+        
+        local dist2D = Vector2.new(hrp.Position.X - wpPos.X, hrp.Position.Z - wpPos.Z).Magnitude
+        if dist2D > 100 then
+            targetCFrame = CFrame.new(wpPos.X, math.max(hrp.Position.Y, 150), wpPos.Z)
+        else
+            targetCFrame = CFrame.new(wpPos)
+        end
+    end
+    -- ==========================================================
+    
+    local dist = (hrp.Position - targetCFrame.Position).Magnitude
+    if dist < 50 then
+        char:PivotTo(targetCFrame)
+    else
+        local bp = Instance.new("BodyVelocity", hrp)
+        bp.Velocity = Vector3.new(0, 0, 0)
+        bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        
+        local nclConn = RunService.Stepped:Connect(function()
+            for _, v in ipairs(char:GetChildren()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end)
+        
+        local tweenSpeed = 350
+        
+        local function DoTween(cframeTarget)
+            local tDist = (hrp.Position - cframeTarget.Position).Magnitude
+            if tDist < 5 then return end
+            local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
+            local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
+            
+            local startPos = hrp.Position
+            local tpCheckConn = RunService.Stepped:Connect(function()
+                if (hrp.Position - startPos).Magnitude > 3000 then
+                    tween:Cancel()
+                end
+            end)
+            
+            tween:Play()
+            tween.Completed:Wait()
+            if tpCheckConn then tpCheckConn:Disconnect() end
+        end
+        
+        -- SISTEMA ANTI-ATASCO Y ANTI-AGUA (RUTA EN U / V)
+        -- Si está en la ciudad fuente (Y muy altos o bajos) o la distancia es grande
+        if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
+            local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
+            local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
+            local p2 = CFrame.new(targetCFrame.X, safeY, targetCFrame.Z)
+            
+            DoTween(p1)
+            DoTween(p2)
+            DoTween(targetCFrame)
+        else
+            DoTween(targetCFrame)
+        end
+        
+        bp:Destroy()
+        nclConn:Disconnect()
+    end
+end
+
+-- ==================== ULTIMATE SHOP BYPASS (HOOKMETAMETHOD + GHOST TP) ====================
+-- Utiliza funciones exclusivas de ejecutores nivel 8 para bypassear anti-cheats sin lag.
+-- Cero lag: Solo corre al hacer clic.
+local bypassHookInstalled = false
+local function InstallShopBypass()
+    if bypassHookInstalled then return end
+    pcall(function()
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            if not checkcaller() and method == "DistanceFromCharacter" then
+                return 0 -- Engañar al cliente diciendo que la distancia es 0
+            end
+            return oldNamecall(self, ...)
+        end)
+        bypassHookInstalled = true
+    end)
+end
+
+local function BuyItem(action, arg1, arg2, npcName)
+    InstallShopBypass()
+    
+    task.spawn(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp then return end
+        
+        local oldCFrame = hrp.CFrame
+        
+        -- Indexar al máximo para conseguir las coordenadas reales del NPC
+        local targetNPC = nil
+        if npcName then
+            -- Búsqueda exhaustiva sin causar lag
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Model") and string.find(string.lower(v.Name), string.lower(npcName)) and v:FindFirstChild("HumanoidRootPart") then
+                    targetNPC = v
+                    break
+                end
+            end
+        end
+        
+        -- Llegar más rápido a la ubicación usando el Tween Real del HUB
+        if targetNPC then
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Polar Hub | Viajando",
+                    Text = "Bypass activo: Volando hacia " .. npcName .. "...",
+                    Duration = 2
+                })
+            end)
+            
+            local targetCF = targetNPC.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
+            -- Usar la potente función del ejecutor de antes para el TP seguro
+            BypassTeleport(targetCF)
+            task.wait(0.5) -- Pausa para estabilizar la posición y red
+            
+            -- Activar Proximity Prompts si existen (Funciones del ejecutor nivel 8)
+            for _, v in ipairs(targetNPC:GetDescendants()) do
+                if v:IsA("ProximityPrompt") and fireproximityprompt then
+                    pcall(function() fireproximityprompt(v) end)
+                end
+            end
+            task.wait(0.5)
+        end
+        
+        -- Ejecutar la compra con spoof normal
+        local success, result = pcall(function()
+            if arg2 then
+                return CommF:InvokeServer(action, arg1, arg2)
+            elseif arg1 then
+                return CommF:InvokeServer(action, arg1)
+            else
+                return CommF:InvokeServer(action)
+            end
+        end)
+        
+        -- Regresar a la posición original
+        if targetNPC then
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Polar Hub | Compra",
+                    Text = success and "Compra inyectada. Volviendo..." or "Hubo un error. Volviendo...",
+                    Duration = 2
+                })
+            end)
+            
+            task.wait(0.5)
+            BypassTeleport(oldCFrame)
+        else
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "Polar Hub | Aviso",
+                    Text = "NPC no encontrado, compra remota inyectada.",
+                    Duration = 2
+                })
+            end)
+        end
+    end)
+end
+
+-- ==================== INTELIGENCIA ARTIFICIAL DE MISIONES ====================
+local function HasQuest()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+        if pgui.Main.Quest.Visible then
+            local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+            if title and title.Text then
+                -- FIX: Blox Fruits deja el UI de la quest visible varios segundos diciendo "Quest Completed!".
+                -- Si no tiene un contador válido como (0/9), significa que la misión ya no está activa.
+                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
+                    return false
+                end
+                
+                -- Si no encontramos ningún nombre de enemigo en el texto, asumimos que no hay misión activa.
+                local bestMatch = nil
+                for _, qData in ipairs(LevelQuests) do
+                    if string.find(string.lower(title.Text), string.lower(qData.name)) then
+                        bestMatch = qData.name
+                        break
+                    end
+                end
+                
+                if bestMatch then
+                    return true
+                end
+            end
+            return true
+        end
+    end
+    return false
+end
+
+local function GetTargetEnemyNameFromQuest()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+        if pgui.Main.Quest.Visible then
+            local title = pgui.Main.Quest:FindFirstChild("Container") 
+                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
+                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+            if title and title.Text then
+                local questText = title.Text
+                local bestMatch = nil
+                local bestLen = 0
+                
+                -- FIX: Buscar la coincidencia de mayor longitud. 
+                -- Evita que "Desert Bandit" se confunda con "Bandit".
+                for _, qData in ipairs(LevelQuests) do
+                    if string.find(string.lower(questText), string.lower(qData.name)) then
+                        if #qData.name > bestLen then
+                            bestLen = #qData.name
+                            bestMatch = qData.name
+                        end
+                    end
+                end
+                
+                for _, bData in ipairs(Sea1Bosses) do
+                    if string.find(string.lower(questText), string.lower(bData.name)) then
+                        if #bData.name > bestLen then
+                            bestLen = #bData.name
+                            bestMatch = bData.name
+                        end
+                    end
+                end
+                
+                if enemiesFolder then
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        if string.find(string.lower(questText), string.lower(npc.Name)) then
+                            if #npc.Name > bestLen then
+                                bestLen = #npc.Name
+                                bestMatch = npc.Name
+                            end
+                        end
+                    end
+                end
+                
+                return bestMatch
+            end
+        end
+    end
+    return nil
+end
+
+local function IsEnemyAlive(enemyName)
+    if enemiesFolder then
+        for _, npc in ipairs(enemiesFolder:GetChildren()) do
+            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+local function GetBestQuestData()
+    local data = LocalPlayer:FindFirstChild("Data")
+    local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
+    local best = LevelQuests[1]
+    
+    for i = 1, #LevelQuests do
+        local q = LevelQuests[i]
+        if lvl >= q.lvl then
+            if q.isBoss then
+                if IsEnemyAlive(q.name) then
+                    best = q
+                end
+            else
+                best = q
+            end
+        else
+            break
+        end
+    end
+    return best
+end
+
+local function GetIslandPosition(islandKeyword)
+    if string.lower(islandKeyword) == "fishman" then
+        islandKeyword = "Underwater City"
+    end
+    local origin = workspace:FindFirstChild("_WorldOrigin")
+    local locs = origin and origin:FindFirstChild("Locations")
+    if locs then
+        for _, v in ipairs(locs:GetChildren()) do
+            if string.find(string.lower(v.Name), string.lower(islandKeyword)) then
+                return v.Position
+            end
+        end
+    end
+    
+    if string.lower(islandKeyword) == "upper sky" then
+        return Vector3.new(-7904, 5634, -1640)
+    end
+    
+    return nil
+end
+
+local cachedSpawns = {}
+local function GetEnemySpawnPosition(enemyName)
+    if cachedSpawns[enemyName] and cachedSpawns[enemyName].Y > 0 then 
+        return cachedSpawns[enemyName] 
+    end
+    
+    if string.lower(enemyName) == "mob leader" then
+        local rs = game:GetService("ReplicatedStorage")
+        local wp = workspace:FindFirstChild("_WorldOrigin")
+        local es = wp and wp:FindFirstChild("EnemySpawns")
+        
+        local targets = {
+            es and es:FindFirstChild("Mob Leader [Lv. 120] [Boss]"),
+            rs:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and rs.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Mob Leader"),
+            rs:FindFirstChild("Mob Leader"),
+            workspace.Map:FindFirstChild("MobBoss")
+        }
+        
+        for _, t in ipairs(targets) do
+            if t then
+                if t:IsA("BasePart") then
+                    cachedSpawns[enemyName] = t.Position
+                    return t.Position
+                else
+                    local bp = t:FindFirstChildWhichIsA("BasePart", true)
+                    if bp then
+                        cachedSpawns[enemyName] = bp.Position
+                        return bp.Position
+                    end
+                end
+            end
+        end
+        return Vector3.new(-2880.71, 6.44, 5430.85) -- Fallback absoluto exacto (V9 Scanner)
+    elseif string.lower(enemyName) == "saber expert" then
+        local rs = game:GetService("ReplicatedStorage")
+        local wp = workspace:FindFirstChild("_WorldOrigin")
+        local es = wp and wp:FindFirstChild("EnemySpawns")
+        
+        local targets = {
+            es and es:FindFirstChild("Saber Expert [Lv. 200] [Boss]"),
+            rs:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and rs.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Saber Expert"),
+            rs:FindFirstChild("Saber Expert")
+        }
+        
+        for _, t in ipairs(targets) do
+            if t then
+                if t:IsA("BasePart") then
+                    cachedSpawns[enemyName] = t.Position
+                    return t.Position
+                else
+                    local bp = t:FindFirstChildWhichIsA("BasePart", true)
+                    if bp then
+                        cachedSpawns[enemyName] = bp.Position
+                        return bp.Position
+                    end
+                end
+            end
+        end
+        return Vector3.new(-1461, 30, -51) -- Fallback absoluto (Jungle)
+    end
+
+    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
+    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
+    
+    if enemySpawns then
+        local bestSpawn = nil
+        local bestLenDiff = math.huge
+        for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
+            if string.find(string.lower(spawnPart.Name), string.lower(enemyName)) then
+                if spawnPart.Position.Y > 0 then
+                    local diff = math.abs(#spawnPart.Name - #enemyName)
+                    if diff < bestLenDiff then
+                        bestLenDiff = diff
+                        bestSpawn = spawnPart.Position
+                    end
+                end
+            end
+        end
+        if bestSpawn then
+            cachedSpawns[enemyName] = bestSpawn
+            return bestSpawn
+        end
+    end
+    
+    if enemiesFolder then
+        local bestSpawn = nil
+        local bestLenDiff = math.huge
+        for _, npc in ipairs(enemiesFolder:GetChildren()) do
+            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("HumanoidRootPart") then
+                local pos = npc.HumanoidRootPart.Position
+                if pos.Y > 0 then
+                    local diff = math.abs(#npc.Name - #enemyName)
+                    if diff < bestLenDiff then
+                        bestLenDiff = diff
+                        bestSpawn = pos
+                    end
+                end
+            end
+        end
+        if bestSpawn then
+            cachedSpawns[enemyName] = bestSpawn
+            return bestSpawn
+        end
+    end
+    return nil
+end
+
+local HardcodedGivers = {
+    ["Freezeburg Quest Giver"] = CFrame.new(5259.771, 37.713, 4050.025)
+}
+
+local function GetQuestGiverPosition(qData)
+    if not qData or not qData.giver then return nil end
+    
+    -- Si tenemos las coordenadas exactas, ir directo (evita problemas de NPCs no renderizados a lo lejos)
+    if HardcodedGivers[qData.giver] then
+        return HardcodedGivers[qData.giver]
+    end
+    
+    local targetNPC = nil
+    local minDist = math.huge
+    local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
+    
+    local function GetValidPart(npc)
+        return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
+    end
+    
+    if workspace:FindFirstChild("NPCs") then
+        for _, npc in ipairs(workspace.NPCs:GetChildren()) do
+            local validPart = GetValidPart(npc)
+            if string.find(string.lower(npc.Name), string.lower(qData.giver)) and validPart then
+                local dist = spawnPos and (validPart.Position - spawnPos).Magnitude or 0
+                if dist < minDist then
+                    minDist = dist
+                    targetNPC = npc
+                end
+            end
+        end
+        
+        if not targetNPC and spawnPos then
+            local fallbackDist = math.huge
+            for _, npc in ipairs(workspace.NPCs:GetChildren()) do
+                local validPart = GetValidPart(npc)
+                if string.find(string.lower(npc.Name), "quest") and validPart then
+                    local dist = (validPart.Position - spawnPos).Magnitude
+                    if dist < fallbackDist then
+                        fallbackDist = dist
+                        targetNPC = npc
+                    end
+                end
+            end
+        end
+    end
+    
+    if targetNPC then
+        local validPart = GetValidPart(targetNPC)
+        if validPart then return validPart.CFrame end
+    end
+    return nil
+end
+
+-- ==================== ESP OPTIMIZADO ====================
+local ESPEnabled = false
+local function CreateESP(target, name)
+    if not target:FindFirstChild("Head") or target.Head:FindFirstChild("Polar_ESP") then return end
+    local billboard = Instance.new("BillboardGui")
+    billboard.Name = "Polar_ESP"
+    billboard.Adornee = target:WaitForChild("Head")
+    billboard.Size = UDim2.new(0, 100, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2, 0)
+    billboard.AlwaysOnTop = true
+    billboard.Parent = target.Head
+    local label = Instance.new("TextLabel")
+    label.BackgroundTransparency = 1
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.Text = name or target.Name
+    label.Font = Enum.Font.GothamBold
+    label.TextSize = 14
+    label.TextColor3 = Color3.new(0, 1, 1)
+    label.TextStrokeTransparency = 0.5
+    label.Parent = billboard
+end
+local function ClearESP()
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p.Character and p.Character:FindFirstChild("Head") then
+            local e = p.Character.Head:FindFirstChild("Polar_ESP")
+            if e then e:Destroy() end
+        end
+    end
+    if enemiesFolder then
+        for _, n in ipairs(enemiesFolder:GetChildren()) do
+            if n:FindFirstChild("Head") then
+                local e = n.Head:FindFirstChild("Polar_ESP")
+                if e then e:Destroy() end
+            end
+        end
+    end
+end
+local function UpdateESPState()
+    if not ESPEnabled then return ClearESP() end
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then CreateESP(p.Character, p.Name) end
+    end
+    if enemiesFolder then
+        for _, n in ipairs(enemiesFolder:GetChildren()) do CreateESP(n, n.Name) end
+    end
+end
+Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function(c) if ESPEnabled then task.wait(1) CreateESP(c, p.Name) end end) end)
+for _, p in ipairs(Players:GetPlayers()) do p.CharacterAdded:Connect(function(c) if ESPEnabled then task.wait(1) CreateESP(c, p.Name) end end) end
+if enemiesFolder then enemiesFolder.ChildAdded:Connect(function(c) if ESPEnabled then task.wait(0.5) CreateESP(c, c.Name) end end) end
+
+
+-- ==================== AUTO EQUIPAR ====================
+local SelectedWeaponType = "Melee" 
+local AutoMasteryEnabled = false
+local AutoMasteryItem = "Sword"
+local AutoSkillsEnabled = false
+
+local function EquipWeapon(targetHealthPercent)
+    local char = LocalPlayer.Character
+    if not char then return end
+    
+    local weaponToEquip = SelectedWeaponType
+    if AutoMasteryEnabled and targetHealthPercent and targetHealthPercent < 20 then
+        weaponToEquip = AutoMasteryItem
+    end
+
+    local currentTool = char:FindFirstChildOfClass("Tool")
+    if currentTool and currentTool.ToolTip == weaponToEquip then return end
+    
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if backpack then
+        for _, tool in ipairs(backpack:GetChildren()) do
+            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
+                char.Humanoid:EquipTool(tool)
+                task.wait(0.1) -- FIX ANTI-CHEAT: Esperar a que el arma se equipe antes de atacar
+                break
+            end
+        end
+    end
+end
+
+-- ==================== MÁQUINA DE ESTADOS (STATE MACHINE) ====================
+local STATE_IDLE = "IDLE"
+local STATE_GETTING_QUEST = "GETTING_QUEST"
+local STATE_FARMING = "FARMING"
+local STATE_WAITING = "WAITING"
+local CurrentBotState = STATE_IDLE
+
+local FarmAnchorCF = nil
+local FarmAnchorNPC = nil
+
+-- ==================== CEREBRO AUTO FARM ====================
+local AutoFarmEnabled = false
+local FastAttackEnabled = false
+local AutoFarmNearestEnabled = false
+local AutoMobLeaderEnabled = false
+local AutoSaberExpertEnabled = false
+
+local function MatchEnemyName(npcName, targetName)
+    if npcName == targetName then return true end
+    local lowerNpc = string.lower(npcName)
+    local lowerTarget = string.lower(targetName)
+    if string.find(lowerNpc, lowerTarget) then
+        if lowerTarget == "gorilla" and string.find(lowerNpc, "king") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "desert") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "snow") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "sky") then return false end
+        return true
+    end
+    return false
+end
+
+local function GetCurrentTargetEnemyName()
+    if AutoSaberExpertEnabled then return "Saber Expert" end
+    if AutoMobLeaderEnabled then return "Mob Leader" end
+    if AutoFarmNearestEnabled then return "NearestNPC" end
+    if AutoFarmAllBossesEnabled then
+        for _, b in ipairs(Sea1Bosses) do
+            if IsEnemyAlive(b.name) then return b.name end
+        end
+        if lastBossCheckedIndex > #Sea1Bosses then
+            ServerHop()
+            return "Buscando Jefes..."
+        end
+        return Sea1Bosses[lastBossCheckedIndex].name
+    end
+    if AutoFarmBossEnabled then return SelectedBossToFarm end
+    return GetTargetEnemyNameFromQuest() or GetBestQuestData().name
+end
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+        if not hrp then continue end
+        
+        local anyFarmActive = AutoFarmEnabled or AutoFarmBossEnabled or AutoFarmAllBossesEnabled or AutoSaberExpertEnabled or AutoMobLeaderEnabled or AutoFarmNearestEnabled
+        
+        if not anyFarmActive then
+            CurrentBotState = STATE_IDLE
+            local plat = workspace:FindFirstChild("PolarFarmPlat")
+            if plat then plat:Destroy() end
+            task.wait(1)
+            continue
+        end
+
+        if anyFarmActive and char and hrp and hum and hum.Health > 0 then
+            
+            -- 1. Asegurar plataforma base
+            local plat = workspace:FindFirstChild("PolarFarmPlat")
+            if not plat then
+                plat = Instance.new("Part", workspace)
+                plat.Name = "PolarFarmPlat"
+                plat.Size = Vector3.new(15, 1, 15)
+                plat.Anchored = true
+                plat.Transparency = 1
+                plat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+            end
+
+            -- 2. Determinar Objetivo Principal
+            local targetEnemyName = GetCurrentTargetEnemyName()
+            local bestQuestData = GetBestQuestData()
+            local activeBossQuestData = nil
+            local isHuntingBoss = AutoFarmAllBossesEnabled or AutoFarmBossEnabled or AutoSaberExpertEnabled or AutoMobLeaderEnabled
+            
+            -- Manejo de AutoFarmNearest
+            if AutoFarmNearestEnabled then
+                local minDist = math.huge
+                local nearestName = nil
+                if enemiesFolder then
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                        local nHum = npc:FindFirstChild("Humanoid")
+                        if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                            local d = (nHrp.Position - hrp.Position).Magnitude
+                            if d < minDist then
+                                minDist = d
+                                nearestName = npc.Name
+                            end
+                        end
+                    end
+                end
+                targetEnemyName = nearestName or "Buscando Enemigos..."
+            end
+            
+            -- Manejo de Jefes
+            if AutoFarmAllBossesEnabled or AutoFarmBossEnabled or AutoMobLeaderEnabled or AutoSaberExpertEnabled then
+                for _, b in ipairs(Sea1Bosses) do
+                    if b.name == targetEnemyName then
+                        activeBossQuestData = b
+                        break
+                    end
+                end
+            end
+            
+            local needsQuest = not (AutoSaberExpertEnabled or AutoMobLeaderEnabled or AutoFarmNearestEnabled)
+            if (AutoFarmAllBossesEnabled or AutoFarmBossEnabled) then
+                if not BossWithQuest then
+                    needsQuest = false
+                elseif activeBossQuestData and not activeBossQuestData.q then
+                    needsQuest = false
+                end
+            end
+            
+            if targetEnemyName == "Buscando Jefes..." then
+                CurrentBotState = STATE_IDLE
+                task.wait(1)
+                continue
+            end
+
+            -- ==================== INICIO MÁQUINA DE ESTADOS ====================
+            if CurrentBotState == STATE_IDLE then
+                QuestTryCount = 0
+                if needsQuest and not HasQuest() then
+                    CurrentBotState = STATE_GETTING_QUEST
+                else
+                    CurrentBotState = STATE_FARMING
+                end
+            end
+            
+            if CurrentBotState == STATE_GETTING_QUEST then
+                if HasQuest() then
+                    CurrentBotState = STATE_FARMING
+                    continue
+                end
+                
+                local qData = activeBossQuestData or bestQuestData
+                local playerLvl = LocalPlayer:FindFirstChild("Data") and LocalPlayer.Data:FindFirstChild("Level") and LocalPlayer.Data.Level.Value or 1
+                if AutoFarmAllBossesEnabled or AutoFarmBossEnabled then
+                    if not BossWithQuest or not qData.q or (qData.lvl and playerLvl < qData.lvl) then
+                        CurrentBotState = STATE_FARMING
+                        continue
+                    end
+                end
+                
+                BotActiveQuest = qData.name
+                local giverCF = GetQuestGiverPosition(qData)
+                if giverCF then
+                    if (hrp.Position - giverCF.Position).Magnitude > 15 then
+                        BypassTeleport(giverCF)
+                    else
+                        hrp.CFrame = giverCF
+                        task.wait(0.2)
+                        pcall(function() CommF:InvokeServer("StartQuest", qData.q, qData.ql) end)
+                        QuestTryCount = QuestTryCount + 1
+                        if QuestTryCount > 10 then CurrentBotState = STATE_FARMING end
+                        task.wait(0.5)
+                    end
+                else
+                    -- FIX EXTREMO: Si el NPC no ha cargado, volar al spawn principal de la isla (Safe Zone) para forzar su renderizado.
+                    local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
+                    if loadPos then
+                        local targetCF = CFrame.new(loadPos) * CFrame.new(0, 30, 0)
+                        if (hrp.Position - targetCF.Position).Magnitude > 50 then
+                            BypassTeleport(targetCF)
+                        else
+                            hrp.CFrame = targetCF
+                            hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                            task.wait(1) -- FIX: Previene el bug de flotar en el aire congelado
+                        end
+                    else
+                        CurrentBotState = STATE_FARMING
+                    end
+                end
+                continue
+            end
+            
+            if CurrentBotState == STATE_FARMING then
+                -- Validación Continua de Misión
+                if needsQuest and HasQuest() then
+                    local currentQuestTarget = GetTargetEnemyNameFromQuest()
+                    local expectedTarget = activeBossQuestData and activeBossQuestData.name or bestQuestData.name
+                    
+                    if currentQuestTarget and currentQuestTarget ~= expectedTarget and not MatchEnemyName(currentQuestTarget, expectedTarget) and not MatchEnemyName(expectedTarget, currentQuestTarget) then
+                        
+                        warn("==================================================")
+                        warn("[Polar DEBUG EXTREMO] ⚠️ ABANDONANDO MISIÓN ⚠️")
+                        warn("-> Misión que deberíamos tener (expectedTarget):", tostring(expectedTarget))
+                        warn("-> Misión detectada en pantalla (currentQuestTarget):", tostring(currentQuestTarget))
+                        warn("-> MatchEnemyName devolvió FALSE para ambos casos.")
+                        
+                        local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+                        if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+                            local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+                            if title and title.Text then
+                                warn("-> TEXTO REAL EN LA UI DE ROBLOX:", tostring(title.Text))
+                            end
+                        end
+                        warn("==================================================")
+                        
+                        pcall(function() CommF:InvokeServer("AbandonQuest") end)
+                        BotActiveQuest = nil
+                        CurrentBotState = STATE_GETTING_QUEST
+                        QuestTryCount = 0
+                        task.wait(1)
+                        continue
+                    end
+                elseif needsQuest and not HasQuest() then
+                    if BotActiveQuest ~= nil then
+                        warn("[Polar DEBUG EXTREMO] ❓ HasQuest() se volvió FALSE de repente! (La UI de la misión desapareció)")
+                    end
+                    CurrentBotState = STATE_GETTING_QUEST
+                    QuestTryCount = 0
+                    continue
+                end
+
+                local targetRealName = BotActiveQuest or targetEnemyName
+                if targetEnemyName == "NearestNPC" or AutoFarmNearestEnabled then targetRealName = targetEnemyName end
+                
+                local firstNPC = nil
+                local minDist = math.huge
+                
+                if enemiesFolder then
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        if MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name) then
+                            local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                            local nHum = npc:FindFirstChild("Humanoid")
+                            if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                                local d = (nHrp.Position - hrp.Position).Magnitude
+                                if d < minDist then
+                                    minDist = d
+                                    firstNPC = npc
+                                end
+                            end
+                        end
+                    end
+                end
+                
+                if firstNPC then
+                    local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
+                    local targetCF
+                    
+                    -- AUTO FARM SEGURO Y ESTABLE (Cero Bans / Cero Bugs Físicos):
+                    -- En lugar de arrastrar NPCs al aire (lo que causa bugs de Anti-Cheat y colisiones en casas),
+                    -- el jugador VA directo hacia el NPC y se coloca de manera estable arriba de él.
+                    if isHuntingBoss then
+                        targetCF = nHrp.CFrame * CFrame.new(0, 18, 0)
+                    else
+                        targetCF = nHrp.CFrame * CFrame.new(0, 12, 0)
+                    end
+                    
+                    -- Limpiar la rotación para que la plataforma no se incline si el NPC se cae, manteniendo la cámara estable.
+                    targetCF = CFrame.new(targetCF.Position)
+                    
+                    plat.CFrame = targetCF
+                    
+                    if (hrp.Position - plat.Position).Magnitude > 15 then
+                        BypassTeleport(plat.CFrame * CFrame.new(0, 3.5, 0))
+                    end
+                    -- Mantener la velocidad en cero para que no resbale de la plataforma
+                    hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                    
+                    -- Congelar al NPC principal en su lugar original y ANULAR sus físicas
+                    local oHum = firstNPC:FindFirstChild("Humanoid")
+                    if oHum then 
+                        oHum.WalkSpeed = 0 
+                        oHum.JumpPower = 0 
+                    end
+                    
+                    -- Restaurando BodyVelocity (El método que el usuario amó)
+                    -- Congelar al NPC principal en su lugar original
+                    local primaryBv = nHrp:FindFirstChild("Polar_AntiGlitch")
+                    if not primaryBv then
+                        primaryBv = Instance.new("BodyVelocity")
+                        primaryBv.Name = "Polar_AntiGlitch"
+                        primaryBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                        primaryBv.Velocity = Vector3.new(0, 0, 0)
+                        primaryBv.Parent = nHrp
+                    end
+                    
+                    if not isHuntingBoss then
+                        local broughtCount = 1 -- Ya tenemos el principal
+                        for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                            if npc ~= firstNPC and (MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name)) then
+                                local targetHrp = npc:FindFirstChild("HumanoidRootPart")
+                                local targetHum = npc:FindFirstChild("Humanoid")
+                                if targetHrp and targetHum and targetHum.Health > 0 then
+                                    
+                                    -- EXECUTOR LEVEL 7-8: Network Ownership Bypass
+                                    -- Fuerza al servidor a darnos control de los NPCs lejanos
+                                    pcall(function()
+                                        if setsimulationradius then
+                                            setsimulationradius(math.huge, math.huge)
+                                        elseif sethiddenproperty then
+                                            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+                                        end
+                                    end)
+                                    
+                                    -- Rango masivo (350 studs) para limpiar la isla rapidísimo
+                                    if (targetHrp.Position - nHrp.Position).Magnitude <= 350 then
+                                        if broughtCount < 6 then -- Jalar hasta 6 NPCs al mismo tiempo
+                                            broughtCount = broughtCount + 1
+                                            
+                                            local secBv = targetHrp:FindFirstChild("Polar_AntiGlitch")
+                                            if not secBv then
+                                                secBv = Instance.new("BodyVelocity")
+                                                secBv.Name = "Polar_AntiGlitch"
+                                                secBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                                secBv.Velocity = Vector3.new(0, 0, 0)
+                                                secBv.Parent = targetHrp
+                                            end
+                                            
+                                            -- Executor Hack: Stacking Perfecto
+                                            -- Amontonarlos en el EXACTO MISMO PIXEL sin empujarse
+                                            for _, part in ipairs(npc:GetDescendants()) do
+                                                if part:IsA("BasePart") then
+                                                    part.CanCollide = false
+                                                end
+                                            end
+                                            
+                                            targetHrp.CFrame = nHrp.CFrame
+                                            targetHrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                                            
+                                            targetHum.WalkSpeed = 0
+                                            targetHum.JumpPower = 0
+                                            -- Deshabilitar Inteligencia Artificial del enemigo
+                                            targetHum.PlatformStand = true
+                                        end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                else
+                    CurrentBotState = STATE_WAITING
+                end
+            end
+            
+            if CurrentBotState == STATE_WAITING then
+                local targetRealName = BotActiveQuest or targetEnemyName
+                if targetEnemyName == "NearestNPC" or AutoFarmNearestEnabled then targetRealName = targetEnemyName end
+                
+                -- Verificar reaparición
+                local enemySpawned = false
+                if enemiesFolder then
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        if MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name) then
+                            local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                            local nHum = npc:FindFirstChild("Humanoid")
+                            if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                                enemySpawned = true
+                                break
+                            end
+                        end
+                    end
+                end
+                
+                if enemySpawned then
+                    CurrentBotState = STATE_FARMING
+                else
+                    local spawnPos = GetEnemySpawnPosition(targetRealName)
+                    if spawnPos then
+                        local targetCF = CFrame.new(spawnPos) * CFrame.new(0, 30, 0)
+                        plat.CFrame = targetCF
+                        if (hrp.Position - targetCF.Position).Magnitude > 20 then
+                            BypassTeleport(targetCF * CFrame.new(0, 3.5, 0))
+                        else
+                            hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                            task.wait(1) -- FIX: Previene que el loop sin espera te deje flotando congelado en el aire
+                            if AutoFarmAllBossesEnabled then
+                                if not IsEnemyAlive(targetRealName) then
+                                    lastBossCheckedIndex = lastBossCheckedIndex + 1
+                                    CurrentBotState = STATE_IDLE
+                                end
+                            end
+                        end
+                    else
+                        local targetCF = nil
+                        if AutoFarmNearestEnabled then
+                            local closestDist = math.huge
+                            local islandPos = nil
+                            for _, quest in ipairs(LevelQuests) do
+                                local p = GetIslandPosition(quest.island)
+                                if p then
+                                    local d = (hrp.Position - p).Magnitude
+                                    if d < closestDist then
+                                        closestDist = d
+                                        islandPos = p
+                                    end
+                                end
+                            end
+                            if islandPos then targetCF = CFrame.new(islandPos) end
+                        else
+                            local qData = activeBossQuestData or bestQuestData
+                            
+                            -- Fix: Esperar cerca del spawn o del Quest Giver. 
+                            -- Si vamos al centro de la isla en Magma, caemos justo en el Magma Admiral (Boss).
+                            local spawnP = GetEnemySpawnPosition(qData.name)
+                            local giverP = GetQuestGiverPosition(qData)
+                            local islP = GetIslandPosition(qData.island)
+                            
+                            if spawnP then
+                                targetCF = CFrame.new(spawnP)
+                            elseif giverP then
+                                targetCF = giverP
+                            elseif islP then
+                                targetCF = CFrame.new(islP)
+                            end
+                        end
+                        
+                        if targetCF then
+                            targetCF = targetCF * CFrame.new(0, 30, 0)
+                            plat.CFrame = targetCF
+                            if (hrp.Position - targetCF.Position).Magnitude > 50 then
+                                BypassTeleport(targetCF * CFrame.new(0, 3.5, 0))
+                            else
+                                hrp.CFrame = targetCF * CFrame.new(0, 3.5, 0)
+                                hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                                if AutoFarmAllBossesEnabled then
+                                    task.wait(1)
+                                    if not IsEnemyAlive(targetRealName) then
+                                        lastBossCheckedIndex = lastBossCheckedIndex + 1
+                                        CurrentBotState = STATE_IDLE
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            
+        else
+            CurrentBotState = STATE_IDLE
+            local plat = workspace:FindFirstChild("PolarFarmPlat")
+            if plat then plat:Destroy() end
+        end
+    end
+end)
+
+-- ==================== FAST ATTACK ANTI-KICK ====================
+local FastAttackRange = 60
+task.spawn(function()
+    while true do
+        local active = FastAttackEnabled and (AutoFarmEnabled or AutoFarmBossEnabled or AutoFarmAllBossesEnabled or AutoSaberExpertEnabled or AutoMobLeaderEnabled or AutoFarmNearestEnabled)
+        if not active then
+            task.wait(1)
+            continue
+        end
+        -- EXECUTOR HACK: Velocidad de Relámpago (0.05s)
+        task.wait(0.05)
+        if active and RegisterHit and RegisterAttack then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then continue end
+            
+            local targetEnemyName = GetCurrentTargetEnemyName()
+            
+            -- 1. Escanear salud para AutoMastery ANTES de hacer yield
+            local minHealthPercent = nil
+            if enemiesFolder and targetEnemyName then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    if not AutoFarmNearestEnabled and not MatchEnemyName(npc.Name, targetEnemyName) then continue end
+                    local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                    local hum = npc:FindFirstChild("Humanoid")
+                    if nHrp and hum and hum.Health > 0 and (nHrp.Position - hrp.Position).Magnitude <= FastAttackRange then
+                        local hPct = (hum.Health / hum.MaxHealth) * 100
+                        if not minHealthPercent or hPct < minHealthPercent then minHealthPercent = hPct end
+                    end
+                end
+            end
+            
+            -- 2. Equipar Arma (esto puede hacer un task.wait si necesita cambiar de arma)
+            EquipWeapon(minHealthPercent)
+            
+            -- 3. Recopilar objetivos de forma SEGURA después del yield
+            local targets = {}
+            local mainTargetPart = nil
+            
+            if enemiesFolder and targetEnemyName then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    if not AutoFarmNearestEnabled and not MatchEnemyName(npc.Name, targetEnemyName) then continue end
+                    
+                    local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                    local hum = npc:FindFirstChild("Humanoid")
+                    local ff = npc:FindFirstChildOfClass("ForceField")
+                    
+                    -- Verificar firmemente que el objetivo existe y es válido
+                    if nHrp and nHrp.Parent and hum and hum.Parent and hum.Health > 0 and not ff and (nHrp.Position - hrp.Position).Magnitude <= FastAttackRange then
+                        local targetPart = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
+                        if targetPart and targetPart.Parent then
+                            table.insert(targets, {npc, targetPart})
+                            if not mainTargetPart then mainTargetPart = targetPart end
+                            if #targets >= 8 then break end
+                        end
+                    end
+                end
+            end
+            
+            -- FIX ANTI-CHEAT: Jamás atacar con armas inválidas (como Fishing Rod) ni objetos destruidos
+            local currentTool = char:FindFirstChildOfClass("Tool")
+            local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
+            
+            if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+                pcall(function()
+                    -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
+                    -- Esto clona tu daño y derrite a los enemigos al instante
+                    for _ = 1, 3 do
+                        RegisterAttack:FireServer(0)
+                        RegisterHit:FireServer(mainTargetPart, targets)
+                    end
+                end)
+            end
+        end
+    end
+end)
+
+
+-- ==================== AUTO CHEST ====================
+local AutoChestEnabled = false
+task.spawn(function()
+    while true do
+        if not AutoChestEnabled then
+            task.wait(1)
+            continue
+        end
+        task.wait(1)
+        if AutoChestEnabled then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local chests = {}
+                for _, v in ipairs(workspace:GetDescendants()) do
+                    if string.find(v.Name, "Chest") and v:IsA("BasePart") and v:FindFirstChild("TouchInterest") then
+                        table.insert(chests, v)
+                    end
+                end
+                
+                if #chests > 0 then
+                    table.sort(chests, function(a, b)
+                        return (hrp.Position - a.Position).Magnitude < (hrp.Position - b.Position).Magnitude
+                    end)
+                    
+                    for _, chest in ipairs(chests) do
+                        if not AutoChestEnabled then break end
+                        if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
+                            local chestCF = chest.CFrame
+                            local dist = (hrp.Position - chestCF.Position).Magnitude
+                            if dist > 15 then
+                                BypassTeleport(chestCF)
+                            else
+                                hrp.CFrame = chestCF
+                            end
+                            task.wait(0.2)
+                            if firetouchinterest and chest:FindFirstChild("TouchInterest") then
+                                firetouchinterest(hrp, chest, 0)
+                                task.wait(0.01)
+                                firetouchinterest(hrp, chest, 1)
+                            end
+                            task.wait(0.2)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- ==================== AUTO STATS / HAKI ====================
+local AutoStatsEnabled = false
+local activeStats = {}
+
+task.spawn(function()
+    while true do
+        if not AutoStatsEnabled then
+            task.wait(1)
+            continue
+        end
+        task.wait(1)
+        if AutoStatsEnabled and CommF and #activeStats > 0 then
+            local data = LocalPlayer:FindFirstChild("Data")
+            local points = data and data:FindFirstChild("Points")
+            if points and points.Value > 0 then
+                local pts = points.Value
+                local n = #activeStats
+                local base = math.floor(pts / n)
+                local rem = pts % n
+                
+                for i, statName in ipairs(activeStats) do
+                    local add = base
+                    if i <= rem then add = add + 1 end
+                    if add > 0 then
+                        pcall(function() CommF:InvokeServer("AddPoint", statName, add) end)
+                        task.wait(0.2)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- FIX #1: AutoMobLeaderEnabled y AutoSaberExpertEnabled ya están declaradas arriba (línea ~498)
+local AutoSaberRunning = false
+
+local GlobalPhase1Solved = false
+local MaxSaberPhaseReached = 1
+
+local function FullAutoSaber()
+    if AutoSaberRunning then return end
+    AutoSaberRunning = true
+
+    task.spawn(function()
+        local playerData = LocalPlayer:FindFirstChild("Data")
+        local playerLevel = playerData and playerData:FindFirstChild("Level")
+        if not playerLevel or playerLevel.Value < 200 then
+            warn("❌ Polar Hub [Error Inicial]: Necesitas Nivel 200+ para el Saber Puzzle o Datos no cargados.")
+            AutoSaberRunning = false
+            return
+        end
+
+        -- Desactivar interferencias globales
+        AutoFarmEnabled = false
+        AutoFarmBossEnabled = false
+        AutoFarmAllBossesEnabled = false
+        AutoFarmNearestEnabled = false
+        print("✅ Polar Hub: Iniciando Auto Saber Puzzle (V7.2 Extreme)...")
+
+        local function Notify(text)
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {Title = "👑 Polar Hub", Text = text, Duration = 5})
+            end)
+            print("Polar Hub: " .. text)
+        end
+
+        -- ==================== V7.2 SAFE ACCESS UTILS ====================
+        local function SafeGetMapFolder(folderName)
+            local map = workspace:FindFirstChild("Map")
+            if not map then return nil end
+            return map:FindFirstChild(folderName)
+        end
+
+        local function GetHRP()
+            local char = LocalPlayer.Character
+            return char and char:FindFirstChild("HumanoidRootPart")
+        end
+
+        local function HasItem(toolName)
+            local bp = LocalPlayer:FindFirstChild("Backpack")
+            if bp and bp:FindFirstChild(toolName) then return true end
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild(toolName) then return true end
+            return false
+        end
+
+        local function EquipToolByName(toolName)
+            local bp = LocalPlayer:FindFirstChild("Backpack")
+            local char = LocalPlayer.Character
+            if not bp or not char then return false end
+            local tool = bp:FindFirstChild(toolName) or char:FindFirstChild(toolName)
+            if tool and tool.Parent == bp then
+                local hum = char:FindFirstChild("Humanoid")
+                if hum then hum:EquipTool(tool) return true end
+            end
+            return (tool and tool.Parent == char)
+        end
+
+        local function ResolvePart(obj)
+            if typeof(obj) == "CFrame" then return obj end
+            if not obj then return nil end
+            if obj:IsA("BasePart") then return obj.CFrame end
+            if obj:IsA("Model") then
+                return (obj.PrimaryPart and obj.PrimaryPart.CFrame)
+                    or (obj:FindFirstChild("Handle", true) and obj:FindFirstChild("Handle", true).CFrame)
+                    or (obj:FindFirstChildWhichIsA("BasePart", true) and obj:FindFirstChildWhichIsA("BasePart", true).CFrame)
+            end
+            return nil
+        end
+
+        local function SafeFly(targetCF, forceTweenMode)
+            if not targetCF then return end
+            local hrp = GetHRP()
+            if not hrp then return end
+            local dist = (hrp.Position - targetCF.Position).Magnitude
+            
+            local function RawTween(cf)
+                local tHrp = GetHRP()
+                if not tHrp then return end
+                local tDist = (tHrp.Position - cf.Position).Magnitude
+                local tInfo = TweenInfo.new(tDist / 300, Enum.EasingStyle.Linear)
+                local tween = game:GetService("TweenService"):Create(tHrp, tInfo, {CFrame = cf})
+                
+                local bp = Instance.new("BodyVelocity", tHrp)
+                bp.Velocity = Vector3.new(0, 0, 0)
+                bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                
+                local nclConn = game:GetService("RunService").Stepped:Connect(function()
+                    local lchar = LocalPlayer.Character
+                    if lchar then
+                        for _, v in ipairs(lchar:GetChildren()) do
+                            if v:IsA("BasePart") then v.CanCollide = false end
+                        end
+                    end
+                end)
+                
+                tween:Play()
+                tween.Completed:Wait()
+                bp:Destroy()
+                nclConn:Disconnect()
+            end
+
+            local pos = hrp.Position
+            if pos.Y < 15 and pos.X > 1000 and pos.Z > 4000 then 
+                RawTween(CFrame.new(1113, 5, 4350)) 
+                RawTween(CFrame.new(1094, 20, 4344)) 
+            elseif pos.Y < 50 and pos.X > 1300 and pos.Z < -1200 then 
+                RawTween(CFrame.new(1370, 87, -1320)) 
+                RawTween(CFrame.new(1384, 90, -1300)) 
+            end
+
+            hrp = GetHRP()
+            if not hrp then return end
+            dist = (hrp.Position - targetCF.Position).Magnitude
+
+            if dist < 50 and not forceTweenMode then
+                local char = LocalPlayer.Character
+                if char then char:PivotTo(targetCF) end
+            else
+                if dist > 500 then
+                    local upCF = CFrame.new(hrp.Position.X, 500, hrp.Position.Z)
+                    RawTween(upCF)
+                    local acrossCF = CFrame.new(targetCF.Position.X, 500, targetCF.Position.Z)
+                    RawTween(acrossCF)
+                end
+                RawTween(targetCF)
+            end
+        end
+
+        local function ForceTouchV7(obj, fallbackCF)
+            local targetCF = ResolvePart(obj) or fallbackCF
+            if not targetCF then return false end
+            
+            SafeFly(targetCF, false)
+            
+            local timeout = 0
+            while AutoSaberRunning and GetHRP() and timeout < 50 do
+                local hrp = GetHRP()
+                local d = (hrp.Position - targetCF.Position).Magnitude
+                if d < 15 then break end
+                if timeout > 0 and timeout % 10 == 0 then
+                    local char = LocalPlayer.Character
+                    if char then char:PivotTo(targetCF) end
+                end
+                task.wait(0.2)
+                timeout = timeout + 1
+            end
+
+            local hrp = GetHRP()
+            if hrp then
+                hrp.CFrame = targetCF
+                local isPart = (typeof(obj) ~= "CFrame" and obj and obj:IsA("BasePart"))
+                if isPart and firetouchinterest then
+                    task.wait(0.2)
+                    firetouchinterest(hrp, obj, 0)
+                    task.wait(0.1)
+                    firetouchinterest(hrp, obj, 1)
+                end
+                return true
+            end
+            return false
+        end
+
+        local function TalkToNPCV7(npcName, fallbackCF, remoteId)
+            -- FIX #8: Buscar NPCs en workspace:GetDescendants() para encontrarlos incluso fuera de NPCs folder
+            local function FindNPCByName(name)
+                local npcs = workspace:FindFirstChild("NPCs")
+                if npcs then
+                    local found = npcs:FindFirstChild(name)
+                    if found and found:FindFirstChild("HumanoidRootPart") then return found end
+                end
+                -- Fallback: buscar en todos los descendientes del workspace
+                for _, obj in ipairs(workspace:GetDescendants()) do
+                    if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
+                        return obj
+                    end
+                end
+                return nil
+            end
+            
+            local npc = FindNPCByName(npcName)
+            if not npc then
+                ForceTouchV7(nil, fallbackCF)
+                task.wait(2) -- Esperar a que el NPC cargue
+                npc = FindNPCByName(npcName)
+                if not npc then
+                    warn("Polar Hub [Error TalkToNPCV7]: NPC '" .. npcName .. "' no se encontró en workspace")
+                    return false
+                end
+            end
+            
+            ForceTouchV7(npc.HumanoidRootPart, fallbackCF)
+            task.wait(1)
+            for i = 1, 3 do
+                task.spawn(function() pcall(function() CommF:InvokeServer("ProQuestProgress", remoteId) end) end)
+                if npc then
+                    for _, v in ipairs(npc:GetDescendants()) do
+                        if v:IsA("ProximityPrompt") then
+                            task.spawn(function() pcall(function() fireproximityprompt(v) end) end)
+                        end
+                    end
+                end
+                task.wait(0.5)
+            end
+            return true
+        end
+
+        local function DetectPhase()
+            -- PRIORIDAD ABSOLUTA: Si la memoria dice que superamos la fase 5+,
+            -- confiar en ella. Después de entregar la copa al Sick Man, los ítems
+            -- desaparecen del inventario y el desierto no renderiza a distancia.
+            -- Sin esta barrera, el bot regresa infinitamente a la Fase 3.
+            if HasItem("Saber") then MaxSaberPhaseReached = 9; return 9 end
+            if MaxSaberPhaseReached >= 5 then return MaxSaberPhaseReached end
+            
+            local function calculateRawPhase()
+                if HasItem("Saber") then return 9 end
+                
+                local s, progress = pcall(function() return CommF:InvokeServer("ProQuestProgress", "RichMan") end)
+                if not s or (type(progress) == "string" and progress == "Unknown") then 
+                    return -1 -- Remote failure/timeout
+                end
+                
+                local hasRelic = HasItem("Relic") or progress == "Relic" or (type(progress) == "table" and progress.Relic)
+                if hasRelic then return 7 end
+                
+                -- El remoto de RichMan indica si ya matamos al Mob Leader
+                if type(progress) == "table" and progress.RichMan then return 6 end
+                -- NOTA: progress.SickMan NO existe en Blox Fruits.
+                -- La transición Fase 4→5 se fuerza manualmente al hablar con Sick Man.
+                
+                if HasItem("Cup") or HasItem("FilledCup") then return 4 end
+                if HasItem("Torch") then return 3 end
+                
+                -- Chequeo de la puerta del desierto:
+                -- SOLO verificar si estamos en fases bajas (< 5).
+                -- Si la puerta Burn ya NO existe y no tenemos copa,
+                -- significa que la quemamos y perdimos la copa.
+                local desert = SafeGetMapFolder("Desert")
+                local desertDoor = desert and desert:FindFirstChild("Burn")
+                if desert and not desertDoor then return 3 end
+                
+                local jungle = SafeGetMapFolder("Jungle")
+                local jungleDoor = jungle and jungle:FindFirstChild("QuestDoor")
+                if jungleDoor and jungleDoor.Transparency > 0.5 then return 2 end
+                
+                if GlobalPhase1Solved then return 2 end
+                
+                return 1
+            end
+            
+            local rawPhase = calculateRawPhase()
+            
+            -- Si el remoto falló, usar ítems físicos como override, luego memoria
+            if rawPhase == -1 then
+                if HasItem("Relic") then MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 7); return MaxSaberPhaseReached end
+                if HasItem("Cup") or HasItem("FilledCup") then MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 4); return MaxSaberPhaseReached end
+                if HasItem("Torch") then MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 3); return MaxSaberPhaseReached end
+                warn("Polar Hub [DetectPhase]: Remoto sin respuesta. Forzando memoria Anti-Regresión: Fase " .. MaxSaberPhaseReached)
+                return MaxSaberPhaseReached
+            end
+            
+            -- Cuando la detección es exitosa, actualizar si avanzamos naturalmente.
+            if rawPhase > MaxSaberPhaseReached then
+                MaxSaberPhaseReached = rawPhase
+            end
+            
+            -- ✅ DEBE DEVOLVER LA MEMORIA, NUNCA EL RAWPHASE
+            return MaxSaberPhaseReached
+        end
+
+        local function WaitForItem(itemName, timeoutSecs)
+            local t = 0
+            while t < timeoutSecs and AutoSaberRunning do
+                if HasItem(itemName) then return true end
+                task.wait(1)
+                t = t + 1
+            end
+            return false
+        end
+
+        local function ExclusiveTargetLock(targetCF, enemyName, timeoutSecs)
+            -- Equipar arma al entrar en combate
+            EquipWeapon()
+            
+            -- Guardar estado previo de todas las banderas
+            local prevFastAttack = FastAttackEnabled
+            local prevSaberFlag = AutoSaberExpertEnabled
+            local prevMobFlag = AutoMobLeaderEnabled
+            
+            -- Activar FastAttack Y la bandera correcta para que el bucle global de ataque
+            -- también dispare (su condición requiere al menos un Auto*Enabled = true)
+            FastAttackEnabled = true
+            if string.find(string.lower(enemyName), "saber") then AutoSaberExpertEnabled = true end
+            if string.find(string.lower(enemyName), "mob") then AutoMobLeaderEnabled = true end
+            
+            local timeout = 0
+            local aliveCheckFails = 0
+            local lastHP = math.huge
+            local hpStuckCount = 0
+            while AutoSaberRunning and timeout < timeoutSecs do
+                if not IsEnemyAlive(enemyName) then
+                    aliveCheckFails = aliveCheckFails + 1
+                    if aliveCheckFails > 5 then break end
+                else
+                    aliveCheckFails = 0
+                end
+                
+                task.wait(0.5)
+                local hrp = GetHRP()
+                local enemies = workspace:FindFirstChild("Enemies")
+                
+                -- Usar MatchEnemyName en lugar de FindFirstChild
+                local target = nil
+                if enemies then
+                    for _, npc in ipairs(enemies:GetChildren()) do
+                        if MatchEnemyName(npc.Name, enemyName) and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                            target = npc
+                            break
+                        end
+                    end
+                end
+                
+                if target and target:FindFirstChild("HumanoidRootPart") and hrp then
+                    -- Incrementar contador si el HP del boss no baja
+                    local currentHP = target:FindFirstChild("Humanoid") and target.Humanoid.Health or 0
+                    if currentHP >= lastHP then
+                        hpStuckCount = hpStuckCount + 1
+                        if hpStuckCount > 20 then
+                            warn("Polar Hub [ExclusiveTargetLock]: HP de '" .. enemyName .. "' no baja. Re-equipando arma...")
+                            EquipWeapon()
+                            hpStuckCount = 0
+                        end
+                    else
+                        hpStuckCount = 0
+                    end
+                    lastHP = currentHP
+                    
+                    if (hrp.Position - target.HumanoidRootPart.Position).Magnitude > 300 then
+                        SafeFly(target.HumanoidRootPart.CFrame, true)
+                    else
+                        hrp.CFrame = target.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+                    end
+                    
+                    -- Atacar con remotes directamente
+                    if RegisterHit and RegisterAttack then
+                        local targetPart = target:FindFirstChild("HumanoidRootPart") or target:FindFirstChild("Head")
+                        if targetPart then
+                            pcall(function()
+                                RegisterAttack:FireServer(0)
+                                RegisterHit:FireServer(targetPart, {{target, targetPart}})
+                            end)
+                        end
+                    end
+                elseif hrp and (hrp.Position - targetCF.Position).Magnitude > 300 then
+                    SafeFly(targetCF, true)
+                end
+                timeout = timeout + 1
+            end
+            
+            -- Restaurar TODAS las banderas a su estado previo
+            FastAttackEnabled = prevFastAttack
+            AutoSaberExpertEnabled = prevSaberFlag
+            AutoMobLeaderEnabled = prevMobFlag
+        end
+
+        -- ==================== BUCLE MAESTRO V7.2 ====================
+        local phaseAttempts = { [1]=0, [2]=0, [3]=0, [4]=0, [5]=0, [6]=0, [7]=0, [8]=0 }
+
+        local function HandleCriticalFailure(phaseNum)
+            warn("Polar Hub [Error Crítico]: Atascado en Fase " .. phaseNum .. " tras múltiples intentos.")
+            Notify("⚠️ Atascado en Fase " .. phaseNum .. ". Retrocediendo para re-validar...")
+            
+            -- LÓGICA DE ESCAPE (Rollback): Si fallamos repetidamente,
+            -- retrocedemos la memoria 1 fase para obligar al bot a re-verificar.
+            if MaxSaberPhaseReached > 1 then
+                MaxSaberPhaseReached = MaxSaberPhaseReached - 1
+            else
+                MaxSaberPhaseReached = 1
+                GlobalPhase1Solved = false
+            end
+            
+            -- Reiniciar contadores para el nuevo intento
+            for i=1, 8 do phaseAttempts[i] = 0 end
+            task.wait(3) -- Pausa táctica antes de reintentar
+        end
+
+        while AutoSaberRunning do
+            task.wait(1)
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChild("Humanoid")
+            if not hrp or not hum or hum.Health <= 0 then continue end
+
+            local currentPhase = DetectPhase()
+            
+            -- Fase 1: Placas (MODO EXTREMO: 5 INTENTOS Y FUERZA AVANCE)
+            if currentPhase == 1 then
+                local s, err = pcall(function()
+                    if not GlobalPhase1Solved then
+                        phaseAttempts[1] = phaseAttempts[1] + 1
+                        
+                        -- LÍMITE EXTREMO: Si ya lo intentó 5 veces, ¡PASA A LA FASE 2 A LA FUERZA!
+                        if phaseAttempts[1] > 5 then 
+                            Notify("⚠️ 5 intentos alcanzados. ¡Forzando avance a Fase 2 (Antorcha)!")
+                            GlobalPhase1Solved = true
+                            MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 2)
+                            phaseAttempts[1] = 0
+                            return 
+                        end
+                        
+                        Notify("Fase 1: Activando Placas (Intento " .. phaseAttempts[1] .. "/5)")
+                        
+                        local hrp = GetHRP()
+                        local jungleCenterCF = CFrame.new(-1610, 22, 162)
+                        if hrp and (hrp.Position - jungleCenterCF.Position).Magnitude > 300 then
+                            Notify("✈️ Volando a la Jungla para cargar el mapa...")
+                            SafeFly(jungleCenterCF, false)
+                            task.wait(2)
+                        end
+                        
+                        local jungle = SafeGetMapFolder("Jungle")
+                        local questPlates = jungle and jungle:FindFirstChild("QuestPlates")
+                        if questPlates then
+                            for _, v in ipairs(questPlates:GetDescendants()) do
+                                if not AutoSaberRunning then break end
+                                if v:IsA("BasePart") and (string.find(string.lower(v.Name), "button") or string.find(string.lower(v.Name), "plate")) then
+                                    ForceTouchV7(v, v.CFrame)
+                                    task.wait(0.5)
+                                end
+                            end
+                        else
+                            warn("Polar Hub [Error Fase 1]: Carpeta 'QuestPlates' no renderizada aún.")
+                        end
+                        
+                        task.wait(2)
+                        local door = jungle and jungle:FindFirstChild("QuestDoor")
+                        if door and door.Transparency > 0.5 then
+                            Notify("✅ ¡Placas activadas! Puerta abierta de forma natural.")
+                            GlobalPhase1Solved = true
+                            MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 2)
+                            phaseAttempts[1] = 0
+                        else
+                            if phaseAttempts[1] >= 3 then
+                                Notify("⚠️ Las placas resisten. Cooldown táctico (3s)...")
+                                task.wait(3)
+                            end
+                        end
+                    end
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 1]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 2: Recoger Antorcha (MODO EXTREMO)
+            if currentPhase == 2 then
+                local s, err = pcall(function()
+                    phaseAttempts[2] = phaseAttempts[2] + 1
+                    
+                    if phaseAttempts[2] > 5 then
+                        Notify("⚠️ 5 intentos en Antorcha. ¡Forzando avance a Fase 3 (Desierto)!")
+                        MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 3)
+                        phaseAttempts[2] = 0
+                        return
+                    end
+                    
+                    Notify("Fase 2: Recogiendo Antorcha (Intento " .. phaseAttempts[2] .. "/5)...")
+                    local torchCF = CFrame.new(-1610.15, 12.18, 162.72)
+                    local jungle = SafeGetMapFolder("Jungle")
+                    local torch = jungle and jungle:FindFirstChild("Torch")
+                    
+                    if not torch then warn("Polar Hub [Error Fase 2]: Objeto 'Torch' no renderizado en Map/Jungle.") end
+                    ForceTouchV7(torch, torchCF)
+                    
+                    if WaitForItem("Torch", 5) then -- Reducido a 5s de espera por agilidad
+                        Notify("✅ ¡Antorcha obtenida!")
+                        phaseAttempts[2] = 0
+                    end
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 2]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 3: Desierto (Quemar Puerta y Recoger Copa) (MODO EXTREMO)
+            if currentPhase == 3 then
+                local s, err = pcall(function()
+                    phaseAttempts[3] = phaseAttempts[3] + 1
+                    
+                    if phaseAttempts[3] > 5 then
+                        Notify("⚠️ 5 intentos en Desierto. ¡Forzando avance a Fase 4 (Nieve)!")
+                        MaxSaberPhaseReached = math.max(MaxSaberPhaseReached, 4)
+                        phaseAttempts[3] = 0
+                        return
+                    end
+                    
+                    Notify("Fase 3: Desierto (Puerta y Copa) - Intento " .. phaseAttempts[3] .. "/5")
+                    local desert = SafeGetMapFolder("Desert")
+                    local doorBurn = desert and desert:FindFirstChild("Burn")
+                    
+                    if doorBurn then
+                        if HasItem("Torch") then
+                            EquipToolByName("Torch")
+                            ForceTouchV7(doorBurn, doorBurn.CFrame)
+                            task.wait(3)
+                        else
+                            -- Ya no retrocede. Gasta el intento advirtiendo.
+                            warn("Polar Hub [Fase 3]: Intentando avanzar sin Antorcha física...")
+                        end
+                    else
+                        Notify("Fase 3: Puerta ya quemada o no existe.")
+                    end
+
+                    local cupCF = CFrame.new(1114.26, 4.17, 4366.15)
+                    local cup = desert and desert:FindFirstChild("Cup")
+                    ForceTouchV7(cup, cupCF)
+
+                    if WaitForItem("Cup", 5) then
+                        Notify("✅ ¡Copa obtenida exitosamente!")
+                        phaseAttempts[3] = 0
+                    else
+                        warn("Polar Hub [Fase 3]: Fallo al obtener Copa. Se forzará en próximos intentos.")
+                    end
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 3]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 4: Llenar Copa y dársela al Sick Man
+            if currentPhase == 4 then
+                local s, err = pcall(function()
+                    phaseAttempts[4] = phaseAttempts[4] + 1
+                    if phaseAttempts[4] > 5 then
+                        Notify("⚠️ 5 intentos en Sick Man. ¡Forzando avance a Fase 5!")
+                        MaxSaberPhaseReached = 5
+                        phaseAttempts[4] = 0
+                        return
+                    end
+                    
+                    Notify("Fase 4: Llenando Copa en la Nieve (Intento " .. phaseAttempts[4] .. "/5)")
+                    local fillCF = CFrame.new(1394.12, 37.38, -1320.83)
+                    
+                    if HasItem("FilledCup") then
+                        EquipToolByName("FilledCup")
+                    elseif HasItem("Cup") then
+                        EquipToolByName("Cup")
+                    end
+                    
+                    ForceTouchV7(nil, fillCF)
+                    task.wait(4)
+                    
+                    if HasItem("FilledCup") then
+                        Notify("Fase 4: Copa llena. Entregando a Sick Man...")
+                        TalkToNPCV7("Sick Man", CFrame.new(1395.4, 37.3, -1322.5), nil)
+                        task.wait(2)
+                        
+                        -- VERIFICACIÓN FÍSICA: Si ya no tenemos la copa, el NPC la aceptó.
+                        if not HasItem("FilledCup") and not HasItem("Cup") then
+                            Notify("✅ ¡Sick Man ayudado! Avanzando a Fase 5...")
+                            MaxSaberPhaseReached = 5
+                            phaseAttempts[4] = 0
+                        else
+                            warn("Polar Hub [Error Fase 4]: Sick Man no tomó la copa. Reintentando...")
+                        end
+                    else
+                        warn("Polar Hub [Error Fase 4]: La copa no se llenó con agua.")
+                    end
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 4]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 5: Ir a Rich Man (Primer Encuentro)
+            if currentPhase == 5 then
+                local s, err = pcall(function()
+                    phaseAttempts[5] = phaseAttempts[5] + 1
+                    if phaseAttempts[5] > 5 then
+                        Notify("⚠️ 5 intentos en Rich Man. ¡Forzando avance a Fase 6!")
+                        MaxSaberPhaseReached = 6
+                        phaseAttempts[5] = 0
+                        return
+                    end
+                    
+                    Notify("Fase 5: Volando hacia Rich Man (Intento " .. phaseAttempts[5] .. "/5)...")
+                    TalkToNPCV7("Rich Man", CFrame.new(-1145, 4.7, 3828.6), "RichMan")
+                    task.wait(3)
+                    
+                    Notify("✅ ¡Hablamos con Rich Man! Avanzando a cazar al Mob Leader...")
+                    MaxSaberPhaseReached = 6
+                    phaseAttempts[5] = 0
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 5]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 6: Matar Mob Leader y Reclamar Reliquia
+            if currentPhase == 6 then
+                local s, err = pcall(function()
+                    phaseAttempts[6] = phaseAttempts[6] + 1
+                    if phaseAttempts[6] > 40 then
+                        HandleCriticalFailure(6)
+                        return
+                    end
+                    
+                    local mobLeaderCF = CFrame.new(-2880.71, 15, 5430.85)
+                    local richManCF = CFrame.new(-1145, 4.7, 3828.6)
+                    
+                    -- 1. Intentar cobrar recompensa ANTES de cazar (Por si ya lo matamos antes)
+                    if phaseAttempts[6] == 1 or phaseAttempts[6] % 4 == 0 then
+                        Notify("Fase 6: Verificando estado con Rich Man...")
+                        TalkToNPCV7("Rich Man", richManCF, "RichMan")
+                        task.wait(3)
+                        if HasItem("Relic") then
+                            Notify("✅ ¡Reliquia obtenida! Avanzando a Fase 7...")
+                            MaxSaberPhaseReached = 7
+                            phaseAttempts[6] = 0
+                            return
+                        end
+                    end
+                    
+                    -- 2. Si no tenemos la reliquia, buscamos al Mob Leader
+                    if IsEnemyAlive("Mob Leader") then
+                        Notify("🎯 ¡Mob Leader encontrado! Entrando en combate...")
+                        ExclusiveTargetLock(mobLeaderCF, "Mob Leader", 600)
+                        Notify("✅ ¡Mob Leader derrotado! Yendo a reclamar recompensa...")
+                        task.wait(3)
+                        
+                        -- Reclamar insistentemente
+                        for i = 1, 3 do
+                            TalkToNPCV7("Rich Man", richManCF, "RichMan")
+                            task.wait(3)
+                            if HasItem("Relic") then
+                                Notify("✅ ¡Reliquia obtenida! Avanzando a Fase 7...")
+                                MaxSaberPhaseReached = 7
+                                phaseAttempts[6] = 0
+                                return
+                            end
+                        end
+                        Notify("⚠️ No se recibió la reliquia. Se reintentará en el próximo ciclo...")
+                    else
+                        Notify("⏳ Mob Leader no spawneado. Esperando en isla (Intento " .. phaseAttempts[6] .. "/40)...")
+                        local hrp = GetHRP()
+                        if hrp and (hrp.Position - mobLeaderCF.Position).Magnitude > 100 then
+                            SafeFly(mobLeaderCF, false)
+                        end
+                        task.wait(5)
+                    end
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 6]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 7: Usar Relic
+            if currentPhase == 7 then
+                local s, err = pcall(function()
+                    phaseAttempts[7] = phaseAttempts[7] + 1
+                    
+                    if phaseAttempts[7] > 5 then
+                        Notify("⚠️ 5 intentos con Relic. ¡Forzando avance a Fase 8 (Saber Expert)!")
+                        MaxSaberPhaseReached = 8
+                        phaseAttempts[7] = 0
+                        return
+                    end
+                    
+                    Notify("Fase 7: Abriendo bóveda con Relic (Intento " .. phaseAttempts[7] .. "/5)...")
+                    EquipToolByName("Relic")
+                    local relicCF = CFrame.new(-1406.8, 29.8, 3.8)
+                    local jungle = SafeGetMapFolder("Jungle")
+                    local relicDoor = jungle and jungle:FindFirstChild("Relic", true)
+                    
+                    if not relicDoor then warn("Polar Hub [Error Fase 7]: Puerta 'Relic' no encontrada en Map/Jungle.") end
+                    ForceTouchV7(relicDoor, relicCF)
+                    task.wait(3)
+                    
+                    Notify("✅ ¡Reliquia colocada! Avanzando a Fase 8...")
+                    MaxSaberPhaseReached = 8
+                    phaseAttempts[7] = 0
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 7]: " .. tostring(err)) end
+                continue
+            end
+
+            -- Fase 8: Saber Expert
+            if currentPhase == 8 or currentPhase == 9 then
+                local s, err = pcall(function()
+                    if HasItem("Saber") or currentPhase == 9 then
+                        Notify("🎉 ¡ÉXITO TOTAL! Ya tienes la espada Saber.")
+                        AutoSaberRunning = false
+                        CurrentBotState = STATE_IDLE
+                        return
+                    end
+                    
+                    Notify("Fase 8: Validando Saber Expert...")
+                    local shanksCF = CFrame.new(-1461, 30, -51)
+                    ForceTouchV7(nil, shanksCF)
+                    task.wait(1)
+                    
+                    if not IsEnemyAlive("Saber Expert") then
+                        phaseAttempts[8] = phaseAttempts[8] + 1
+                        -- Los bosses tardan hasta 30 min en reaparecer.
+                        -- 120 intentos x 10s = 20 minutos de espera paciente.
+                        if phaseAttempts[8] > 120 then
+                            Notify("⚠️ Saber Expert no ha spawneado en 20 min. Reiniciando contador...")
+                            phaseAttempts[8] = 0
+                            return
+                        end
+                        -- Mostrar progreso sin alarmar al usuario
+                        if phaseAttempts[8] % 6 == 1 then -- Solo notificar cada ~60s
+                            local minutesWaited = math.floor(phaseAttempts[8] * 10 / 60)
+                            Notify("⏳ Esperando spawn de Saber Expert... (" .. minutesWaited .. " min)")
+                        end
+                        -- Mantenerse en la zona de spawn
+                        local hrp = GetHRP()
+                        if hrp and (hrp.Position - shanksCF.Position).Magnitude > 100 then
+                            SafeFly(shanksCF, false)
+                        end
+                        task.wait(10)
+                        return
+                    end
+
+                    -- Boss está vivo, entrar en combate
+                    EquipWeapon()
+                    phaseAttempts[8] = 0
+                    Notify("⚔️ ¡Matando a Shanks (Saber Expert)!")
+                    ExclusiveTargetLock(shanksCF, "Saber Expert", 600)
+                    WaitForItem("Saber", 10)
+                end)
+                if not s then warn("Polar Hub [Error Crítico Fase 8]: " .. tostring(err)) end
+                if not AutoSaberRunning then break end
+                continue
+            end
+            
+            -- FIX #9: Else con warn al final del loop si ninguna fase coincidió
+            warn("Polar Hub [Loop Principal]: Fase " .. tostring(currentPhase) .. " no tiene handler definido. MaxPhase=" .. tostring(MaxSaberPhaseReached))
+        end
+        
+        -- Limpieza Final
+        AutoSaberRunning = false
+        -- FIX #15: Restaurar CurrentBotState al terminar FullAutoSaber
+        CurrentBotState = STATE_IDLE
+    end)
+end
+local AutoHakiEnabled = true
+task.spawn(function()
+    while true do
+        if not AutoHakiEnabled then
+            task.wait(1)
+            continue
+        end
+        task.wait(0.5)
+        -- FIX: Activar Haki automáticamente si está encendido
+        if AutoHakiEnabled and CommF then
+            local char = LocalPlayer.Character
+            if char and not char:FindFirstChild("HasBuso") then 
+                pcall(function() CommF:InvokeServer("Buso") end) 
+            end
+        end
+    end
+end)
+
+
+-- ==================== UTILS ====================
+
+local function ScanIslands()
+    local islands = {}
+    local added = {}
+    local origin = workspace:FindFirstChild("_WorldOrigin")
+    local locs = origin and origin:FindFirstChild("Locations")
+    if locs then
+        for _, v in ipairs(locs:GetChildren()) do
+            if not added[v.Name] then
+                table.insert(islands, v.Name)
+                added[v.Name] = true
+            end
+        end
+    end
+    if #islands == 0 then table.insert(islands, "None") end
+    table.sort(islands)
+    return islands
+end
+
+local sAct, sVal, iJ, ncl, walkWaterEnabled = false, 16, false, false, false
+RunService.Heartbeat:Connect(function()
+    if sAct then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hum and hum.MoveDirection.Magnitude > 0 then char:TranslateBy(hum.MoveDirection * (sVal / 55)) end
+    end
+end)
+UserInputService.JumpRequest:Connect(function()
+    if iJ then
+        local char = LocalPlayer.Character
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+RunService.Stepped:Connect(function()
+    if ncl then
+        local char = LocalPlayer.Character
+        if char then for _, v in ipairs(char:GetChildren()) do if v:IsA("BasePart") then v.CanCollide = false end end end
+    end
+end)
+local waterPart = nil
+RunService.RenderStepped:Connect(function()
+    if walkWaterEnabled then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp and hrp.Position.Y >= 9.5 and hrp.AssemblyLinearVelocity.Y <= 0 then
+            if not waterPart then
+                waterPart = Instance.new("Part", workspace)
+                waterPart.Name = "Polar_Water"
+                waterPart.Size, waterPart.Transparency, waterPart.Anchored, waterPart.CanQuery = Vector3.new(30, 1, 30), 1, true, false
+            end
+            waterPart.CFrame = CFrame.new(hrp.Position.X, 9.2, hrp.Position.Z)
+        elseif waterPart then waterPart.CFrame = CFrame.new(0, -5000, 0) end
+    elseif waterPart then waterPart:Destroy() waterPart = nil end
+end)
+
+
+-- ==================== WIND UI CONSTRUCCION ====================
+
+local TabFarm = Window:Tab({ Title = "Farm", Icon = "swords" })
+local TabStats = Window:Tab({ Title = "Stats", Icon = "user" })
+local TabStatus = Window:Tab({ Title = "Status", Icon = "activity" })
+local TabShop = Window:Tab({ Title = "Shop", Icon = "shopping-cart" })
+local TabQuest = Window:Tab({ Title = "Quest Farm", Icon = "map" })
+local TabTeleport = Window:Tab({ Title = "Teleport", Icon = "globe" })
+local TabCombat = Window:Tab({ Title = "Combat PvP", Icon = "crosshair" })
+local TabMisc = Window:Tab({ Title = "Misc", Icon = "settings" })
+
+
+-- ===== TAB FARM =====
+TabFarm:Section({ Title = "Configuración de Combate" })
+
+TabFarm:Dropdown({
+    Title = "Farm Tool (Arma)",
+    Values = {"Melee", "Sword", "Blox Fruit", "Gun"},
+    Value = "Melee",
+    Callback = function(Value)
+        SelectedWeaponType = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Mastery Inteligente",
+    Desc = "Baja la vida con tu Farm Tool, y remata (cuando le quede < 20%) con el arma que elijas abajo.",
+    Callback = function(Value)
+        AutoMasteryEnabled = Value
+    end
+})
+
+TabFarm:Dropdown({
+    Title = "Arma a Masterizar (Auto Mastery)",
+    Values = {"Melee", "Sword", "Blox Fruit", "Gun"},
+    Value = "Sword",
+    Callback = function(Value)
+        AutoMasteryItem = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Skills",
+    Desc = "Usa las habilidades Z, X, C, V, F automáticamente mientras farmeas.",
+    Callback = function(Value)
+        AutoSkillsEnabled = Value
+    end
+})
+
+TabFarm:Section({ Title = "Auto Farm Automático" })
+
+TabFarm:Toggle({
+    Title = "Auto Farm Nivel (100% Automático)",
+    Desc = "Detecta nivel, vuela a la isla, toma misión y ataca.",
+    Callback = function(Value)
+        AutoFarmEnabled = Value
+        FastAttackEnabled = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Chest (Farm Beli)",
+    Callback = function(Value)
+        AutoChestEnabled = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Farm Nearest (Masacre Total)",
+    Desc = "Ignora misiones y niveles. Aniquila al NPC más cercano en la isla actual. Exterminio masivo.",
+    Callback = function(Value)
+        AutoFarmNearestEnabled = Value
+        FastAttackEnabled = Value
+    end
+})
+
+-- ==================== TAB FARM (BOSS SECTION) ====================
+TabFarm:Section({ Title = "Cazador de Jefes (Bosses)" })
+
+local BossNamesList = {}
+for _, b in ipairs(Sea1Bosses) do table.insert(BossNamesList, b.name) end
+
+TabFarm:Dropdown({
+    Title = "Seleccionar Jefe",
+    Values = BossNamesList,
+    Value = "Gorilla King",
+    Callback = function(Value)
+        SelectedBossToFarm = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Farm Boss Seleccionado",
+    Desc = "Caza exclusivamente al jefe seleccionado arriba.",
+    Callback = function(Value)
+        AutoFarmBossEnabled = Value
+        FastAttackEnabled = Value
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Auto Farm ALL Bosses",
+    Desc = "Modo Exterminio: Escanea el servidor y caza a TODOS los jefes vivos.",
+    Callback = function(Value)
+        AutoFarmAllBossesEnabled = Value
+        FastAttackEnabled = Value
+        lastBossCheckedIndex = 1
+    end
+})
+
+TabFarm:Toggle({
+    Title = "Tomar Misión del Jefe",
+    Desc = "Si está desactivado, los cazará a sangre fría ignorando requisitos de nivel.",
+    Callback = function(Value)
+        BossWithQuest = Value
+    end
+})
+
+-- ===== TAB STATS =====
+TabStats:Section({ Title = "Mejoras de Jugador" })
+
+TabStats:Toggle({
+    Title = "Player & NPC ESP",
+    Callback = function(Value)
+        ESPEnabled = Value
+        UpdateESPState()
+    end
+})
+
+TabStats:Toggle({
+    Title = "Auto Haki (Buso)",
+    Default = true,
+    Callback = function(Value)
+        AutoHakiEnabled = Value
+    end
+})
+
+TabStats:Section({ Title = "Auto Stats Equitativo" })
+
+local function ToggleStat(statName, value)
+    if value then
+        if not table.find(activeStats, statName) then table.insert(activeStats, statName) end
+    else
+        local idx = table.find(activeStats, statName)
+        if idx then table.remove(activeStats, idx) end
+    end
+end
+
+TabStats:Toggle({ Title = "Melee", Callback = function(v) ToggleStat("Melee", v) end })
+TabStats:Toggle({ Title = "Defense", Callback = function(v) ToggleStat("Defense", v) end })
+TabStats:Toggle({ Title = "Sword", Callback = function(v) ToggleStat("Sword", v) end })
+TabStats:Toggle({ Title = "Gun", Callback = function(v) ToggleStat("Gun", v) end })
+TabStats:Toggle({ Title = "Demon Fruit", Callback = function(v) ToggleStat("Demon Fruit", v) end })
+
+TabStats:Toggle({
+    Title = "Activar Auto Stats",
+    Desc = "Divide tus puntos equitativamente.",
+    Callback = function(Value)
+        AutoStatsEnabled = Value
+    end
+})
+
+
+-- ===== TAB STATUS =====
+TabStatus:Section({ Title = "Telemetría del Servidor" })
+
+local LabelServerUptime = TabStatus:Paragraph({
+    Title = "Tiempo de Vida del Servidor",
+    Desc = "Calculando..."
+})
+
+local LabelPlayerTime = TabStatus:Paragraph({
+    Title = "Tiempo en Sesión (Jugador)",
+    Desc = "Calculando..."
+})
+
+TabStatus:Section({ Title = "Radar de Jefes Especiales (Sea 1)" })
+
+local LabelTheSaw = TabStatus:Paragraph({
+    Title = "The Saw (Nvl 100) - Middle Town",
+    Desc = "Estado: Calculando..."
+})
+
+local LabelGreybeard = TabStatus:Paragraph({
+    Title = "Greybeard (Nvl 750) - Marine Fortress",
+    Desc = "Estado: Calculando..."
+})
+
+local scriptStartTime = os.time()
+
+local function FormatTime(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+local function UpdatePara(para, newDesc)
+    if not para then return end
+    pcall(function()
+        if para.SetDesc then para:SetDesc(newDesc)
+        elseif para.Set then para:Set({Desc = newDesc}) end
+    end)
+end
+
+local function GetExactBossTimer(bossName)
+    local foundTimer = nil
+    for _, gui in ipairs(workspace:GetDescendants()) do
+        if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
+            local isTargetBoss = false
+            local timerText = nil
+            
+            for _, child in ipairs(gui:GetDescendants()) do
+                if child:IsA("TextLabel") and child.Text then
+                    local textLower = string.lower(child.Text)
+                    if string.find(textLower, string.lower(bossName)) then
+                        isTargetBoss = true
+                    end
+                    local matchTimer = string.match(child.Text, "%[(%d+:%d+:%d+)%]") or string.match(child.Text, "%[(%d+:%d+)%]")
+                    if matchTimer then
+                        timerText = matchTimer
+                    end
+                end
+            end
+            
+            if isTargetBoss and timerText then
+                foundTimer = timerText
+            end
+        end
+    end
+    return foundTimer
+end
+
+task.spawn(function()
+    while true do
+        task.wait(5) -- OPTIMIZADO: Espera aumentada para evitar lag extremo de búsqueda en workspace
+        pcall(function()
+            local serverUptime = workspace.DistributedGameTime
+            UpdatePara(LabelServerUptime, FormatTime(serverUptime))
+            
+            local sessionTime = os.time() - scriptStartTime
+            UpdatePara(LabelPlayerTime, FormatTime(sessionTime))
+            
+            local enemies = workspace:FindFirstChild("Enemies")
+            
+            -- THE SAW
+            local sawAlive = false
+            if enemies and enemies:FindFirstChild("The Saw") then sawAlive = true end
+            
+            if sawAlive then
+                UpdatePara(LabelTheSaw, "🟢 SPAWNEADO! (¡Ve a matarlo!)")
+            else
+                local exactTimer = GetExactBossTimer("The Saw")
+                if exactTimer then
+                    UpdatePara(LabelTheSaw, "🔴 MUERTO\nPróximo Spawn (Holograma Oficial): " .. exactTimer)
+                else
+                    UpdatePara(LabelTheSaw, "🔴 MUERTO\nPróximo Spawn: Esperando sincronización...")
+                end
+            end
+            
+            -- GREYBEARD
+            local greyAlive = false
+            if enemies and enemies:FindFirstChild("Greybeard") then greyAlive = true end
+            
+            if greyAlive then
+                UpdatePara(LabelGreybeard, "🟢 SPAWNEADO! (¡Ve a matarlo!)")
+            else
+                local exactTimer = GetExactBossTimer("Greybeard")
+                if exactTimer then
+                    UpdatePara(LabelGreybeard, "🔴 MUERTO\nPróximo Spawn (Holograma Oficial): " .. exactTimer)
+                else
+                    UpdatePara(LabelGreybeard, "🔴 MUERTO\nPróximo Spawn: Esperando sincronización...")
+                end
+            end
+        end)
+    end
+end)
+
+
+-- ===== TAB SHOP =====
+TabShop:Section({ Title = "Habilidades (Bypass Distancia)" })
+TabShop:Button({ Title = "Comprar Geppo (Skyjump) - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })
+TabShop:Button({ Title = "Comprar Buso (Aura) - $25k", Callback = function() BuyItem("BuyHaki", "Buso", nil, "Ability Teacher") end })
+TabShop:Button({ Title = "Comprar Soru (Flash Step) - $100k", Callback = function() BuyItem("BuyHaki", "Soru", nil, "Ability Teacher") end })
+TabShop:Button({ Title = "Comprar Ken Haki (Observation) - $750k", Callback = function() BuyItem("KenTalk", "Buy", nil, "Instinct Teacher") end })
+
+TabShop:Section({ Title = "Estilos de Pelea (Ghost TP Bypass)" })
+TabShop:Button({ Title = "Dark Step (Teacher) - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
+TabShop:Button({ Title = "Electro (Mad Scientist) - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
+TabShop:Button({ Title = "Water Kung Fu (Teacher) - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
+
+TabShop:Section({ Title = "Espadas Avanzadas (Sword Dealer)" })
+TabShop:Button({ Title = "Katana Clásica - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
+TabShop:Button({ Title = "Dual Katana - $12k", Callback = function() BuyItem("BuyItem", "Dual Katana", nil, "Sword Dealer") end })
+TabShop:Button({ Title = "Iron Mace - $25k", Callback = function() BuyItem("BuyItem", "Iron Mace", nil, "Sword Dealer") end })
+TabShop:Button({ Title = "Triple Katana - $60k", Callback = function() BuyItem("BuyItem", "Triple Katana", nil, "Sword Dealer") end })
+TabShop:Button({ Title = "Pipe (Tubería) - $100k", Callback = function() BuyItem("BuyItem", "Pipe", nil, "Sword Dealer") end })
+TabShop:Button({ Title = "Soul Cane (Bastón) - $750k", Callback = function() BuyItem("BuyItem", "Soul Cane", nil, "Living Skeleton") end })
+TabShop:Button({ Title = "Bisento (Barbablanca) - $1M", Callback = function() BuyItem("BuyItem", "Bisento", nil, "Master Sword Dealer") end })
+
+TabShop:Section({ Title = "Armas de Fuego (Weapon Dealer)" })
+TabShop:Button({ Title = "Slingshot (Resortera) - $5k", Callback = function() BuyItem("BuyItem", "Slingshot", nil, "Weapon Dealer") end })
+TabShop:Button({ Title = "Musket (Mosquete) - $8k", Callback = function() BuyItem("BuyItem", "Musket", nil, "Weapon Dealer") end })
+TabShop:Button({ Title = "Flintlock (Pistola) - $10k", Callback = function() BuyItem("BuyItem", "Flintlock", nil, "Weapon Dealer") end })
+
+
+-- ===== TAB QUEST FARM =====
+
+TabQuest:Section({ Title = "Habilidades Especiales" })
+TabQuest:Button({ 
+    Title = "Auto Desbloquear Ken Haki (Visión) - $750k", 
+    Callback = function() 
+        local data = LocalPlayer:FindFirstChild("Data")
+        local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
+        if lvl >= 300 then
+            BuyItem("KenTalk", "Buy")
+        else
+            warn("❌ Error Polar Hub: Necesitas Nivel 300 para el Ken Haki.")
+        end
+    end 
+})
+
+TabQuest:Section({ Title = "Saber Puzzle (100% Automático)" })
+TabQuest:Paragraph({
+    Title = "Auto Saber Definitivo",
+    Desc = "Presiona INICIAR y el bot viajará por 4 islas, presionará los botones secretos, tomará la antorcha, quemará paredes, y masacrará a los jefes de la mafia y a Shanks de forma autónoma."
+})
+
+TabQuest:Button({
+    Title = "▶ Iniciar Auto Saber Puzzle",
+    Callback = function()
+        if not AutoSaberRunning then
+            FullAutoSaber()
+        end
+    end
+})
+
+TabQuest:Button({
+    Title = "⏹ Detener Auto Saber",
+    Callback = function()
+        AutoSaberRunning = false
+        AutoMobLeaderEnabled = false
+        AutoSaberExpertEnabled = false
+    end
+})
+
+TabQuest:Section({ Title = "Caza de Jefes (Modo Manual)" })
+
+TabQuest:Toggle({
+    Title = "Auto Matar Mob Leader (Nvl 120)",
+    Default = false,
+    Callback = function(v)
+        AutoMobLeaderEnabled = v
+        FastAttackEnabled = v
+    end
+})
+
+TabQuest:Toggle({
+    Title = "Auto Matar Saber Expert / Shanks (Nvl 200)",
+    Default = false,
+    Callback = function(v)
+        AutoSaberExpertEnabled = v
+        FastAttackEnabled = v
+    end
+})
+
+-- ===== TAB TELEPORT =====
+TabTeleport:Section({ Title = "Viajes Dinámicos" })
+
+local SelectedIsland = ""
+TabTeleport:Dropdown({
+    Title = "Isla a Volar",
+    Values = ScanIslands(),
+    Callback = function(Value)
+        SelectedIsland = Value
+    end
+})
+
+TabTeleport:Button({
+    Title = "Volar Hacia Isla (Tween)",
+    Callback = function()
+        local origin = workspace:FindFirstChild("_WorldOrigin")
+        local locs = origin and origin:FindFirstChild("Locations")
+        if locs and SelectedIsland ~= "" and SelectedIsland ~= "None" then
+            local islaObj = locs:FindFirstChild(SelectedIsland)
+            if islaObj then BypassTeleport(islaObj.CFrame * CFrame.new(0, 80, 0)) end
+        end
+    end
+})
+
+
+-- =========================================================
+-- ===== TAB COMBAT PVP (RESTAURADO + ANTI-LAG)         =====
+-- =========================================================
+
+TabCombat:Section({ Title = "Bounty Hunter Tracker" })
+
+local SelectedTarget = nil
+local TargetSetInfo = "Esperando objetivo..."
+
+-- Desplegable para seleccionar jugador
+local PlayerDropdown = TabCombat:Dropdown({
+    Title = "Seleccionar Víctima",
+    Values = {"Nadie"},
+    Callback = function(Value)
+        if Value ~= "Nadie" then
+            SelectedTarget = Players:FindFirstChild(Value)
+        else
+            SelectedTarget = nil
+        end
+    end
+})
+
+-- Función reutilizable para refrescar la lista de jugadores
+local function RefreshPlayerList()
+    local list = {"Nadie"}
+    for _, p in ipairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(list, p.Name) end
+    end
+    pcall(function()
+        if PlayerDropdown.SetValues then
+            PlayerDropdown:SetValues(list)
+        elseif PlayerDropdown.Refresh then
+            PlayerDropdown:Refresh(list)
+        elseif PlayerDropdown.UpdateValues then
+            PlayerDropdown:UpdateValues(list)
+        elseif PlayerDropdown.Set then
+            PlayerDropdown:Set({Values = list})
+        end
+    end)
+end
+
+-- Poblar la lista al cargar
+task.delay(2, RefreshPlayerList)
+
+TabCombat:Button({
+    Title = "🔄 Actualizar Lista del Servidor",
+    Callback = function()
+        RefreshPlayerList()
+    end
+})
+
+local LabelTargetInfo = TabCombat:Paragraph({
+    Title = "Inspección Táctica (Set & Stats)",
+    Desc = TargetSetInfo
+})
+
+-- Auto-refrescar lista cuando entran/salen jugadores
+Players.PlayerAdded:Connect(function() task.delay(1, RefreshPlayerList) end)
+Players.PlayerRemoving:Connect(function(p)
+    if SelectedTarget == p then SelectedTarget = nil end
+    task.delay(0.5, RefreshPlayerList)
+end)
+
+-- Bucle para extraer los datos del jugador seleccionado en tiempo real
+task.spawn(function()
+    while task.wait(1.5) do
+        if SelectedTarget and SelectedTarget.Parent and SelectedTarget.Character then
+            local bounty = "Oculto"
+            pcall(function()
+                local data = SelectedTarget:FindFirstChild("Data")
+                if data and data:FindFirstChild("Bounty") then
+                    bounty = tostring(data.Bounty.Value)
+                elseif SelectedTarget:FindFirstChild("leaderstats") and SelectedTarget.leaderstats:FindFirstChild("Bounty") then
+                    bounty = tostring(SelectedTarget.leaderstats.Bounty.Value)
+                end
+            end)
+            
+            local armas = ""
+            pcall(function()
+                for _, item in ipairs(SelectedTarget.Character:GetChildren()) do
+                    if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
+                end
+                local bp = SelectedTarget:FindFirstChild("Backpack")
+                if bp then
+                    for _, item in ipairs(bp:GetChildren()) do
+                        if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
+                    end
+                end
+            end)
+            if armas == "" then armas = "Manos vacías" else armas = string.sub(armas, 1, -3) end
+
+            -- Datos extra: nivel, salud, fruta
+            local extraInfo = ""
+            pcall(function()
+                local hum = SelectedTarget.Character:FindFirstChild("Humanoid")
+                if hum then
+                    extraInfo = string.format("\n❤️ HP: %d/%d", math.floor(hum.Health), math.floor(hum.MaxHealth))
+                end
+                local data = SelectedTarget:FindFirstChild("Data")
+                if data then
+                    local lvl = data:FindFirstChild("Level")
+                    if lvl then extraInfo = extraInfo .. "\n📊 Nivel: " .. tostring(lvl.Value) end
+                    local fruit = data:FindFirstChild("BloxFruit")
+                    if fruit and fruit.Value ~= "" then extraInfo = extraInfo .. "\n🍎 Fruta: " .. tostring(fruit.Value) end
+                end
+            end)
+
+            local info = string.format("🎯 Objetivo: %s\n💰 Bounty: %s\n⚔️ Inventario/Armas: %s%s", SelectedTarget.Name, bounty, armas, extraInfo)
+            
+            pcall(function()
+                if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc(info)
+                elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = info}) end
+            end)
+        else
+            pcall(function()
+                if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc("Selecciona un jugador válido...")
+                elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = "Selecciona un jugador válido..."}) end
+            end)
+        end
+    end
+end)
+
+TabCombat:Button({
+    Title = "🚀 Teletransportarse al Objetivo",
+    Callback = function()
+        if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
+            BypassTeleport(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+        end
+    end
+})
+
+-- ==================== MODO COMBATE (TOGGLE MAESTRO) ====================
+-- ANTI-LAG: Los hooks y bucles de Hitbox/Silent Aim NO se ejecutan
+-- hasta que actives este toggle. Esto garantiza 0 lag si no estás en PvP.
+TabCombat:Section({ Title = "⚡ Modo Combate (Anti-Lag)" })
+
+local CombatModeEnabled = false
+local CombatHooksInjected = false -- Flag para inyectar hooks solo 1 vez
+
+TabCombat:Toggle({
+    Title = "⚡ Activar Modo Combate",
+    Desc = "ACTIVA ESTO PRIMERO. Sin esto, Hitbox y Silent Aim no funcionarán. Desactívalo cuando no hagas PvP para eliminar lag.",
+    Callback = function(Value)
+        CombatModeEnabled = Value
+        if Value and not CombatHooksInjected then
+            CombatHooksInjected = true
+            -- Inyectar hooks SOLO la primera vez que se activa
+            -- (ver abajo: se inyectan al final de esta sección)
+        end
+    end
+})
+
+-- ==================== HITBOX EXPANDER ====================
+TabCombat:Section({ Title = "Aimbot & Hitbox" })
+
+local HitboxEnabled = false
+local HitboxSizeValue = 15
+local HITBOX_ORIGINAL_SIZE = Vector3.new(2, 2, 1)
+local lastHitboxUpdate = 0
+
+-- Función centralizada de limpieza de hitboxes
+local function RestoreAllHitboxes()
+    for _, p in ipairs(Players:GetPlayers()) do
+        pcall(function()
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+                p.Character.HumanoidRootPart.Transparency = 1
+                p.Character.HumanoidRootPart.CanCollide = true
+                p.Character.HumanoidRootPart.Material = Enum.Material.Plastic
+            end
+        end)
+    end
+end
+
+TabCombat:Toggle({
+    Title = "Activar Hitbox Expander",
+    Desc = "Aumenta la caja de colisión de los enemigos. Requiere Modo Combate activado. (15-25 es óptimo)",
+    Callback = function(Value)
+        HitboxEnabled = Value
+        if not Value then RestoreAllHitboxes() end
+    end
+})
+
+TabCombat:Slider({
+    Title = "Tamaño de Hitbox",
+    Value = { Min = 5, Max = 40, Default = 15 },
+    Callback = function(Value)
+        HitboxSizeValue = Value
+    end
+})
+
+-- Restaurar hitboxes cuando un jugador muere (evita artefactos visuales)
+for _, p in ipairs(Players:GetPlayers()) do
+    if p ~= LocalPlayer then
+        p.CharacterRemoving:Connect(function(oldChar)
+            pcall(function()
+                if oldChar:FindFirstChild("HumanoidRootPart") then
+                    oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+                    oldChar.HumanoidRootPart.Transparency = 1
+                end
+            end)
+        end)
+    end
+end
+Players.PlayerAdded:Connect(function(p)
+    p.CharacterRemoving:Connect(function(oldChar)
+        pcall(function()
+            if oldChar:FindFirstChild("HumanoidRootPart") then
+                oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+                oldChar.HumanoidRootPart.Transparency = 1
+            end
+        end)
+    end)
+end)
+
+-- Bucle de Hitbox con throttling (5 veces/seg) Y gateado por CombatModeEnabled
+RunService.Heartbeat:Connect(function()
+    if CombatModeEnabled and HitboxEnabled and tick() - lastHitboxUpdate > 0.05 then
+        lastHitboxUpdate = tick()
+        for _, p in ipairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                pcall(function()
+                    local hrp = p.Character.HumanoidRootPart
+                    hrp.Size = Vector3.new(HitboxSizeValue, HitboxSizeValue, HitboxSizeValue)
+                    hrp.Transparency = 0.6
+                    hrp.Color = Color3.fromRGB(255, 0, 0)
+                    hrp.Material = Enum.Material.Neon
+                    hrp.CanCollide = false
+                end)
+            end
+        end
+    end
+end)
+
+-- ==================== SILENT AIM (TÉCNICA AVANZADA - checkcaller) ====================
+-- Usa checkcaller() para romper la recursión de __index:
+-- Cuando NUESTRO HOOK lee propiedades (.Character, .Name) → checkcaller() = true → pasa directo
+-- Cuando el JUEGO lee Mouse.Hit → checkcaller() = false → interceptamos y redirigimos
+-- Esta es la técnica estándar de los script hubs profesionales.
+
+local SilentAimEnabled = false
+local BringTargetEnabled = false
+
+TabCombat:Toggle({
+    Title = "Silent Aim (Full Aimbot)",
+    Desc = "Redirige Mouse.Hit, remotos y skills al objetivo. Armas como Tirachinas apuntan solas. Requiere Modo Combate.",
+    Callback = function(Value)
+        SilentAimEnabled = Value
+    end
+})
+
+TabCombat:Toggle({
+    Title = "Bring Target (Atraer Víctima)",
+    Desc = "Teletransporta la víctima frente a ti. Combo letal con Silent Aim. Requiere Modo Combate.",
+    Callback = function(Value)
+        BringTargetEnabled = Value
+    end
+})
+
+TabCombat:Section({ Title = "Combate Extremo" })
+
+local KillAuraEnabled = false
+TabCombat:Toggle({
+    Title = "Kill Aura (Destrucción Total)",
+    Desc = "Daña a todos los enemigos o jugadores a tu alrededor automáticamente sin apuntar.",
+    Callback = function(Value)
+        KillAuraEnabled = Value
+    end
+})
+
+-- Bring Target: Trae al jugador enemigo cerca de ti (no usa hooks)
+
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if CombatModeEnabled and BringTargetEnabled then
+            pcall(function()
+                local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                local enemyHrp = SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart")
+                if myHrp and enemyHrp then
+                    enemyHrp.CFrame = myHrp.CFrame * CFrame.new(0, 0, -5)
+                    enemyHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                end
+            end)
+        end
+    end
+end)
+
+-- Remotos de combate
+local COMBAT_REMOTE_NAMES = {
+    ["RE/RegisterHit"] = true, ["RE/RegisterAttack"] = true,
+    ["RE/AttackTarget"] = true, ["RE/DealDamage"] = true,
+    ["RE/CombatEvent"] = true, ["RE/UseSkill"] = true,
+    ["RE/Shoot"] = true, ["RE/ShootGun"] = true,
+    ["RE/Projectile"] = true, ["RE/GunEvent"] = true,
+}
+local COMBAT_KEYWORDS = {"hit", "attack", "damage", "shoot", "skill", "combat", "projectile", "gun"}
+
+-- ============ HOOKS DE PROTECCIÓN PROFUNDA (ANTI-CHEAT BYPASS) ============
+-- Intercepta intentos del Anti-Cheat local de borrarnos la GUI o patearnos
+pcall(function()
+    local OldNewIndex
+    OldNewIndex = hookmetamethod(game, "__newindex", newcclosure(function(self, key, value)
+        if not checkcaller() then
+            if (self.Name == "PlayerGui" or self == LocalPlayer) and key == "Parent" and value == nil then
+                return -- Anular el borrado silencioso
+            end
+        end
+        return OldNewIndex(self, key, value)
+    end))
+end)
+
+-- ============ HOOK __namecall (con checkcaller) ============
+-- Intercepta FireServer para combate y bloquea Destroy/Kick del Anti-Cheat
+pcall(function()
+    local OldNamecall
+    OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        
+        -- BLOQUEADOR DE CASTIGOS (Anti-Cheat Bypass):
+        if not checkcaller() then
+            if method == "Destroy" or method == "ClearAllChildren" or method == "Remove" then
+                if self.Name == "PlayerGui" or self == LocalPlayer then
+                    return -- Anular la ejecución (Bloqueado)
+                end
+            elseif method == "Kick" or method == "kick" then
+                if self == LocalPlayer then
+                    return -- Anular el Kick
+                end
+            end
+        end
+
+        -- Si no está activo el combate, pasar directo
+        if not CombatModeEnabled or not SilentAimEnabled then
+            return OldNamecall(self, ...)
+        end
+        
+        -- checkcaller: si somos nosotros los que llamamos, no interceptar (anti-recursión)
+        if checkcaller and checkcaller() then
+            return OldNamecall(self, ...)
+        end
+        
+        local method = getnamecallmethod()
+        if method ~= "FireServer" and method ~= "InvokeServer" then
+            return OldNamecall(self, ...)
+        end
+        
+        if typeof(self) ~= "Instance" then
+            return OldNamecall(self, ...)
+        end
+        
+        -- Seguro: con checkcaller, podemos usar :IsA() sin recursión
+        if not self:IsA("RemoteEvent") and not self:IsA("RemoteFunction") then
+            return OldNamecall(self, ...)
+        end
+        
+        -- Verificar si es remoto de combate (Optimizado Anti-Lag)
+        local remoteName = self.Name
+        local isCombat = COMBAT_REMOTE_NAMES[remoteName]
+        if isCombat == nil then
+            local lower = string.lower(remoteName)
+            for _, kw in ipairs(COMBAT_KEYWORDS) do
+                if string.find(lower, kw) then isCombat = true break end
+            end
+            if not isCombat and self.Parent then
+                local pn = self.Parent.Name
+                if pn == "Net" or pn == "Remotes" then isCombat = true end
+            end
+            COMBAT_REMOTE_NAMES[remoteName] = isCombat or false
+        end
+        
+        if not isCombat then
+            return OldNamecall(self, ...)
+        end
+        
+        -- Redirigir al target
+        if SelectedTarget and SelectedTarget.Parent and SelectedTarget.Character then
+            local targetHrp = SelectedTarget.Character:FindFirstChild("HumanoidRootPart")
+            if targetHrp then
+                local args = {...}
+                for i, v in pairs(args) do
+                    if typeof(v) == "CFrame" then args[i] = targetHrp.CFrame
+                    elseif typeof(v) == "Vector3" then args[i] = targetHrp.Position end
+                end
+                return OldNamecall(self, unpack(args))
+            end
+        end
+        
+        return OldNamecall(self, ...)
+    end))
+end)
+
+-- ============ HOOK __index (con checkcaller + newcclosure) ============
+-- Intercepta Mouse.Hit / Mouse.Target para que armas apunten al objetivo
+-- checkcaller() rompe la recursión: nuestro código pasa directo, el juego se intercepta
+pcall(function()
+    local OldIndex
+    OldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
+        -- ANTI-RECURSIÓN PRINCIPAL: Si nuestro propio script está leyendo propiedades, NO interceptar
+        -- checkcaller() = true cuando NUESTRO código llama → pasa al original sin procesar
+        -- checkcaller() = false cuando el JUEGO llama → aplicamos la redirección
+        if not checkcaller or checkcaller() then
+            return OldIndex(self, key)
+        end
+        
+        -- Si no está activo, pasar directo (0 CPU)
+        if not CombatModeEnabled or not SilentAimEnabled then
+            return OldIndex(self, key)
+        end
+        
+        -- Solo nos interesan Hit y Target del Mouse
+        if key ~= "Hit" and key ~= "Target" then
+            return OldIndex(self, key)
+        end
+        
+        -- Verificar que tenemos un objetivo válido
+        if not SelectedTarget or not SelectedTarget.Parent then
+            return OldIndex(self, key)
+        end
+        
+        -- Verificar que self es el Mouse del jugador (comparación segura)
+        local isOurMouse = false
+        pcall(function()
+            isOurMouse = (self == LocalPlayer:GetMouse())
+        end)
+        if not isOurMouse then
+            return OldIndex(self, key)
+        end
+        
+        -- Obtener HRP del target
+        local targetHrp = nil
+        pcall(function()
+            targetHrp = SelectedTarget.Character.HumanoidRootPart
+        end)
+        if not targetHrp then
+            return OldIndex(self, key)
+        end
+        
+        -- Redirigir Mouse.Hit y Mouse.Target
+        if key == "Hit" then
+            return targetHrp.CFrame
+        elseif key == "Target" then
+            return targetHrp
+        end
+        
+        return OldIndex(self, key)
+    end))
+end)
+
+-- ===== TAB MISC =====
+TabMisc:Section({ Title = "Utilidades Extra" })
+
+local FruitFinderEnabled = false
+local foundFruits = {}
+TabMisc:Toggle({
+    Title = "Buscador de Frutas (Fruit Finder)",
+    Desc = "Notifica si aparece una fruta en el mapa.",
+    Callback = function(Value)
+        FruitFinderEnabled = Value
+    end
+})
+
+local FlyEnabled = false
+local flySpeed = 50
+local flyBodyMover = nil
+TabMisc:Toggle({
+    Title = "Modo Fly Libre",
+    Desc = "Vuela usando W A S D y tu cámara.",
+    Callback = function(Value)
+        FlyEnabled = Value
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if Value and hrp then
+            local bp = Instance.new("BodyVelocity", hrp)
+            bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bp.Velocity = Vector3.new(0, 0, 0)
+            flyBodyMover = bp
+            
+            local bg = Instance.new("BodyGyro", hrp)
+            bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bg.D = 10
+            bg.CFrame = hrp.CFrame
+            flyBodyMover.Name = "Polar_Fly"
+            bg.Name = "Polar_FlyG"
+        else
+            if hrp then
+                local b1 = hrp:FindFirstChild("Polar_Fly")
+                local b2 = hrp:FindFirstChild("Polar_FlyG")
+                if b1 then b1:Destroy() end
+                if b2 then b2:Destroy() end
+            end
+            flyBodyMover = nil
+        end
+    end
+})
+
+local AutoRejoinEnabled = false
+TabMisc:Toggle({
+    Title = "Auto Rejoin",
+    Desc = "Te reconecta al instante si eres expulsado.",
+    Callback = function(Value)
+        AutoRejoinEnabled = Value
+    end
+})
+
+TabMisc:Section({ Title = "Movimiento" })
+
+TabMisc:Slider({
+    Title = "Nivel de Velocidad",
+    Value = { Min = 16, Max = 500, Default = 16 },
+    Callback = function(Value)
+        sVal = Value
+    end
+})
+
+TabMisc:Toggle({
+    Title = "Control de Velocidad",
+    Callback = function(Value)
+        sAct = Value
+    end
+})
+
+TabMisc:Toggle({
+    Title = "Salto Infinito",
+    Callback = function(Value)
+        iJ = Value
+    end
+})
+
+TabMisc:Toggle({
+    Title = "Atravesar Paredes (NoClip)",
+    Callback = function(Value)
+        ncl = Value
+    end
+})
+
+TabMisc:Toggle({
+    Title = "Caminar sobre el Agua",
+    Callback = function(Value)
+        walkWaterEnabled = Value
+    end
+})
+
+TabMisc:Section({ Title = "Sistema" })
+
+TabMisc:Button({
+    Title = "Server Hop (Saltar Servidor)",
+    Callback = function()
+        ServerHop()
+    end
+})
+
+-- ==================== LOGICA DE UTILIDADES Y COMBATE EXTREMO ====================
+
+task.spawn(function()
+    while true do
+        task.wait(1)
+        if AutoSkillsEnabled and (AutoFarmEnabled or AutoFarmBossEnabled or AutoFarmAllBossesEnabled or AutoSaberExpertEnabled or AutoMobLeaderEnabled or AutoFarmNearestEnabled) then
+            pcall(function()
+                VirtualUser:CaptureController()
+                VirtualUser:SetKeyDown("Z") task.wait(0.1) VirtualUser:SetKeyUp("Z") task.wait(0.1)
+                VirtualUser:SetKeyDown("X") task.wait(0.1) VirtualUser:SetKeyUp("X") task.wait(0.1)
+                VirtualUser:SetKeyDown("C") task.wait(0.1) VirtualUser:SetKeyUp("C") task.wait(0.1)
+                VirtualUser:SetKeyDown("V") task.wait(0.1) VirtualUser:SetKeyUp("V") task.wait(0.1)
+                VirtualUser:SetKeyDown("F") task.wait(0.1) VirtualUser:SetKeyUp("F")
+            end)
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(2)
+        if FruitFinderEnabled then
+            for _, v in ipairs(workspace:GetDescendants()) do
+                if v:IsA("Tool") and string.find(string.lower(v.Name), "fruit") and not foundFruits[v] then
+                    foundFruits[v] = true
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "🍎 ¡FRUTA ENCONTRADA!",
+                        Text = "Se ha encontrado: " .. v.Name,
+                        Duration = 10
+                    })
+                end
+            end
+        end
+    end
+end)
+
+task.spawn(function()
+    while true do
+        task.wait(0.15)
+        if KillAuraEnabled and RegisterHit and RegisterAttack then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local targets = {}
+                local mainTargetPart = nil
+
+                if enemiesFolder then
+                    local targetEnemyName = GetCurrentTargetEnemyName()
+                    local farmingActive = (AutoFarmNearestEnabled or AutoFarmBossEnabled or AutoFarmAllBossesEnabled or AutoSaberExpertEnabled or AutoMobLeaderEnabled or CurrentBotState ~= STATE_IDLE)
+                    
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        if farmingActive and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
+                            continue
+                        end
+                        
+                        local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                        local hum = npc:FindFirstChild("Humanoid")
+                        local ff = npc:FindFirstChildOfClass("ForceField")
+                        if nHrp and nHrp.Parent and hum and hum.Parent and hum.Health > 0 and not ff and (nHrp.Position - hrp.Position).Magnitude < 60 then
+                            table.insert(targets, {npc, nHrp})
+                            if not mainTargetPart then mainTargetPart = nHrp end
+                            if #targets >= 8 then break end
+                        end
+                    end
+                end
+                
+                -- FIX ANTI-CHEAT: Validar herramienta y objetivo
+                local currentTool = char:FindFirstChildOfClass("Tool")
+                local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
+                
+                if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+                    pcall(function()
+                        RegisterAttack:FireServer(0)
+                        RegisterHit:FireServer(mainTargetPart, targets)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if FlyEnabled and flyBodyMover then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChild("Humanoid")
+        if hrp and hum then
+            local dir = Vector3.new()
+            local cam = workspace.CurrentCamera
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then dir = dir + cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then dir = dir - cam.CFrame.LookVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then dir = dir - cam.CFrame.RightVector end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then dir = dir + cam.CFrame.RightVector end
+            
+            flyBodyMover.Velocity = dir * flySpeed
+            local bg = hrp:FindFirstChild("Polar_FlyG")
+            if bg then bg.CFrame = cam.CFrame end
+        end
+    end
+end)
+
+local CoreGui = game:GetService("CoreGui")
+local promptOverlay = CoreGui:FindFirstChild("RobloxPromptGui") and CoreGui.RobloxPromptGui:FindFirstChild("promptOverlay")
+if promptOverlay then
+    promptOverlay.ChildAdded:Connect(function(child)
+        if child.Name == "ErrorPrompt" and AutoRejoinEnabled then
+            task.wait(2)
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end
+    end)
+end
+
+print("✅ Polar Hub cargado exitosamente.")
