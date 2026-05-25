@@ -1,6 +1,6 @@
 -- Polar HUB | loadstring ready
 -- Subir a GitHub como archivo raw y usar este comando en tu ejecutor:
--- loadstring(game:HttpGet("AQUI_TU_LINK_RAW_DE_GITHUB"))()
+-- loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/main.lua"))()
 
 -- Esperar a que el juego cargue completamente antes de inyectar
 repeat task.wait() until game:IsLoaded()
