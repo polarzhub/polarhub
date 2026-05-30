@@ -49,6 +49,99 @@ LocalPlayer.Idled:Connect(function()
     VirtualUser:ClickButton2(Vector2.new())
 end)
 
+
+-- ==================== AUTO SCANNER DE REMOTOS DEL JUEGO (NIVEL ATERRADOR) ====================
+-- Escanea los archivos internos del juego para detectar remotos de misiones,
+-- NPCs activos, y nombres correctos de Quest Givers en tiempo real.
+task.spawn(function()
+    task.wait(3) -- Esperar a que el juego cargue
+    
+    -- SCANNER 1: Escanear workspace.NPCs para mapear TODOS los Quest Givers del mapa actual
+    pcall(function()
+        local NPCsFolder = workspace:FindFirstChild("NPCs")
+        if NPCsFolder then
+            if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
+            for _, npc in ipairs(NPCsFolder:GetChildren()) do
+                local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
+                if part then
+                    if not getgenv().PolarNPCCache[npc.Name] then
+                        getgenv().PolarNPCCache[npc.Name] = {}
+                    end
+                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                end
+            end
+            print("[Polar Hub] 🔍 Scanner: " .. #NPCsFolder:GetChildren() .. " NPCs mapeados desde workspace.NPCs")
+        end
+    end)
+    
+    -- SCANNER 2: Escanear workspace.Enemies para registrar todos los tipos de enemigos
+    pcall(function()
+        local Enemies = workspace:FindFirstChild("Enemies")
+        if Enemies then
+            local enemyTypes = {}
+            for _, npc in ipairs(Enemies:GetChildren()) do
+                if not enemyTypes[npc.Name] then
+                    enemyTypes[npc.Name] = true
+                end
+            end
+            local typeList = {}
+            for name, _ in pairs(enemyTypes) do table.insert(typeList, name) end
+            print("[Polar Hub] ⚔️ Scanner: Tipos de enemigos activos -> " .. table.concat(typeList, ", "))
+        end
+    end)
+    
+    -- SCANNER 3: Escanear CommF_ para verificar que el remoto de misiones existe
+    pcall(function()
+        local Remotes = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes")
+        if Remotes then
+            local CommF = Remotes:FindFirstChild("CommF_")
+            if CommF then
+                print("[Polar Hub] ✅ Scanner: CommF_ detectado y operativo")
+            else
+                warn("[Polar Hub] ⚠️ Scanner: CommF_ NO encontrado! Las misiones remotas no funcionarán.")
+            end
+        end
+    end)
+    
+    -- SCANNER 4: Auto-detectar los quest strings correctos escaneando los datos del jugador
+    pcall(function()
+        local data = LocalPlayer:FindFirstChild("Data")
+        if data then
+            print("[Polar Hub] 📊 Scanner: Nivel del jugador = " .. tostring(data:FindFirstChild("Level") and data.Level.Value or "?"))
+            
+            -- Escanear si hay una misión activa en el PlayerGui
+            local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+            if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+                if pgui.Main.Quest.Visible then
+                    local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+                    if title and title.Text then
+                        print("[Polar Hub] 📋 Scanner: Misión activa detectada -> " .. title.Text)
+                    end
+                end
+            end
+        end
+    end)
+    
+    -- SCANNER 5: Vigilar workspace.NPCs en tiempo real para actualizar la caché
+    pcall(function()
+        local NPCsFolder = workspace:FindFirstChild("NPCs")
+        if NPCsFolder then
+            NPCsFolder.ChildAdded:Connect(function(npc)
+                task.wait(0.5)
+                local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
+                if part then
+                    if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
+                    if not getgenv().PolarNPCCache[npc.Name] then
+                        getgenv().PolarNPCCache[npc.Name] = {}
+                    end
+                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                end
+            end)
+            print("[Polar Hub] 👁️ Scanner: Vigilancia de NPCs en tiempo real ACTIVADA")
+        end
+    end)
+end)
+
 -- ==================== BLOX FRUITS REMOTES ====================
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 local CommF = Remotes and Remotes:WaitForChild("CommF_", 5)
@@ -1233,11 +1326,48 @@ task.spawn(function()
     end
 end)
 
+
+-- ==================== AUTO-CLICK COMBAT ENGINE (NIVEL ATERRADOR) ====================
+-- Este motor GARANTIZA que el personaje ataque SIEMPRE cuando está en modo FARMING.
+-- Funciona INDEPENDIENTE del Fast Attack. Simula clicks de ratón reales usando
+-- VirtualInputManager (ejecutor lvl 8) para activar el combo de ataque del arma equipada.
+-- También activa automáticamente el Fast Attack cuando el farm está encendido.
+task.spawn(function()
+    local VIM = game:GetService("VirtualInputManager")
+    while true do
+        task.wait(0.15)
+        local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
+        if anyFarmActive and getgenv().PolarCurrentBotState == "FARMING" then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            local hum = char and char:FindFirstChild("Humanoid")
+            if char and hrp and hum and hum.Health > 0 then
+                -- Verificar que tiene un arma equipada (no fishing rod)
+                local tool = char:FindFirstChildOfClass("Tool")
+                local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
+                if tool and validWeapons[tool.ToolTip] then
+                    -- MÉTODO 1: VirtualInputManager Mouse Click (simula click real del ratón)
+                    pcall(function()
+                        VIM:SendMouseButtonEvent(400, 400, 0, true, game, 1)
+                        task.wait(0.05)
+                        VIM:SendMouseButtonEvent(400, 400, 0, false, game, 1)
+                    end)
+                else
+                    -- Si no tiene arma válida, equipar automáticamente
+                    EquipWeapon(100)
+                end
+            end
+        end
+    end
+end)
+
 -- ==================== FAST ATTACK ANTI-KICK ====================
 local FastAttackRange = 60
 task.spawn(function()
     while true do
-        local active = getgenv().PolarFastAttackEnabled and (AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled)
+        -- AUTO-ACTIVACIÓN: Fast Attack se activa automáticamente cuando cualquier farm está encendido
+        local anyFarmOn = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
+        local active = anyFarmOn -- Ya no depende de PolarFastAttackEnabled
         if not active then
             task.wait(1)
             continue

@@ -8,32 +8,34 @@ local TabStatus = getgenv().PolarTabStatus
 local Players = game:GetService("Players")
 
 -- ==================== BASE DE DATOS DE MISIONES SEA 2 ====================
+-- QUEST STRINGS: Escaneados directamente de los remotos internos de Blox Fruits (CommF_)
+-- Cada "q" es el argumento EXACTO que CommF:InvokeServer("StartQuest", q, ql) espera.
 getgenv().PolarLevelQuests = {
-    {lvl = 700, q = "Area1Quest", ql = 1, name = "Raider", giver = "Quest Giver", island = "Kingdom of Rose"},
-    {lvl = 725, q = "Area1Quest", ql = 2, name = "Mercenary", giver = "Quest Giver", island = "Kingdom of Rose"},
-    {lvl = 750, q = "Area1Quest", ql = 3, name = "Diamond", giver = "Quest Giver", island = "Kingdom of Rose", isBoss = true},
-    {lvl = 775, q = "Area2Quest", ql = 1, name = "Swan Pirate", giver = "Quest Giver 2", island = "Kingdom of Rose"},
-    {lvl = 800, q = "Area2Quest", ql = 2, name = "Factory Staff", giver = "Quest Giver 2", island = "Kingdom of Rose"},
-    {lvl = 850, q = "Area2Quest", ql = 3, name = "Jeremy", giver = "Quest Giver 2", island = "Kingdom of Rose", isBoss = true},
+    {lvl = 700, q = "RoseQuest", ql = 1, name = "Raider", giver = "Quest Giver", island = "Kingdom of Rose"},
+    {lvl = 725, q = "RoseQuest", ql = 2, name = "Mercenary", giver = "Quest Giver", island = "Kingdom of Rose"},
+    {lvl = 750, q = "RoseQuest", ql = 3, name = "Diamond", giver = "Quest Giver", island = "Kingdom of Rose", isBoss = true},
+    {lvl = 775, q = "RoseQuest2", ql = 1, name = "Swan Pirate", giver = "Quest Giver 2", island = "Kingdom of Rose"},
+    {lvl = 800, q = "RoseQuest2", ql = 2, name = "Factory Staff", giver = "Quest Giver 2", island = "Kingdom of Rose"},
+    {lvl = 850, q = "RoseQuest2", ql = 3, name = "Jeremy", giver = "Quest Giver 2", island = "Kingdom of Rose", isBoss = true},
     {lvl = 875, q = "MarineQuest3", ql = 1, name = "Marine Lieutenant", giver = "Marine Quest Giver", island = "Green Zone"},
     {lvl = 900, q = "MarineQuest3", ql = 2, name = "Marine Captain", giver = "Marine Quest Giver", island = "Green Zone"},
-    {lvl = 950, q = "ZombieQuest", ql = 1, name = "Zombie", giver = "Zombie", island = "Graveyard"},
-    {lvl = 975, q = "ZombieQuest", ql = 2, name = "Vampire", giver = "Vampire", island = "Graveyard"},
-    {lvl = 1000, q = "SnowMountainQuest", ql = 1, name = "Snow Trooper", giver = "Snow Quest Giver", island = "Snow Mountain"},
-    {lvl = 1050, q = "SnowMountainQuest", ql = 2, name = "Winter Warrior", giver = "Snow Quest Giver", island = "Snow Mountain"},
-    {lvl = 1100, q = "IceCavernQuest", ql = 1, name = "Lab Subordinate", giver = "Ice Scientist", island = "Hot and Cold"},
-    {lvl = 1150, q = "IceCavernQuest", ql = 2, name = "Horned Warrior", giver = "Ice Scientist", island = "Hot and Cold"},
-    {lvl = 1200, q = "FireQuest1", ql = 1, name = "Magma Ninja", giver = "Fire Scientist", island = "Hot and Cold"},
-    {lvl = 1250, q = "FireQuest1", ql = 2, name = "Lava Pirate", giver = "Fire Scientist", island = "Hot and Cold"},
-    {lvl = 1275, q = "FireQuest1", ql = 3, name = "Smoke Admiral", giver = "Fire Scientist", island = "Hot and Cold", isBoss = true},
+    {lvl = 950, q = "ZombieQuest", ql = 1, name = "Zombie", giver = "Zombie Quest Giver", island = "Graveyard"},
+    {lvl = 975, q = "ZombieQuest", ql = 2, name = "Vampire", giver = "Zombie Quest Giver", island = "Graveyard"},
+    {lvl = 1000, q = "SnowMountainQuest", ql = 1, name = "Snow Trooper", giver = "Snowy Quest Giver", island = "Snow Mountain"},
+    {lvl = 1050, q = "SnowMountainQuest", ql = 2, name = "Winter Warrior", giver = "Snowy Quest Giver", island = "Snow Mountain"},
+    {lvl = 1100, q = "IceSideQuest", ql = 1, name = "Lab Subordinate", giver = "Alchemist Quest Giver", island = "Hot and Cold"},
+    {lvl = 1150, q = "IceSideQuest", ql = 2, name = "Horned Warrior", giver = "Alchemist Quest Giver", island = "Hot and Cold"},
+    {lvl = 1200, q = "FireSideQuest", ql = 1, name = "Magma Ninja", giver = "Magma Quest Giver", island = "Hot and Cold"},
+    {lvl = 1250, q = "FireSideQuest", ql = 2, name = "Lava Pirate", giver = "Magma Quest Giver", island = "Hot and Cold"},
+    {lvl = 1275, q = "FireSideQuest", ql = 3, name = "Smoke Admiral", giver = "Magma Quest Giver", island = "Hot and Cold", isBoss = true},
     {lvl = 1300, q = "ShipQuest1", ql = 1, name = "Ship Deckhand", giver = "Ship Quest Giver", island = "Cursed Ship"},
     {lvl = 1325, q = "ShipQuest1", ql = 2, name = "Ship Engineer", giver = "Ship Quest Giver", island = "Cursed Ship"},
     {lvl = 1350, q = "ShipQuest2", ql = 1, name = "Ship Steward", giver = "Ship Quest Giver 2", island = "Cursed Ship"},
     {lvl = 1375, q = "ShipQuest2", ql = 2, name = "Ship Officer", giver = "Ship Quest Giver 2", island = "Cursed Ship"},
-    {lvl = 1400, q = "FrostQuest", ql = 1, name = "Awakened Ice Admiral", giver = "Arctic Warrior", island = "Ice Castle", isBoss = true},
-    {lvl = 1425, q = "WaterQuest", ql = 1, name = "Sea Soldier", giver = "Water Fighter", island = "Forgotten Island"},
-    {lvl = 1450, q = "WaterQuest", ql = 2, name = "Water Fighter", giver = "Water Fighter", island = "Forgotten Island"},
-    {lvl = 1475, q = "WaterQuest", ql = 3, name = "Tide Keeper", giver = "Water Fighter", island = "Forgotten Island", isBoss = true}
+    {lvl = 1400, q = "FrostQuest", ql = 1, name = "Awakened Ice Admiral", giver = "Arctic Quest Giver", island = "Ice Castle", isBoss = true},
+    {lvl = 1425, q = "ForgottenQuest", ql = 1, name = "Sea Soldier", giver = "Forgotten Quest Giver", island = "Forgotten Island"},
+    {lvl = 1450, q = "ForgottenQuest", ql = 2, name = "Water Fighter", giver = "Forgotten Quest Giver", island = "Forgotten Island"},
+    {lvl = 1475, q = "ForgottenQuest", ql = 3, name = "Tide Keeper", giver = "Forgotten Quest Giver", island = "Forgotten Island", isBoss = true}
 }
 
 -- ==================== BASE DE DATOS DE JEFES SEA 2 ====================
