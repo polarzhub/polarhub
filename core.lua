@@ -157,27 +157,108 @@ local function BypassTeleport(targetCFrame)
     end
 end
 
--- ==================== ULTIMATE SHOP BYPASS (HOOKMETAMETHOD + GHOST TP) ====================
--- Utiliza funciones exclusivas de ejecutores nivel 8 para bypassear anti-cheats sin lag.
--- Cero lag: Solo corre al hacer clic.
+-- ==================== ULTIMATE GLOBAL BYPASS (HOOKMETAMETHOD LVL 8) ====================
+-- Intercepta TODAS las llamadas a DistanceFromCharacter del juego completo.
+-- Esto hace que el servidor CREA que estás al lado de cualquier NPC, ya sea
+-- para comprar items, agarrar misiones, o interactuar con prompts.
+-- Se activa UNA VEZ al cargar el script y nunca se desactiva.
 local bypassHookInstalled = false
-local function InstallShopBypass()
+local function InstallGlobalBypass()
     if bypassHookInstalled then return end
     pcall(function()
         local oldNamecall
         oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
             local method = getnamecallmethod()
             if not checkcaller() and method == "DistanceFromCharacter" then
-                return 0 -- Engañar al cliente diciendo que la distancia es 0
+                return 0
             end
             return oldNamecall(self, ...)
         end)
         bypassHookInstalled = true
+        print("[Polar Hub] ✅ Bypass Global de Distancia instalado (hookmetamethod lvl 8)")
     end)
+end
+InstallGlobalBypass() -- SE ACTIVA INMEDIATAMENTE
+
+-- ==================== FORCE GET QUEST (MOTOR DE MISIONES AVANZADO) ====================
+-- Función de nivel extremo que GARANTIZA obtener la misión sin importar la distancia.
+-- Combina: hookmetamethod + ghost teleport + fireproximityprompt + position anchoring + retry
+local function ForceGetQuest(qData)
+    if not qData or not qData.q then return false end
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    InstallGlobalBypass()
+
+    -- PASO 1: Intentar remotamente sin moverse (el bypass hace que DistanceFromCharacter = 0)
+    local gotQuest = false
+    for attempt = 1, 3 do
+        pcall(function()
+            CommF:InvokeServer("StartQuest", qData.q, qData.ql)
+        end)
+        task.wait(0.3)
+        if HasQuest() then
+            gotQuest = true
+            break
+        end
+    end
+    if gotQuest then return true end
+
+    -- PASO 2: Si el bypass remoto no bastó, volar al NPC físicamente
+    local giverCF = GetQuestGiverPosition(qData)
+    if not giverCF then
+        -- Cargar la isla primero para que el NPC aparezca en memoria
+        local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
+        if loadPos then
+            BypassTeleport(CFrame.new(loadPos) * CFrame.new(0, 50, 0))
+            task.wait(1.5) -- Esperar a que Roblox cargue los chunks del mapa
+            giverCF = GetQuestGiverPosition(qData)
+        end
+    end
+
+    if giverCF then
+        -- Volar directamente al NPC
+        BypassTeleport(giverCF * CFrame.new(0, 0, 3))
+        task.wait(0.5)
+        -- Anclar posición exacta sobre el NPC
+        hrp.CFrame = giverCF * CFrame.new(0, 0, 3)
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        task.wait(0.3)
+
+        -- PASO 3: Disparar ProximityPrompts del NPC (técnica de ejecutor lvl 8)
+        pcall(function()
+            for _, npc in ipairs(workspace:GetDescendants()) do
+                if npc:IsA("Model") and string.find(string.lower(npc.Name), string.lower(qData.giver)) then
+                    for _, child in ipairs(npc:GetDescendants()) do
+                        if child:IsA("ProximityPrompt") and fireproximityprompt then
+                            fireproximityprompt(child)
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(0.3)
+
+        -- PASO 4: Disparar el remoto de misión con reintentos agresivos
+        for attempt = 1, 5 do
+            pcall(function()
+                CommF:InvokeServer("StartQuest", qData.q, qData.ql)
+            end)
+            task.wait(0.4)
+            if HasQuest() then return true end
+            -- Micro-reposicionamiento para forzar al servidor a recalcular
+            hrp.CFrame = giverCF * CFrame.new(math.random(-2, 2), 0, math.random(-2, 2))
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            task.wait(0.2)
+        end
+    end
+
+    return HasQuest()
 end
 
 local function BuyItem(action, arg1, arg2, npcName)
-    InstallShopBypass()
+    InstallGlobalBypass()
     
     task.spawn(function()
         local char = LocalPlayer.Character
@@ -872,31 +953,18 @@ task.spawn(function()
                 end
                 
                 BotActiveQuest = qData.name
-                local giverCF = GetQuestGiverPosition(qData)
-                if giverCF then
-                    if (hrp.Position - giverCF.Position).Magnitude > 15 then
-                        BypassTeleport(giverCF)
-                    else
-                        hrp.CFrame = giverCF
-                        task.wait(0.2)
-                        pcall(function() CommF:InvokeServer("StartQuest", qData.q, qData.ql) end)
-                        QuestTryCount = QuestTryCount + 1
-                        if QuestTryCount > 10 then getgenv().PolarCurrentBotState = STATE_FARMING end
-                        task.wait(0.5)
-                    end
+                
+                -- MOTOR DE MISIONES AVANZADO: ForceGetQuest maneja TODO internamente
+                -- (bypass global + ghost teleport + fireproximityprompt + retry agresivo)
+                local success = ForceGetQuest(qData)
+                
+                if success then
+                    print("[Polar Hub] ✅ Misión obtenida: " .. qData.name)
+                    getgenv().PolarCurrentBotState = STATE_FARMING
                 else
-                    -- FIX EXTREMO: Si el NPC no ha cargado, volar al spawn principal de la isla (Safe Zone) para forzar su renderizado.
-                    local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
-                    if loadPos then
-                        local targetCF = CFrame.new(loadPos) * CFrame.new(0, 30, 0)
-                        if (hrp.Position - targetCF.Position).Magnitude > 50 then
-                            BypassTeleport(targetCF)
-                        else
-                            hrp.CFrame = targetCF
-                            hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                            task.wait(1) -- FIX: Previene el bug de flotar en el aire congelado
-                        end
-                    else
+                    QuestTryCount = QuestTryCount + 1
+                    if QuestTryCount > 5 then
+                        warn("[Polar Hub] ⚠️ No se pudo obtener la misión después de 5 intentos. Farmeando sin misión...")
                         getgenv().PolarCurrentBotState = STATE_FARMING
                     end
                 end
