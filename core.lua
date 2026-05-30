@@ -507,9 +507,25 @@ local HardcodedGivers = {
 local function GetQuestGiverPosition(qData)
     if not qData or not qData.giver then return nil end
     
+    local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
+    
     -- PERFORMANCE BOOST: Leer del escáner dinámico si está disponible
     if getgenv().PolarNPCCache and getgenv().PolarNPCCache[qData.giver] then
-        return getgenv().PolarNPCCache[qData.giver]
+        local cacheList = getgenv().PolarNPCCache[qData.giver]
+        if type(cacheList) == "table" and #cacheList > 0 then
+            local bestCF = cacheList[1]
+            local bestDist = math.huge
+            if spawnPos then
+                for _, cf in ipairs(cacheList) do
+                    local dist = (cf.Position - spawnPos).Magnitude
+                    if dist < bestDist then
+                        bestDist = dist
+                        bestCF = cf
+                    end
+                end
+            end
+            return bestCF
+        end
     end
     
     if HardcodedGivers[qData.giver] then
@@ -518,7 +534,6 @@ local function GetQuestGiverPosition(qData)
     
     local targetNPC = nil
     local minDist = math.huge
-    local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
     
     local function GetValidPart(npc)
         return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
@@ -644,6 +659,60 @@ local function EquipWeapon(targetHealthPercent)
         end
     end
 end
+
+
+-- ==================== AUTO HAKI & AUTO SKILLS ====================
+getgenv().PolarAutoBusoEnabled = false
+getgenv().PolarAutoKenEnabled = false
+getgenv().PolarAutoSkillsEnabled = false
+
+task.spawn(function()
+    local VirtualInputManager = game:GetService("VirtualInputManager")
+    while true do
+        task.wait(2)
+        local char = LocalPlayer.Character
+        if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
+            local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
+            if anyFarmActive then
+                if getgenv().PolarAutoBusoEnabled then
+                    local hasBuso = false
+                    for _, v in ipairs(char:GetChildren()) do
+                        if string.find(string.lower(v.Name), "buso") then hasBuso = true break end
+                    end
+                    if not hasBuso then
+                        pcall(function() CommF:InvokeServer("Buso") end)
+                    end
+                end
+                
+                if getgenv().PolarAutoKenEnabled then
+                    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+                    if pgui and not pgui:FindFirstChild("KenGUI") then
+                        pcall(function()
+                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+                            task.wait(0.1)
+                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+                        end)
+                    end
+                end
+                
+                if getgenv().PolarAutoSkillsEnabled and getgenv().PolarCurrentBotState == "FARMING" then
+                    pcall(function()
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Z, false, game)
+                        task.wait(0.1)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Z, false, game)
+                        task.wait(0.1)
+                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.X, false, game)
+                        task.wait(0.1)
+                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.X, false, game)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+-- ==================== AUTO STATS ====================
+-- Usaremos la función nativa que ya existe: ToggleStat
 
 -- ==================== MÁQUINA DE ESTADOS (STATE MACHINE) ====================
 local STATE_IDLE = "IDLE"
@@ -1529,6 +1598,12 @@ TabTeleport:Button({
 -- =========================================================
 -- ===== TAB COMBAT PVP (RESTAURADO + ANTI-LAG)         =====
 -- =========================================================
+
+
+TabCombat:Section({ Title = "Mejoras de Combate" })
+TabCombat:Toggle({ Title = "Auto Buso Haki (Aura)", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
+TabCombat:Toggle({ Title = "Auto Ken Haki (Observation)", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
+TabCombat:Toggle({ Title = "Auto Skills (Z, X)", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
 
 TabCombat:Section({ Title = "Bounty Hunter Tracker" })
 

@@ -62,7 +62,10 @@ task.spawn(function()
         for _, npc in ipairs(NPCs:GetChildren()) do
             local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
             if part then
-                getgenv().PolarNPCCache[npc.Name] = part.CFrame
+                if not getgenv().PolarNPCCache[npc.Name] then
+                    getgenv().PolarNPCCache[npc.Name] = {}
+                end
+                table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
                 foundCount = foundCount + 1
             end
         end
@@ -70,20 +73,7 @@ task.spawn(function()
     end
 end)
 
--- Interceptor para la función de Quest Givers de Core.lua
-local OriginalGetQuestGiverPosition = nil
-if getgenv().PolarGetQuestGiverPosition then
-    OriginalGetQuestGiverPosition = getgenv().PolarGetQuestGiverPosition
-    getgenv().PolarGetQuestGiverPosition = function(qData)
-        if not qData or not qData.giver then return nil end
-        -- Si está en la caché dinámica del escáner, devolverlo al INSTANTE sin lag:
-        if getgenv().PolarNPCCache and getgenv().PolarNPCCache[qData.giver] then
-            return getgenv().PolarNPCCache[qData.giver]
-        end
-        -- Fallback a la función original de core.lua
-        return OriginalGetQuestGiverPosition(qData)
-    end
-end
+
 
 -- ==================== INTERFAZ DE JEFES ====================
 TabFarm:Section({ Title = "Cazador de Jefes (Sea 2)" })
