@@ -509,23 +509,24 @@ local function GetQuestGiverPosition(qData)
     
     local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
     
-    -- PERFORMANCE BOOST: Leer del escáner dinámico si está disponible
-    if getgenv().PolarNPCCache and getgenv().PolarNPCCache[qData.giver] then
-        local cacheList = getgenv().PolarNPCCache[qData.giver]
-        if type(cacheList) == "table" and #cacheList > 0 then
-            local bestCF = cacheList[1]
-            local bestDist = math.huge
-            if spawnPos then
-                for _, cf in ipairs(cacheList) do
-                    local dist = (cf.Position - spawnPos).Magnitude
-                    if dist < bestDist then
-                        bestDist = dist
-                        bestCF = cf
+    -- PERFORMANCE BOOST: Leer del escáner dinámico usando coincidencias de texto (Fix para Area 1 Quest Giver)
+    if getgenv().PolarNPCCache then
+        local bestGlobalCF = nil
+        local bestGlobalDist = math.huge
+        for npcName, cacheList in pairs(getgenv().PolarNPCCache) do
+            if string.find(string.lower(npcName), string.lower(qData.giver)) then
+                if type(cacheList) == "table" and #cacheList > 0 then
+                    for _, cf in ipairs(cacheList) do
+                        local dist = spawnPos and (cf.Position - spawnPos).Magnitude or 0
+                        if dist < bestGlobalDist then
+                            bestGlobalDist = dist
+                            bestGlobalCF = cf
+                        end
                     end
                 end
             end
-            return bestCF
         end
+        if bestGlobalCF then return bestGlobalCF end
     end
     
     if HardcodedGivers[qData.giver] then
