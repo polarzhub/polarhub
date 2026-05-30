@@ -10,16 +10,26 @@ local LocalPlayer = Players.LocalPlayer
 
 -- ==================== ANTI-CHEAT BYPASS (NIVEL EXECUTOR) ====================
 -- Usamos hookmetamethod para ocultarle al servidor nuestros verdaderos stats
+-- FIX: Caché del humanoide para evitar C Stack Overflow (recursión infinita)
+local myHumanoid = nil
+task.spawn(function()
+    while task.wait(1) do
+        if LocalPlayer.Character then
+            myHumanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+        end
+    end
+end)
+
 local oldIndex, oldNewIndex
 oldIndex = hookmetamethod(game, "__index", function(self, key)
-    if not checkcaller() and self == LocalPlayer.Character:FindFirstChild("Humanoid") then
+    if not checkcaller() and self == myHumanoid then
         if key == "WalkSpeed" then return 16 end
         if key == "JumpPower" then return 50 end
     end
     return oldIndex(self, key)
 end)
 oldNewIndex = hookmetamethod(game, "__newindex", function(self, key, value)
-    if not checkcaller() and self == LocalPlayer.Character:FindFirstChild("Humanoid") then
+    if not checkcaller() and self == myHumanoid then
         if key == "WalkSpeed" or key == "JumpPower" then return end
     end
     return oldNewIndex(self, key, value)
@@ -79,7 +89,7 @@ TabCombat:Dropdown({
     Callback = function(val) getgenv().PolarHitboxTarget = val end
 })
 
-RunService.RenderStepped:Connect(function()
+RunService.Heartbeat:Connect(function()
     if getgenv().PolarHitboxEnabled then
         local size = Vector3.new(getgenv().PolarHitboxSize, getgenv().PolarHitboxSize, getgenv().PolarHitboxSize)
         
