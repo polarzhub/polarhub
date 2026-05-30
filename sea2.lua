@@ -11,9 +11,9 @@ local Players = game:GetService("Players")
 -- QUEST STRINGS: Escaneados directamente de los remotos internos de Blox Fruits (CommF_)
 -- Cada "q" es el argumento EXACTO que CommF:InvokeServer("StartQuest", q, ql) espera.
 getgenv().PolarLevelQuests = {
-    {lvl = 700, q = "RoseQuest", ql = 1, name = "Raider", giver = "Quest Giver", island = "Kingdom of Rose"},
-    {lvl = 725, q = "RoseQuest", ql = 2, name = "Mercenary", giver = "Quest Giver", island = "Kingdom of Rose"},
-    {lvl = 750, q = "RoseQuest", ql = 3, name = "Diamond", giver = "Quest Giver", island = "Kingdom of Rose", isBoss = true},
+    {lvl = 700, q = "RoseQuest", ql = 1, name = "Raider", giver = "Area 1 Quest Giver", island = "Kingdom of Rose"},
+    {lvl = 725, q = "RoseQuest", ql = 2, name = "Mercenary", giver = "Area 1 Quest Giver", island = "Kingdom of Rose"},
+    {lvl = 750, q = "RoseQuest", ql = 3, name = "Diamond", giver = "Area 1 Quest Giver", island = "Kingdom of Rose", isBoss = true},
     {lvl = 775, q = "RoseQuest2", ql = 1, name = "Swan Pirate", giver = "Quest Giver 2", island = "Kingdom of Rose"},
     {lvl = 800, q = "RoseQuest2", ql = 2, name = "Factory Staff", giver = "Quest Giver 2", island = "Kingdom of Rose"},
     {lvl = 850, q = "RoseQuest2", ql = 3, name = "Jeremy", giver = "Quest Giver 2", island = "Kingdom of Rose", isBoss = true},
