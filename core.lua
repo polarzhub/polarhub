@@ -273,82 +273,7 @@ local function InstallGlobalBypass()
 end
 InstallGlobalBypass() -- SE ACTIVA INMEDIATAMENTE
 
--- ==================== FORCE GET QUEST (MOTOR DE MISIONES AVANZADO) ====================
--- Función de nivel extremo que GARANTIZA obtener la misión sin importar la distancia.
--- Combina: hookmetamethod + ghost teleport + fireproximityprompt + position anchoring + retry
-local function ForceGetQuest(qData)
-    if not qData or not qData.q then return false end
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return false end
 
-    InstallGlobalBypass()
-
-    -- PASO 1: Intentar remotamente sin moverse (el bypass hace que DistanceFromCharacter = 0)
-    local gotQuest = false
-    for attempt = 1, 3 do
-        pcall(function()
-            CommF:InvokeServer("StartQuest", qData.q, qData.ql)
-        end)
-        task.wait(0.3)
-        if HasQuest() then
-            gotQuest = true
-            break
-        end
-    end
-    if gotQuest then return true end
-
-    -- PASO 2: Si el bypass remoto no bastó, volar al NPC físicamente
-    local giverCF = GetQuestGiverPosition(qData)
-    if not giverCF then
-        -- Cargar la isla primero para que el NPC aparezca en memoria
-        local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
-        if loadPos then
-            BypassTeleport(CFrame.new(loadPos) * CFrame.new(0, 50, 0))
-            task.wait(1.5) -- Esperar a que Roblox cargue los chunks del mapa
-            giverCF = GetQuestGiverPosition(qData)
-        end
-    end
-
-    if giverCF then
-        -- Volar directamente al NPC
-        BypassTeleport(giverCF * CFrame.new(0, 0, 3))
-        task.wait(0.5)
-        -- Anclar posición exacta sobre el NPC
-        hrp.CFrame = giverCF * CFrame.new(0, 0, 3)
-        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-        task.wait(0.3)
-
-        -- PASO 3: Disparar ProximityPrompts del NPC (técnica de ejecutor lvl 8)
-        pcall(function()
-            for _, npc in ipairs(workspace:GetDescendants()) do
-                if npc:IsA("Model") and string.find(string.lower(npc.Name), string.lower(qData.giver)) then
-                    for _, child in ipairs(npc:GetDescendants()) do
-                        if child:IsA("ProximityPrompt") and fireproximityprompt then
-                            fireproximityprompt(child)
-                        end
-                    end
-                end
-            end
-        end)
-        task.wait(0.3)
-
-        -- PASO 4: Disparar el remoto de misión con reintentos agresivos
-        for attempt = 1, 5 do
-            pcall(function()
-                CommF:InvokeServer("StartQuest", qData.q, qData.ql)
-            end)
-            task.wait(0.4)
-            if HasQuest() then return true end
-            -- Micro-reposicionamiento para forzar al servidor a recalcular
-            hrp.CFrame = giverCF * CFrame.new(math.random(-2, 2), 0, math.random(-2, 2))
-            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-            task.wait(0.2)
-        end
-    end
-
-    return HasQuest()
-end
 
 local function BuyItem(action, arg1, arg2, npcName)
     InstallGlobalBypass()
@@ -746,6 +671,83 @@ local function GetQuestGiverPosition(qData)
         if validPart then return validPart.CFrame end
     end
     return nil
+end
+
+-- ==================== FORCE GET QUEST (MOTOR DE MISIONES AVANZADO) ====================
+-- POSICIÓN CORRECTA: Después de HasQuest, GetQuestGiverPosition, GetIslandPosition, GetEnemySpawnPosition
+-- Función de nivel extremo que GARANTIZA obtener la misión sin importar la distancia.
+local function ForceGetQuest(qData)
+    if not qData or not qData.q then return false end
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+
+    InstallGlobalBypass()
+
+    -- PASO 1: Intentar remotamente sin moverse (el bypass hace que DistanceFromCharacter = 0)
+    local gotQuest = false
+    for attempt = 1, 3 do
+        pcall(function()
+            CommF:InvokeServer("StartQuest", qData.q, qData.ql)
+        end)
+        task.wait(0.3)
+        if HasQuest() then
+            gotQuest = true
+            break
+        end
+    end
+    if gotQuest then return true end
+
+    -- PASO 2: Si el bypass remoto no bastó, volar al NPC físicamente
+    local giverCF = GetQuestGiverPosition(qData)
+    if not giverCF then
+        -- Cargar la isla primero para que el NPC aparezca en memoria
+        local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
+        if loadPos then
+            BypassTeleport(CFrame.new(loadPos) * CFrame.new(0, 50, 0))
+            task.wait(1.5)
+            giverCF = GetQuestGiverPosition(qData)
+        end
+    end
+
+    if giverCF then
+        -- Volar directamente al NPC
+        BypassTeleport(giverCF * CFrame.new(0, 0, 3))
+        task.wait(0.5)
+        -- Anclar posición exacta sobre el NPC
+        hrp.CFrame = giverCF * CFrame.new(0, 0, 3)
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        task.wait(0.3)
+
+        -- PASO 3: Disparar ProximityPrompts del NPC (técnica de ejecutor lvl 8)
+        pcall(function()
+            for _, npc in ipairs(workspace:GetDescendants()) do
+                if npc:IsA("Model") and string.find(string.lower(npc.Name), string.lower(qData.giver)) then
+                    for _, child in ipairs(npc:GetDescendants()) do
+                        if child:IsA("ProximityPrompt") and fireproximityprompt then
+                            fireproximityprompt(child)
+                        end
+                    end
+                end
+            end
+        end)
+        task.wait(0.3)
+
+        -- PASO 4: Disparar el remoto de misión con reintentos agresivos
+        for attempt = 1, 5 do
+            pcall(function()
+                CommF:InvokeServer("StartQuest", qData.q, qData.ql)
+            end)
+            task.wait(0.4)
+            if HasQuest() then return true end
+            -- Micro-reposicionamiento para forzar al servidor a recalcular
+            hrp.CFrame = giverCF * CFrame.new(math.random(-2, 2), 0, math.random(-2, 2))
+            hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+            task.wait(0.2)
+        end
+    end
+
+    return HasQuest()
 end
 
 -- ==================== ESP OPTIMIZADO ====================
