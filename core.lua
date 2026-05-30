@@ -507,7 +507,11 @@ local HardcodedGivers = {
 local function GetQuestGiverPosition(qData)
     if not qData or not qData.giver then return nil end
     
-    -- Si tenemos las coordenadas exactas, ir directo (evita problemas de NPCs no renderizados a lo lejos)
+    -- PERFORMANCE BOOST: Leer del escáner dinámico si está disponible
+    if getgenv().PolarNPCCache and getgenv().PolarNPCCache[qData.giver] then
+        return getgenv().PolarNPCCache[qData.giver]
+    end
+    
     if HardcodedGivers[qData.giver] then
         return HardcodedGivers[qData.giver]
     end
@@ -621,7 +625,13 @@ local function EquipWeapon(targetHealthPercent)
     end
 
     local currentTool = char:FindFirstChildOfClass("Tool")
-    if currentTool and currentTool.ToolTip == weaponToEquip then return end
+    if currentTool then
+        if currentTool.ToolTip == weaponToEquip then
+            return
+        else
+            char.Humanoid:UnequipTools()
+        end
+    end
     
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
@@ -629,7 +639,7 @@ local function EquipWeapon(targetHealthPercent)
             if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
                 char.Humanoid:EquipTool(tool)
                 task.wait(0.1) -- FIX ANTI-CHEAT: Esperar a que el arma se equipe antes de atacar
-                break
+                return
             end
         end
     end
