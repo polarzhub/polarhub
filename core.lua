@@ -78,7 +78,7 @@ task.spawn(function()
             for _, npc in ipairs(NPCsFolder:GetChildren()) do
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
-                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
+                    table.insert(getgenv().PolarNPCCache, {Name = npc.Name, CFrame = part.CFrame})
                 end
             end
             print("[Polar Hub] 🔍 Scanner: " .. #NPCsFolder:GetChildren() .. " NPCs mapeados desde workspace.NPCs")
@@ -142,7 +142,7 @@ task.spawn(function()
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
                     if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
-                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
+                    table.insert(getgenv().PolarNPCCache, {Name = npc.Name, CFrame = part.CFrame})
                 end
             end)
             print("[Polar Hub] 👁️ Scanner: Vigilancia de NPCs en tiempo real ACTIVADA")
@@ -460,8 +460,8 @@ end
 local function GetBestQuestData()
     local data = LocalPlayer:FindFirstChild("Data")
     local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
-    local best = getgenv().PolarLevelQuests[1]
     
+    local best = nil
     for i = 1, #getgenv().PolarLevelQuests do
         local q = getgenv().PolarLevelQuests[i]
         if lvl >= q.lvl then
@@ -472,10 +472,13 @@ local function GetBestQuestData()
             else
                 best = q
             end
-        else
-            break
         end
     end
+    
+    if not best then
+        best = getgenv().PolarLevelQuests[1]
+    end
+    
     return best
 end
 
@@ -616,58 +619,66 @@ local function GetQuestGiverPosition(qData)
     
     local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
     
-    -- PERFORMANCE BOOST: Leer del escáner dinámico usando coincidencias de texto (Fix para Area 1 Quest Giver)
+    -- Usar la posición del jugador como último fallback si no hay spawnPos cargado aún
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local refPos = spawnPos or (hrp and hrp.Position) or Vector3.new(0, 0, 0)
+    
+    local bestCF = nil
+    local bestDist = math.huge
+    
+    -- 1. Intentar buscar en la caché de NPCs (soporta duplicados "Quest Giver" genéricos)
     if getgenv().PolarNPCCache then
-        for npcName, cf in pairs(getgenv().PolarNPCCache) do
-            if string.find(string.lower(npcName), string.lower(qData.giver)) then
-                return cf
-            end
-        end
-    end
-    
-    if HardcodedGivers[qData.giver] then
-        return HardcodedGivers[qData.giver]
-    end
-    
-    local targetNPC = nil
-    local minDist = math.huge
-    
-    local function GetValidPart(npc)
-        return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
-    end
-    
-    if workspace:FindFirstChild("NPCs") then
-        for _, npc in ipairs(workspace.NPCs:GetChildren()) do
-            local validPart = GetValidPart(npc)
-            if string.find(string.lower(npc.Name), string.lower(qData.giver)) and validPart then
-                local dist = spawnPos and (validPart.Position - spawnPos).Magnitude or 0
-                if dist < minDist then
-                    minDist = dist
-                    targetNPC = npc
+        for _, data in ipairs(getgenv().PolarNPCCache) do
+            local npcLower = string.lower(data.Name)
+            local giverLower = string.lower(qData.giver)
+            local cf = data.CFrame
+            
+            if string.find(npcLower, giverLower) or string.find(giverLower, npcLower) then
+                local dist = (cf.Position - refPos).Magnitude
+                if dist < bestDist then
+                    bestDist = dist
+                    bestCF = cf
+                end
+            elseif npcLower == "quest giver" or string.find(npcLower, "quest") then
+                local dist = (cf.Position - refPos).Magnitude
+                if dist < bestDist then
+                    bestDist = dist
+                    bestCF = cf
                 end
             end
         end
-        
-        if not targetNPC and spawnPos then
-            local fallbackDist = math.huge
-            for _, npc in ipairs(workspace.NPCs:GetChildren()) do
-                local validPart = GetValidPart(npc)
-                if string.find(string.lower(npc.Name), "quest") and validPart then
-                    local dist = (validPart.Position - spawnPos).Magnitude
-                    if dist < fallbackDist then
-                        fallbackDist = dist
-                        targetNPC = npc
+    end
+    
+    if bestCF then return bestCF end
+    
+    -- 2. Fallback: Buscar directamente en el Workspace
+    local npcsFolder = workspace:FindFirstChild("NPCs")
+    if npcsFolder then
+        for _, npc in ipairs(npcsFolder:GetChildren()) do
+            local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
+            if part then
+                local npcLower = string.lower(npc.Name)
+                local giverLower = string.lower(qData.giver)
+                
+                if string.find(npcLower, giverLower) or string.find(giverLower, npcLower) then
+                    local dist = (part.Position - refPos).Magnitude
+                    if dist < bestDist then
+                        bestDist = dist
+                        bestCF = part.CFrame
+                    end
+                elseif npcLower == "quest giver" or string.find(npcLower, "quest") then
+                    local dist = (part.Position - refPos).Magnitude
+                    if dist < bestDist then
+                        bestDist = dist
+                        bestCF = part.CFrame
                     end
                 end
             end
         end
     end
     
-    if targetNPC then
-        local validPart = GetValidPart(targetNPC)
-        if validPart then return validPart.CFrame end
-    end
-    return nil
+    return bestCF or HardcodedGivers[qData.giver]
 end
 
 
@@ -984,12 +995,34 @@ task.spawn(function()
                         hrp.CFrame = giverCF
                         hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                         task.wait(0.2)
+                        
+                        -- Enviar remoto de aceptación
                         pcall(function() CommF:InvokeServer("StartQuest", qData.q, qData.ql) end)
+                        
+                        -- Sistema Anti-Stuck: Esperar hasta 3s y verificar si la misión se activó
+                        local questActivated = false
+                        for i = 1, 30 do -- 3 segundos (30 * 0.1s)
+                            task.wait(0.1)
+                            if HasQuest() then
+                                questActivated = true
+                                break
+                            end
+                        end
+                        
+                        -- Si la misión falló al activarse, cerrar diálogo y mover jugador
+                        if not questActivated then
+                            warn("[Polar Hub] ⚠️ Anti-Stuck: Falló activación del quest. Declinando diálogo...")
+                            pcall(function() CommF:InvokeServer("StartQuest", "DeclineQuest") end)
+                            -- Teletransportar ligeramente arriba del NPC para romper contacto
+                            hrp.CFrame = giverCF * CFrame.new(0, 20, 0)
+                            task.wait(1)
+                        end
+                        
                         QuestTryCount = QuestTryCount + 1
                         if QuestTryCount > 10 then 
                             getgenv().PolarCurrentBotState = STATE_FARMING 
+                            QuestTryCount = 0
                         end
-                        task.wait(0.5)
                     end
                 else
                     -- FIX EXTREMO: Si el NPC no ha cargado, volar al spawn principal de la isla (Safe Zone) para forzar su renderizado.

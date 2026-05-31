@@ -64,7 +64,7 @@ task.spawn(function()
         for _, npc in ipairs(NPCs:GetChildren()) do
             local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
             if part then
-                getgenv().PolarNPCCache[npc.Name] = part.CFrame
+                table.insert(getgenv().PolarNPCCache, {Name = npc.Name, CFrame = part.CFrame})
                 foundCount = foundCount + 1
             end
         end
