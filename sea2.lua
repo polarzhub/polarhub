@@ -64,10 +64,7 @@ task.spawn(function()
         for _, npc in ipairs(NPCs:GetChildren()) do
             local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
             if part then
-                if not getgenv().PolarNPCCache[npc.Name] then
-                    getgenv().PolarNPCCache[npc.Name] = {}
-                end
-                table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                getgenv().PolarNPCCache[npc.Name] = part.CFrame
                 foundCount = foundCount + 1
             end
         end
@@ -148,9 +145,12 @@ task.spawn(function()
         local hasDarkbeard = false
         local hasFactory = false
         
-        for _, obj in ipairs(workspace.Enemies:GetChildren()) do
-            if obj.Name == "Darkbeard" then hasDarkbeard = true end
-            if obj.Name == "Core" and obj.Parent.Name == "Factory" then hasFactory = true end
+        local enemies = workspace:FindFirstChild("Enemies")
+        if enemies then
+            for _, obj in ipairs(enemies:GetChildren()) do
+                if obj.Name == "Darkbeard" then hasDarkbeard = true end
+                if obj.Name == "Core" and obj.Parent.Name == "Factory" then hasFactory = true end
+            end
         end
         
         LabelDarkbeard:SetDesc(hasDarkbeard and "¡VIVO! (En la Arena Oscura)" or "Muerto / No Spawneado")

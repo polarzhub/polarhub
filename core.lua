@@ -43,6 +43,20 @@ local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
+-- Luau Fast Registers Optimization
+local task = task
+local string = string
+local math = math
+local table = table
+local CFrame = CFrame
+local Vector3 = Vector3
+local Instance = Instance
+local ipairs = ipairs
+local pairs = pairs
+local pcall = pcall
+local select = select
+local tick = tick
+
 -- ==================== ANTI-AFK ====================
 LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
@@ -64,10 +78,7 @@ task.spawn(function()
             for _, npc in ipairs(NPCsFolder:GetChildren()) do
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
-                    if not getgenv().PolarNPCCache[npc.Name] then
-                        getgenv().PolarNPCCache[npc.Name] = {}
-                    end
-                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
                 end
             end
             print("[Polar Hub] 🔍 Scanner: " .. #NPCsFolder:GetChildren() .. " NPCs mapeados desde workspace.NPCs")
@@ -131,10 +142,7 @@ task.spawn(function()
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
                     if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
-                    if not getgenv().PolarNPCCache[npc.Name] then
-                        getgenv().PolarNPCCache[npc.Name] = {}
-                    end
-                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
                 end
             end)
             print("[Polar Hub] 👁️ Scanner: Vigilancia de NPCs en tiempo real ACTIVADA")
@@ -610,22 +618,11 @@ local function GetQuestGiverPosition(qData)
     
     -- PERFORMANCE BOOST: Leer del escáner dinámico usando coincidencias de texto (Fix para Area 1 Quest Giver)
     if getgenv().PolarNPCCache then
-        local bestGlobalCF = nil
-        local bestGlobalDist = math.huge
-        for npcName, cacheList in pairs(getgenv().PolarNPCCache) do
+        for npcName, cf in pairs(getgenv().PolarNPCCache) do
             if string.find(string.lower(npcName), string.lower(qData.giver)) then
-                if type(cacheList) == "table" and #cacheList > 0 then
-                    for _, cf in ipairs(cacheList) do
-                        local dist = spawnPos and (cf.Position - spawnPos).Magnitude or 0
-                        if dist < bestGlobalDist then
-                            bestGlobalDist = dist
-                            bestGlobalCF = cf
-                        end
-                    end
-                end
+                return cf
             end
         end
-        if bestGlobalCF then return bestGlobalCF end
     end
     
     if HardcodedGivers[qData.giver] then
@@ -776,12 +773,9 @@ task.spawn(function()
         if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
             if anyFarmActive then
-                if getgenv().PolarAutoBusoEnabled then
-                    local hasBuso = false
-                    for _, v in ipairs(char:GetChildren()) do
-                        if string.find(string.lower(v.Name), "buso") then hasBuso = true break end
-                    end
-                    if not hasBuso then
+                local busoEnabled = getgenv().PolarAutoBusoEnabled or AutoHakiEnabled
+                if busoEnabled then
+                    if not char:FindFirstChild("HasBuso") then
                         pcall(function() CommF:InvokeServer("Buso") end)
                     end
                 end
@@ -868,6 +862,13 @@ end
 task.spawn(function()
     while true do
         task.wait(0.1)
+        
+        -- Evitar ejecución si las misiones del mar no han cargado aún
+        if not getgenv().PolarLevelQuests or #getgenv().PolarLevelQuests == 0 then
+            task.wait(0.4)
+            continue
+        end
+        
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
@@ -888,12 +889,14 @@ task.spawn(function()
             -- 1. Asegurar plataforma base
             local plat = workspace:FindFirstChild("PolarFarmPlat")
             if not plat then
-                plat = Instance.new("Part", workspace)
-                plat.Name = "PolarFarmPlat"
-                plat.Size = Vector3.new(15, 1, 15)
-                plat.Anchored = true
-                plat.Transparency = 1
-                plat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+                local newPlat = Instance.new("Part")
+                newPlat.Name = "PolarFarmPlat"
+                newPlat.Size = Vector3.new(15, 1, 15)
+                newPlat.Anchored = true
+                newPlat.Transparency = 1
+                newPlat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+                newPlat.Parent = workspace
+                plat = newPlat
             end
 
             -- 2. Determinar Objetivo Principal
@@ -1070,6 +1073,16 @@ task.spawn(function()
                 
                 if firstNPC then
                     local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
+                    
+                    -- EXECUTOR LEVEL 7-8: Network Ownership Bypass (Ejecutar solo una vez por ciclo)
+                    pcall(function()
+                        if setsimulationradius then
+                            setsimulationradius(math.huge, math.huge)
+                        elseif sethiddenproperty then
+                            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+                        end
+                    end)
+                    
                     local targetCF
                     
                     -- AUTO FARM SEGURO Y ESTABLE (Cero Bans / Cero Bugs Físicos):
@@ -1387,49 +1400,69 @@ end)
 -- ==================== AUTO CHEST ====================
 local AutoChestEnabled = false
 task.spawn(function()
+    local chests = {}
+    local lastScan = 0
+    
     while true do
         if not AutoChestEnabled then
+            chests = {}
             task.wait(1)
             continue
         end
-        task.wait(1)
-        if AutoChestEnabled then
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local chests = {}
+        
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            -- Filtrar los cofres que ya no existen o no tienen TouchInterest
+            local activeChests = {}
+            for _, chest in ipairs(chests) do
+                if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
+                    table.insert(activeChests, chest)
+                end
+            end
+            chests = activeChests
+            
+            -- Si no quedan cofres en la caché, realizar escaneo con throttle (mínimo cada 5s)
+            if #chests == 0 and tick() - lastScan > 5 then
+                lastScan = tick()
                 for _, v in ipairs(workspace:GetDescendants()) do
                     if string.find(v.Name, "Chest") and v:IsA("BasePart") and v:FindFirstChild("TouchInterest") then
                         table.insert(chests, v)
                     end
                 end
                 
-                if #chests > 0 then
-                    table.sort(chests, function(a, b)
-                        return (hrp.Position - a.Position).Magnitude < (hrp.Position - b.Position).Magnitude
-                    end)
-                    
-                    for _, chest in ipairs(chests) do
-                        if not AutoChestEnabled then break end
-                        if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
-                            local chestCF = chest.CFrame
-                            local dist = (hrp.Position - chestCF.Position).Magnitude
-                            if dist > 15 then
-                                BypassTeleport(chestCF)
-                            else
-                                hrp.CFrame = chestCF
-                            end
-                            task.wait(0.2)
-                            if firetouchinterest and chest:FindFirstChild("TouchInterest") then
-                                firetouchinterest(hrp, chest, 0)
-                                task.wait(0.01)
-                                firetouchinterest(hrp, chest, 1)
-                            end
-                            task.wait(0.2)
-                        end
-                    end
-                end
+                -- Ordenar por cercanía
+                table.sort(chests, function(a, b)
+                    return (hrp.Position - a.Position).Magnitude < (hrp.Position - b.Position).Magnitude
+                end)
             end
+            
+            -- Si encontramos cofres, farmear el más cercano y actualizar la lista
+            if #chests > 0 then
+                local chest = chests[1]
+                table.remove(chests, 1) -- Quitar de la lista para no procesarlo de nuevo
+                
+                if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
+                    local chestCF = chest.CFrame
+                    local dist = (hrp.Position - chestCF.Position).Magnitude
+                    if dist > 15 then
+                        BypassTeleport(chestCF)
+                    else
+                        hrp.CFrame = chestCF
+                    end
+                    task.wait(0.2)
+                    if firetouchinterest and chest:FindFirstChild("TouchInterest") and hrp.Parent then
+                        firetouchinterest(hrp, chest, 0)
+                        task.wait(0.01)
+                        firetouchinterest(hrp, chest, 1)
+                    end
+                    task.wait(0.2)
+                end
+            else
+                task.wait(1) -- Esperar antes de intentar escanear de nuevo
+            end
+        else
+            task.wait(1)
         end
     end
 end)
@@ -1640,7 +1673,7 @@ TabStats:Toggle({
     Title = "Auto Haki (Buso)",
     Default = true,
     Callback = function(Value)
-        AutoHakiEnabled = Value
+        getgenv().PolarAutoBusoEnabled = Value
     end
 })
 
@@ -2317,14 +2350,16 @@ task.spawn(function()
     while true do
         task.wait(2)
         if FruitFinderEnabled then
-            for _, v in ipairs(workspace:GetDescendants()) do
+            for _, v in ipairs(workspace:GetChildren()) do
                 if v:IsA("Tool") and string.find(string.lower(v.Name), "fruit") and not foundFruits[v] then
                     foundFruits[v] = true
-                    game:GetService("StarterGui"):SetCore("SendNotification", {
-                        Title = "🍎 ¡FRUTA ENCONTRADA!",
-                        Text = "Se ha encontrado: " .. v.Name,
-                        Duration = 10
-                    })
+                    pcall(function()
+                        game:GetService("StarterGui"):SetCore("SendNotification", {
+                            Title = "🍎 ¡FRUTA ENCONTRADA!",
+                            Text = "Se ha encontrado: " .. v.Name,
+                            Duration = 10
+                        })
+                    end)
                 end
             end
         end

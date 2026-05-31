@@ -401,12 +401,22 @@ local function FullAutoSaber()
                     local found = npcs:FindFirstChild(name)
                     if found and found:FindFirstChild("HumanoidRootPart") then return found end
                 end
-                -- Fallback: buscar en todos los descendientes del workspace
-                for _, obj in ipairs(workspace:GetDescendants()) do
-                    if obj.Name == name and obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") then
-                        return obj
+                
+                -- Fallback 1: Buscar en los hijos directos del workspace
+                local foundDirect = workspace:FindFirstChild(name)
+                if foundDirect and foundDirect:IsA("Model") and foundDirect:FindFirstChild("HumanoidRootPart") then
+                    return foundDirect
+                end
+                
+                -- Fallback 2: Buscar en los hijos directos del mapa
+                local map = workspace:FindFirstChild("Map")
+                if map then
+                    local foundMap = map:FindFirstChild(name)
+                    if foundMap and foundMap:IsA("Model") and foundMap:FindFirstChild("HumanoidRootPart") then
+                        return foundMap
                     end
                 end
+                
                 return nil
             end
             
@@ -971,23 +981,7 @@ local function FullAutoSaber()
         getgenv().PolarCurrentBotState = "IDLE"
     end)
 end
-local AutoHakiEnabled = true
-task.spawn(function()
-    while true do
-        if not AutoHakiEnabled then
-            task.wait(1)
-            continue
-        end
-        task.wait(0.5)
-        -- FIX: Activar Haki automáticamente si está encendido
-        if AutoHakiEnabled and CommF then
-            local char = LocalPlayer.Character
-            if char and not char:FindFirstChild("HasBuso") then 
-                pcall(function() CommF:InvokeServer("Buso") end) 
-            end
-        end
-    end
-end)
+-- El bucle de Auto Haki ha sido movido centralizadamente a core.lua
 
 
 
@@ -1021,8 +1015,27 @@ local function UpdatePara(para, newDesc)
     end)
 end
 
-local function GetExactBossTimer(bossName)
-    local foundTimer = nil
+local cachedSawGui, cachedGreyGui = nil, nil
+
+local function GetExactBossTimer(bossName, isSaw)
+    if isSaw and cachedSawGui and cachedSawGui.Parent then
+        for _, child in ipairs(cachedSawGui:GetDescendants()) do
+            if child:IsA("TextLabel") and child.Text then
+                local matchTimer = string.match(child.Text, "%[(%d+:%d+:%d+)%]") or string.match(child.Text, "%[(%d+:%d+)%]")
+                if matchTimer then return matchTimer end
+            end
+        end
+        return nil
+    elseif not isSaw and cachedGreyGui and cachedGreyGui.Parent then
+        for _, child in ipairs(cachedGreyGui:GetDescendants()) do
+            if child:IsA("TextLabel") and child.Text then
+                local matchTimer = string.match(child.Text, "%[(%d+:%d+:%d+)%]") or string.match(child.Text, "%[(%d+:%d+)%]")
+                if matchTimer then return matchTimer end
+            end
+        end
+        return nil
+    end
+
     for _, gui in ipairs(workspace:GetDescendants()) do
         if gui:IsA("BillboardGui") or gui:IsA("SurfaceGui") then
             local isTargetBoss = false
@@ -1042,11 +1055,16 @@ local function GetExactBossTimer(bossName)
             end
             
             if isTargetBoss and timerText then
-                foundTimer = timerText
+                if isSaw then
+                    cachedSawGui = gui
+                else
+                    cachedGreyGui = gui
+                end
+                return timerText
             end
         end
     end
-    return foundTimer
+    return nil
 end
 
 task.spawn(function()
@@ -1068,7 +1086,7 @@ task.spawn(function()
             if sawAlive then
                 UpdatePara(LabelTheSaw, "🟢 SPAWNEADO! (¡Ve a matarlo!)")
             else
-                local exactTimer = GetExactBossTimer("The Saw")
+                local exactTimer = GetExactBossTimer("The Saw", true)
                 if exactTimer then
                     UpdatePara(LabelTheSaw, "🔴 MUERTO\nPróximo Spawn (Holograma Oficial): " .. exactTimer)
                 else
@@ -1083,7 +1101,7 @@ task.spawn(function()
             if greyAlive then
                 UpdatePara(LabelGreybeard, "🟢 SPAWNEADO! (¡Ve a matarlo!)")
             else
-                local exactTimer = GetExactBossTimer("Greybeard")
+                local exactTimer = GetExactBossTimer("Greybeard", false)
                 if exactTimer then
                     UpdatePara(LabelGreybeard, "🔴 MUERTO\nPróximo Spawn (Holograma Oficial): " .. exactTimer)
                 else
