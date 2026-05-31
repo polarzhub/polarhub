@@ -75,9 +75,9 @@ getgenv().PolarBosses = {
     {name = "Swan", q = "ImpelQuest", ql = 3, giver = "Head Jailer", island = "Prison", lvl = 240},
     {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350},
     {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "Neptune", island = "Fishman", lvl = 425},
-    {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 500},
-    {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 575},
-    {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Fountain Quest Giver", island = "Fountain", lvl = 675},
+    {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Mole", island = "Sky", lvl = 500},
+    {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Quest Giver 2", island = "Sky", lvl = 575},
+    {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Freezeburg Quest Giver", island = "Fountain", lvl = 675},
     {name = "Saber Expert", q = nil, ql = nil, giver = nil, island = "Jungle", lvl = 200},
     {name = "The Saw", q = nil, ql = nil, giver = nil, island = "Town", lvl = 100},
     {name = "Greybeard", q = nil, ql = nil, giver = nil, island = "Marine", lvl = 750}

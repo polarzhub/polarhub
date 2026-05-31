@@ -720,13 +720,13 @@ local function GetQuestGiverPosition(qData)
             
             if CheckMatch(npcName, qData.giver) then
                 local dist = (cf.Position - refPos).Magnitude
-                if dist < bestDist then
+                if dist < 1500 and dist < bestDist then
                     bestDist = dist
                     bestCF = cf
                 end
             elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
                 local dist = (cf.Position - refPos).Magnitude
-                if dist < bestDist then
+                if dist < 1500 and dist < bestDist then
                     bestDist = dist
                     bestCF = cf
                 end
@@ -745,13 +745,13 @@ local function GetQuestGiverPosition(qData)
                 local npcName = npc.Name
                 if CheckMatch(npcName, qData.giver) then
                     local dist = (part.Position - refPos).Magnitude
-                    if dist < bestDist then
+                    if dist < 1500 and dist < bestDist then
                         bestDist = dist
                         bestCF = part.CFrame
                     end
                 elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
                     local dist = (part.Position - refPos).Magnitude
-                    if dist < bestDist then
+                    if dist < 1500 and dist < bestDist then
                         bestDist = dist
                         bestCF = part.CFrame
                     end
@@ -760,7 +760,21 @@ local function GetQuestGiverPosition(qData)
         end
     end
     
-    return bestCF or HardcodedGivers[qData.giver]
+    if bestCF then return bestCF end
+    
+    -- 3. Fallback: Coordenadas hardcodeadas del giver específico
+    local hardcoded = HardcodedGivers[qData.giver]
+    if hardcoded then return hardcoded end
+    
+    -- 4. Fallback de Streaming: Si el NPC no está cargado, devolvemos la posición de la isla/spawn
+    -- para forzar al bot a volar hacia allí, de forma que Roblox renderice/stream in el NPC.
+    if spawnPos then
+        return CFrame.new(spawnPos)
+    elseif refPos then
+        return CFrame.new(refPos)
+    end
+    
+    return nil
 end
 
 
