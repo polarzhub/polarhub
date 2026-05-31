@@ -486,22 +486,86 @@ local function GetIslandPosition(islandKeyword)
     if string.lower(islandKeyword) == "fishman" then
         islandKeyword = "Underwater City"
     end
+    
+    local targetLower = string.lower(islandKeyword)
+    
+    -- 1. Intentar buscar en _WorldOrigin.Locations (Sea 1)
     local origin = workspace:FindFirstChild("_WorldOrigin")
     local locs = origin and origin:FindFirstChild("Locations")
     if locs then
         for _, v in ipairs(locs:GetChildren()) do
-            if string.find(string.lower(v.Name), string.lower(islandKeyword)) then
+            if string.find(string.lower(v.Name), targetLower) then
                 return v.Position
             end
         end
     end
     
-    if string.lower(islandKeyword) == "upper sky" then
-        return Vector3.new(-7904, 5634, -1640)
+    -- 2. Fallback: Buscar en workspace.Map (Sea 2 / Sea 3)
+    local map = workspace:FindFirstChild("Map")
+    if map then
+        for _, v in ipairs(map:GetChildren()) do
+            if string.find(string.lower(v.Name), targetLower) then
+                if v:IsA("Model") then
+                    local success, cf = pcall(function() return v:GetModelCFrame() end)
+                    if success and cf then return cf.Position end
+                    local success2, cf2 = pcall(function() return v:GetBoundingBox() end)
+                    if success2 and cf2 then return cf2.Position end
+                    local primary = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
+                    if primary then return primary.Position end
+                elseif v:IsA("BasePart") then
+                    return v.Position
+                end
+            end
+        end
+    end
+    
+    -- 3. Fallback: Buscar en el workspace principal
+    for _, v in ipairs(workspace:GetChildren()) do
+        if string.find(string.lower(v.Name), targetLower) and v.Name ~= "Map" then
+            if v:IsA("Model") then
+                local success, cf = pcall(function() return v:GetModelCFrame() end)
+                if success and cf then return cf.Position end
+                local success2, cf2 = pcall(function() return v:GetBoundingBox() end)
+                if success2 and cf2 then return cf2.Position end
+                local primary = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
+                if primary then return primary.Position end
+            elseif v:IsA("BasePart") then
+                return v.Position
+            end
+        end
+    end
+    
+    -- 4. Coordenadas fijas hardcodeadas si todo lo demás falla (para Sea 2 y Sea 1)
+    local HardcodedIslands = {
+        ["kingdom of rose"] = Vector3.new(-1800, 10, 1100),
+        ["cafe"] = Vector3.new(-385, 73, 297),
+        ["green zone"] = Vector3.new(-2400, 10, -2800),
+        ["graveyard"] = Vector3.new(-3200, 10, -3200),
+        ["snow mountain"] = Vector3.new(1000, 50, -4000),
+        ["hot and cold"] = Vector3.new(-5800, 15, -4800),
+        ["cursed ship"] = Vector3.new(900, 10, 3200),
+        ["ice castle"] = Vector3.new(5800, 10, -5800),
+        ["forgotten island"] = Vector3.new(-3000, 10, 4500),
+        ["dark arena"] = Vector3.new(2000, 10, -1000),
+        ["upper sky"] = Vector3.new(-7904, 5634, -1640),
+        ["marineford"] = Vector3.new(-4849, 5, 718),
+        ["prison"] = Vector3.new(4849, 5, 718),
+        ["jungle"] = Vector3.new(-1461, 30, -51),
+        ["pirate"] = Vector3.new(-1162, 5, 3816),
+        ["desert"] = Vector3.new(1094, 5, 6496),
+        ["snow"] = Vector3.new(1350, -87, -1325),
+        ["middle town"] = Vector3.new(-789, 7, 1515)
+    }
+    
+    for name, pos in pairs(HardcodedIslands) do
+        if string.find(name, targetLower) or string.find(targetLower, name) then
+            return pos
+        end
     end
     
     return nil
 end
+
 
 local cachedSpawns = {}
 local function GetEnemySpawnPosition(enemyName)
@@ -627,20 +691,40 @@ local function GetQuestGiverPosition(qData)
     local bestCF = nil
     local bestDist = math.huge
     
+    local function CheckMatch(npcName, giverName)
+        local n = string.lower(npcName)
+        local g = string.lower(giverName)
+        if n == g then return true end
+        
+        -- Si uno contiene un número al final y el otro no (o números distintos), no coinciden
+        local nNum = string.match(n, "%d+")
+        local gNum = string.match(g, "%d+")
+        
+        if gNum and gNum ~= "1" then
+            if nNum ~= gNum then
+                return false
+            end
+        end
+        
+        if string.find(n, g) or string.find(g, n) then
+            return true
+        end
+        return false
+    end
+    
     -- 1. Intentar buscar en la caché de NPCs (soporta duplicados "Quest Giver" genéricos)
     if getgenv().PolarNPCCache then
         for _, data in ipairs(getgenv().PolarNPCCache) do
-            local npcLower = string.lower(data.Name)
-            local giverLower = string.lower(qData.giver)
+            local npcName = data.Name
             local cf = data.CFrame
             
-            if string.find(npcLower, giverLower) or string.find(giverLower, npcLower) then
+            if CheckMatch(npcName, qData.giver) then
                 local dist = (cf.Position - refPos).Magnitude
                 if dist < bestDist then
                     bestDist = dist
                     bestCF = cf
                 end
-            elseif npcLower == "quest giver" or string.find(npcLower, "quest") then
+            elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
                 local dist = (cf.Position - refPos).Magnitude
                 if dist < bestDist then
                     bestDist = dist
@@ -658,16 +742,14 @@ local function GetQuestGiverPosition(qData)
         for _, npc in ipairs(npcsFolder:GetChildren()) do
             local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
             if part then
-                local npcLower = string.lower(npc.Name)
-                local giverLower = string.lower(qData.giver)
-                
-                if string.find(npcLower, giverLower) or string.find(giverLower, npcLower) then
+                local npcName = npc.Name
+                if CheckMatch(npcName, qData.giver) then
                     local dist = (part.Position - refPos).Magnitude
                     if dist < bestDist then
                         bestDist = dist
                         bestCF = part.CFrame
                     end
-                elseif npcLower == "quest giver" or string.find(npcLower, "quest") then
+                elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
                     local dist = (part.Position - refPos).Magnitude
                     if dist < bestDist then
                         bestDist = dist
@@ -740,6 +822,25 @@ local AutoMasteryEnabled = false
 local AutoMasteryItem = "Sword"
 local AutoSkillsEnabled = false
 
+local function IsValidWeapon(tool)
+    if not tool or not tool:IsA("Tool") then return false end
+    local name = string.lower(tool.Name)
+    
+    -- Blocklist de items que no son armas de combate (ej. cañas de pescar, llaves, items de evento)
+    local blocklist = {
+        "fishing", "rod", "toy", "key", "chalice", "fist of darkness", 
+        "cup", "card", "ticket", "compass", "fragment", "ore", 
+        "wood", "leather", "scrap", "scroll", " fruit"
+    }
+    
+    for _, pattern in ipairs(blocklist) do
+        if string.find(name, pattern) then
+            return false
+        end
+    end
+    return true
+end
+
 local function EquipWeapon(targetHealthPercent)
     local char = LocalPlayer.Character
     if not char then return end
@@ -751,7 +852,7 @@ local function EquipWeapon(targetHealthPercent)
 
     local currentTool = char:FindFirstChildOfClass("Tool")
     if currentTool then
-        if currentTool.ToolTip == weaponToEquip then
+        if currentTool.ToolTip == weaponToEquip and IsValidWeapon(currentTool) then
             return
         else
             char.Humanoid:UnequipTools()
@@ -761,7 +862,7 @@ local function EquipWeapon(targetHealthPercent)
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
+            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip and IsValidWeapon(tool) then
                 char.Humanoid:EquipTool(tool)
                 task.wait(0.1) -- FIX ANTI-CHEAT: Esperar a que el arma se equipe antes de atacar
                 return
@@ -769,6 +870,7 @@ local function EquipWeapon(targetHealthPercent)
         end
     end
 end
+
 
 
 -- ==================== AUTO HAKI & AUTO SKILLS ====================
@@ -1334,7 +1436,7 @@ task.spawn(function()
                 -- Verificar que tiene un arma equipada (no fishing rod)
                 local tool = char:FindFirstChildOfClass("Tool")
                 local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-                if tool and validWeapons[tool.ToolTip] then
+                if tool and validWeapons[tool.ToolTip] and IsValidWeapon(tool) then
                     -- MÉTODO 1: VirtualInputManager Mouse Click (simula click real del ratón)
                     pcall(function()
                         VIM:SendMouseButtonEvent(400, 400, 0, true, game, 1)
@@ -1415,7 +1517,7 @@ task.spawn(function()
             local currentTool = char:FindFirstChildOfClass("Tool")
             local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
             
-            if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+            if currentTool and validWeapons[currentTool.ToolTip] and IsValidWeapon(currentTool) and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
@@ -2433,7 +2535,7 @@ task.spawn(function()
                 local currentTool = char:FindFirstChildOfClass("Tool")
                 local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
                 
-                if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+                if currentTool and validWeapons[currentTool.ToolTip] and IsValidWeapon(currentTool) and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
                     pcall(function()
                         RegisterAttack:FireServer(0)
                         RegisterHit:FireServer(mainTargetPart, targets)
