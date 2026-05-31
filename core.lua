@@ -371,18 +371,54 @@ local function HasQuest()
         if pgui.Main.Quest.Visible then
             local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
             if title and title.Text then
-                -- FIX: Blox Fruits deja el UI de la quest visible varios segundos diciendo "Quest Completed!".
-                -- Si no tiene un contador válido como (0/9), significa que la misión ya no está activa.
-                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
+                local textLower = string.lower(title.Text)
+                
+                -- Si el texto es del diálogo de selección, no es una misión activa
+                if textLower == "misión" or textLower == "mision" or string.find(textLower, "choose") or string.find(textLower, "elige") or string.find(textLower, "select") then
                     return false
                 end
                 
-                -- Si no encontramos ningún nombre de enemigo en el texto, asumimos que no hay misión activa.
+                if string.find(textLower, "completed") or string.find(textLower, "completada") then
+                    return false
+                end
+                
+                -- Verificar si contiene el indicador de progreso (ej: "0/8" o "0/1")
+                local hasProgress = string.find(title.Text, "%d+/%d+")
+                if not hasProgress then
+                    return false
+                end
+                
+                -- Verificar si coincide con el nombre de algún enemigo de la base de datos (con manejo de plural)
                 local bestMatch = nil
                 for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    if string.find(string.lower(title.Text), string.lower(qData.name)) then
+                    local cleanName = string.lower(qData.name)
+                    local matchName = cleanName
+                    if string.sub(cleanName, -3) == "ies" then
+                        matchName = string.sub(cleanName, 1, -4)
+                    elseif string.sub(cleanName, -1) == "y" then
+                        matchName = string.sub(cleanName, 1, -2) -- "mercenary" -> "mercenar"
+                    end
+                    
+                    if string.find(textLower, matchName) then
                         bestMatch = qData.name
                         break
+                    end
+                end
+                
+                if not bestMatch and getgenv().PolarBosses then
+                    for _, bData in ipairs(getgenv().PolarBosses) do
+                        local cleanName = string.lower(bData.name)
+                        local matchName = cleanName
+                        if string.sub(cleanName, -3) == "ies" then
+                            matchName = string.sub(cleanName, 1, -4)
+                        elseif string.sub(cleanName, -1) == "y" then
+                            matchName = string.sub(cleanName, 1, -2)
+                        end
+                        
+                        if string.find(textLower, matchName) then
+                            bestMatch = bData.name
+                            break
+                        end
                     end
                 end
                 
@@ -390,7 +426,6 @@ local function HasQuest()
                     return true
                 end
             end
-            return true
         end
     end
     return false
@@ -404,14 +439,26 @@ local function GetTargetEnemyNameFromQuest()
                 and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
                 and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
             if title and title.Text then
-                local questText = title.Text
+                local questText = string.lower(title.Text)
+                
+                -- Si es el diálogo de selección, no es una misión activa
+                if questText == "misión" or questText == "mision" or string.find(questText, "choose") or string.find(questText, "elige") or string.find(questText, "select") then
+                    return nil
+                end
+                
                 local bestMatch = nil
                 local bestLen = 0
                 
-                -- FIX: Buscar la coincidencia de mayor longitud. 
-                -- Evita que "Desert Bandit" se confunda con "Bandit".
                 for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    if string.find(string.lower(questText), string.lower(qData.name)) then
+                    local cleanName = string.lower(qData.name)
+                    local matchName = cleanName
+                    if string.sub(cleanName, -3) == "ies" then
+                        matchName = string.sub(cleanName, 1, -4)
+                    elseif string.sub(cleanName, -1) == "y" then
+                        matchName = string.sub(cleanName, 1, -2)
+                    end
+                    
+                    if string.find(questText, matchName) then
                         if #qData.name > bestLen then
                             bestLen = #qData.name
                             bestMatch = qData.name
@@ -420,7 +467,15 @@ local function GetTargetEnemyNameFromQuest()
                 end
                 
                 for _, bData in ipairs(getgenv().PolarBosses) do
-                    if string.find(string.lower(questText), string.lower(bData.name)) then
+                    local cleanName = string.lower(bData.name)
+                    local matchName = cleanName
+                    if string.sub(cleanName, -3) == "ies" then
+                        matchName = string.sub(cleanName, 1, -4)
+                    elseif string.sub(cleanName, -1) == "y" then
+                        matchName = string.sub(cleanName, 1, -2)
+                    end
+                    
+                    if string.find(questText, matchName) then
                         if #bData.name > bestLen then
                             bestLen = #bData.name
                             bestMatch = bData.name
@@ -428,18 +483,9 @@ local function GetTargetEnemyNameFromQuest()
                     end
                 end
                 
-                if enemiesFolder then
-                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                        if string.find(string.lower(questText), string.lower(npc.Name)) then
-                            if #npc.Name > bestLen then
-                                bestLen = #npc.Name
-                                bestMatch = npc.Name
-                            end
-                        end
-                    end
+                if bestMatch then
+                    return bestMatch
                 end
-                
-                return bestMatch
             end
         end
     end
@@ -842,7 +888,7 @@ local function IsValidWeapon(tool)
     
     -- Blocklist de items que no son armas de combate (ej. cañas de pescar, llaves, items de evento)
     local blocklist = {
-        "fishing", "rod", "toy", "key", "chalice", "fist of darkness", 
+        "fishing", "rod", "pescar", "caña", "cana", "toy", "key", "chalice", "fist of darkness", 
         "cup", "card", "ticket", "compass", "fragment", "ore", 
         "wood", "leather", "scrap", "scroll", " fruit"
     }
