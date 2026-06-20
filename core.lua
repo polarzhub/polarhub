@@ -178,24 +178,10 @@ local function ServerHop()
 end
 
 -- ==================== HYBRID SAFE TELEPORT ====================
-local function BypassTeleport(targetCFrame)
+local function MoveDirectly(targetCFrame)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
-    
-    -- === OPTIMIZACION: TP a Isla Submarina mediante Remolino ===
-    if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
-        local whirlpool = workspace.Map:FindFirstChild("Whirlpool", true) or workspace:FindFirstChild("Whirlpool", true)
-        local wpPos = whirlpool and (whirlpool:IsA("Model") and whirlpool:GetModelCFrame().Position or whirlpool.Position) or Vector3.new(3864.68, 6.73, -1926.92)
-        
-        local dist2D = Vector2.new(hrp.Position.X - wpPos.X, hrp.Position.Z - wpPos.Z).Magnitude
-        if dist2D > 100 then
-            targetCFrame = CFrame.new(wpPos.X, math.max(hrp.Position.Y, 150), wpPos.Z)
-        else
-            targetCFrame = CFrame.new(wpPos)
-        end
-    end
-    -- ==========================================================
     
     local dist = (hrp.Position - targetCFrame.Position).Magnitude
     if dist < 50 then
@@ -232,7 +218,6 @@ local function BypassTeleport(targetCFrame)
         end
         
         -- SISTEMA ANTI-ATASCO Y ANTI-AGUA (RUTA EN U / V)
-        -- Si está en la ciudad fuente (Y muy altos o bajos) o la distancia es grande
         if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
             local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
             local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
@@ -248,6 +233,116 @@ local function BypassTeleport(targetCFrame)
         bp:Destroy()
         nclConn:Disconnect()
     end
+end
+
+local function BypassTeleport(targetCFrame)
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    -- === OPTIMIZACION: TP a Isla Submarina mediante Remolino ===
+    if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
+        local whirlpool = workspace.Map:FindFirstChild("Whirlpool", true) or workspace:FindFirstChild("Whirlpool", true)
+        local wpPos = whirlpool and (whirlpool:IsA("Model") and whirlpool:GetModelCFrame().Position or whirlpool.Position) or Vector3.new(3864.68, 6.73, -1926.92)
+        
+        local dist2D = Vector2.new(hrp.Position.X - wpPos.X, hrp.Position.Z - wpPos.Z).Magnitude
+        if dist2D > 100 then
+            targetCFrame = CFrame.new(wpPos.X, math.max(hrp.Position.Y, 150), wpPos.Z)
+        else
+            targetCFrame = CFrame.new(wpPos)
+        end
+    end
+    
+    -- === OPTIMIZACION: TP a Barco Maldito (Cursed Ship) mediante Puerta ===
+    if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
+        local door = nil
+        pcall(function()
+            for _, child in ipairs(workspace:GetChildren()) do
+                if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
+                    for _, sub in ipairs(child:GetDescendants()) do
+                        if sub:IsA("TouchTransmitter") then
+                            door = sub.Parent
+                            break
+                        end
+                    end
+                end
+                if door then break end
+            end
+            if not door and workspace:FindFirstChild("Map") then
+                for _, child in ipairs(workspace.Map:GetChildren()) do
+                    if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
+                        for _, sub in ipairs(child:GetDescendants()) do
+                            if sub:IsA("TouchTransmitter") then
+                                door = sub.Parent
+                                break
+                            end
+                        end
+                    end
+                    if door then break end
+                end
+            end
+        end)
+        
+        if door then
+            print("🚀 [Polar Hub] Entrando al Barco Maldito mediante teletransporte de puerta...")
+            MoveDirectly(door.CFrame)
+            task.wait(0.2)
+            pcall(function()
+                firetouchinterest(hrp, door, 0)
+                task.wait(0.1)
+                firetouchinterest(hrp, door, 1)
+            end)
+            task.wait(1.5)
+            char = LocalPlayer.Character
+            hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+        end
+    elseif targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
+        local exitDoor = nil
+        pcall(function()
+            for _, child in ipairs(workspace:GetChildren()) do
+                if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
+                    for _, sub in ipairs(child:GetDescendants()) do
+                        if sub:IsA("TouchTransmitter") then
+                            exitDoor = sub.Parent
+                            break
+                        end
+                    end
+                end
+                if exitDoor then break end
+            end
+            if not exitDoor and workspace:FindFirstChild("Map") then
+                for _, child in ipairs(workspace.Map:GetChildren()) do
+                    if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
+                        for _, sub in ipairs(child:GetDescendants()) do
+                            if sub:IsA("TouchTransmitter") then
+                                exitDoor = sub.Parent
+                                break
+                            end
+                        end
+                    end
+                    if exitDoor then break end
+                end
+            end
+        end)
+        
+        if exitDoor then
+            print("🚀 [Polar Hub] Saliendo del Barco Maldito...")
+            MoveDirectly(exitDoor.CFrame)
+            task.wait(0.2)
+            pcall(function()
+                firetouchinterest(hrp, exitDoor, 0)
+                task.wait(0.1)
+                firetouchinterest(hrp, exitDoor, 1)
+            end)
+            task.wait(1.5)
+            char = LocalPlayer.Character
+            hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+        end
+    end
+    
+    MoveDirectly(targetCFrame)
 end
 
 -- ==================== ULTIMATE GLOBAL BYPASS (HOOKMETAMETHOD LVL 8) ====================
