@@ -219,16 +219,21 @@ local function MoveDirectly(targetCFrame)
             if tpCheckConn then tpCheckConn:Disconnect() end
         end
         
-        if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
-            local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
-            local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
-            local p2 = CFrame.new(targetCFrame.X, safeY, targetCFrame.Z)
-            
-            DoTween(p1)
-            DoTween(p2)
+        if game.PlaceId == 4442272183 or (hrp.Position.Z > 25000 and targetCFrame.Position.Z > 25000) then
+            -- En el Barco Maldito, volar recto (noclip atravesando paredes), nunca elevarse al techo porque hace daño
             DoTween(targetCFrame)
         else
-            DoTween(targetCFrame)
+            if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
+                local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
+                local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
+                local p2 = CFrame.new(targetCFrame.X, safeY, targetCFrame.Z)
+                
+                DoTween(p1)
+                DoTween(p2)
+                DoTween(targetCFrame)
+            else
+                DoTween(targetCFrame)
+            end
         end
         
         bp:Destroy()
@@ -287,6 +292,9 @@ end
 
 function Polar.Teleport:ToIsland(islandName)
     if not islandName or islandName == "" then return end
+    if game.PlaceId == 4442272183 or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position.Z > 25000) then
+        return -- No viajar entre islas si ya estamos en el sub-lugar del Barco Maldito
+    end
     
     local origin = workspace:FindFirstChild("_WorldOrigin")
     local locs = origin and origin:FindFirstChild("Locations")
@@ -369,6 +377,16 @@ function Polar.World:FindNPC(npcName)
     return nil
 end
 
+local FallbackPositions = {
+    ["Rear Crew Quest Giver"] = Vector3.new(923, 126, 32852),
+    ["Front Crew Quest Giver"] = Vector3.new(920, 125, 33000),
+    ["Ship Deckhand"] = Vector3.new(920, 125, 32900),
+    ["Ship Engineer"] = Vector3.new(920, 125, 32900),
+    ["Ship Steward"] = Vector3.new(920, 125, 33000),
+    ["Ship Officer"] = Vector3.new(920, 125, 33100),
+    ["Cursed Captain"] = Vector3.new(920, 125, 33200),
+}
+
 function Polar.World:GetEnemySpawnPosition(enemyName)
     if not enemyName then return nil end
     if Polar.Data.SpawnCache[enemyName] then return Polar.Data.SpawnCache[enemyName] end
@@ -393,6 +411,14 @@ function Polar.World:GetEnemySpawnPosition(enemyName)
             return bestSpawn
         end
     end
+    
+    -- Usar posición hardcodeada de respaldo si no se encuentra en el mapa (útil bajo StreamingEnabled)
+    local fallbackPos = FallbackPositions[enemyName]
+    if fallbackPos then
+        Polar.Data.SpawnCache[enemyName] = fallbackPos
+        return fallbackPos
+    end
+    
     return nil
 end
 
@@ -536,6 +562,12 @@ function Polar.World:GetQuestGiverCFrame(questName)
     
     local cf = Polar.World:FindNPC(giverName)
     if cf then return cf end
+    
+    -- Usar posición de respaldo si el NPC aún no ha sido cargado/renderizado a lo lejos
+    local fallbackPos = FallbackPositions[giverName]
+    if fallbackPos then
+        return CFrame.new(fallbackPos)
+    end
     
     local islandName = Polar.Data.QuestToIsland[questName]
     if islandName then
