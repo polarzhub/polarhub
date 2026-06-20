@@ -43,20 +43,6 @@ local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
 
--- Luau Fast Registers Optimization
-local task = task
-local string = string
-local math = math
-local table = table
-local CFrame = CFrame
-local Vector3 = Vector3
-local Instance = Instance
-local ipairs = ipairs
-local pairs = pairs
-local pcall = pcall
-local select = select
-local tick = tick
-
 -- ==================== ANTI-AFK ====================
 LocalPlayer.Idled:Connect(function()
     VirtualUser:CaptureController()
@@ -78,7 +64,10 @@ task.spawn(function()
             for _, npc in ipairs(NPCsFolder:GetChildren()) do
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
-                    table.insert(getgenv().PolarNPCCache, {Name = npc.Name, CFrame = part.CFrame})
+                    if not getgenv().PolarNPCCache[npc.Name] then
+                        getgenv().PolarNPCCache[npc.Name] = {}
+                    end
+                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
                 end
             end
             print("[Polar Hub] 🔍 Scanner: " .. #NPCsFolder:GetChildren() .. " NPCs mapeados desde workspace.NPCs")
@@ -142,7 +131,10 @@ task.spawn(function()
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
                     if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
-                    table.insert(getgenv().PolarNPCCache, {Name = npc.Name, CFrame = part.CFrame})
+                    if not getgenv().PolarNPCCache[npc.Name] then
+                        getgenv().PolarNPCCache[npc.Name] = {}
+                    end
+                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
                 end
             end)
             print("[Polar Hub] 👁️ Scanner: Vigilancia de NPCs en tiempo real ACTIVADA")
@@ -371,54 +363,18 @@ local function HasQuest()
         if pgui.Main.Quest.Visible then
             local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
             if title and title.Text then
-                local textLower = string.lower(title.Text)
-                
-                -- Si el texto es del diálogo de selección, no es una misión activa
-                if textLower == "misión" or textLower == "mision" or string.find(textLower, "choose") or string.find(textLower, "elige") or string.find(textLower, "select") then
+                -- FIX: Blox Fruits deja el UI de la quest visible varios segundos diciendo "Quest Completed!".
+                -- Si no tiene un contador válido como (0/9), significa que la misión ya no está activa.
+                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
                     return false
                 end
                 
-                if string.find(textLower, "completed") or string.find(textLower, "completada") then
-                    return false
-                end
-                
-                -- Verificar si contiene el indicador de progreso (ej: "0/8" o "0/1")
-                local hasProgress = string.find(title.Text, "%d+/%d+")
-                if not hasProgress then
-                    return false
-                end
-                
-                -- Verificar si coincide con el nombre de algún enemigo de la base de datos (con manejo de plural)
+                -- Si no encontramos ningún nombre de enemigo en el texto, asumimos que no hay misión activa.
                 local bestMatch = nil
                 for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    local cleanName = string.lower(qData.name)
-                    local matchName = cleanName
-                    if string.sub(cleanName, -3) == "ies" then
-                        matchName = string.sub(cleanName, 1, -4)
-                    elseif string.sub(cleanName, -1) == "y" then
-                        matchName = string.sub(cleanName, 1, -2) -- "mercenary" -> "mercenar"
-                    end
-                    
-                    if string.find(textLower, matchName) then
+                    if string.find(string.lower(title.Text), string.lower(qData.name)) then
                         bestMatch = qData.name
                         break
-                    end
-                end
-                
-                if not bestMatch and getgenv().PolarBosses then
-                    for _, bData in ipairs(getgenv().PolarBosses) do
-                        local cleanName = string.lower(bData.name)
-                        local matchName = cleanName
-                        if string.sub(cleanName, -3) == "ies" then
-                            matchName = string.sub(cleanName, 1, -4)
-                        elseif string.sub(cleanName, -1) == "y" then
-                            matchName = string.sub(cleanName, 1, -2)
-                        end
-                        
-                        if string.find(textLower, matchName) then
-                            bestMatch = bData.name
-                            break
-                        end
                     end
                 end
                 
@@ -426,6 +382,7 @@ local function HasQuest()
                     return true
                 end
             end
+            return true
         end
     end
     return false
@@ -439,26 +396,14 @@ local function GetTargetEnemyNameFromQuest()
                 and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
                 and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
             if title and title.Text then
-                local questText = string.lower(title.Text)
-                
-                -- Si es el diálogo de selección, no es una misión activa
-                if questText == "misión" or questText == "mision" or string.find(questText, "choose") or string.find(questText, "elige") or string.find(questText, "select") then
-                    return nil
-                end
-                
+                local questText = title.Text
                 local bestMatch = nil
                 local bestLen = 0
                 
+                -- FIX: Buscar la coincidencia de mayor longitud. 
+                -- Evita que "Desert Bandit" se confunda con "Bandit".
                 for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    local cleanName = string.lower(qData.name)
-                    local matchName = cleanName
-                    if string.sub(cleanName, -3) == "ies" then
-                        matchName = string.sub(cleanName, 1, -4)
-                    elseif string.sub(cleanName, -1) == "y" then
-                        matchName = string.sub(cleanName, 1, -2)
-                    end
-                    
-                    if string.find(questText, matchName) then
+                    if string.find(string.lower(questText), string.lower(qData.name)) then
                         if #qData.name > bestLen then
                             bestLen = #qData.name
                             bestMatch = qData.name
@@ -467,15 +412,7 @@ local function GetTargetEnemyNameFromQuest()
                 end
                 
                 for _, bData in ipairs(getgenv().PolarBosses) do
-                    local cleanName = string.lower(bData.name)
-                    local matchName = cleanName
-                    if string.sub(cleanName, -3) == "ies" then
-                        matchName = string.sub(cleanName, 1, -4)
-                    elseif string.sub(cleanName, -1) == "y" then
-                        matchName = string.sub(cleanName, 1, -2)
-                    end
-                    
-                    if string.find(questText, matchName) then
+                    if string.find(string.lower(questText), string.lower(bData.name)) then
                         if #bData.name > bestLen then
                             bestLen = #bData.name
                             bestMatch = bData.name
@@ -483,9 +420,18 @@ local function GetTargetEnemyNameFromQuest()
                     end
                 end
                 
-                if bestMatch then
-                    return bestMatch
+                if enemiesFolder then
+                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                        if string.find(string.lower(questText), string.lower(npc.Name)) then
+                            if #npc.Name > bestLen then
+                                bestLen = #npc.Name
+                                bestMatch = npc.Name
+                            end
+                        end
+                    end
                 end
+                
+                return bestMatch
             end
         end
     end
@@ -506,8 +452,8 @@ end
 local function GetBestQuestData()
     local data = LocalPlayer:FindFirstChild("Data")
     local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
+    local best = getgenv().PolarLevelQuests[1]
     
-    local best = nil
     for i = 1, #getgenv().PolarLevelQuests do
         local q = getgenv().PolarLevelQuests[i]
         if lvl >= q.lvl then
@@ -518,13 +464,10 @@ local function GetBestQuestData()
             else
                 best = q
             end
+        else
+            break
         end
     end
-    
-    if not best then
-        best = getgenv().PolarLevelQuests[1]
-    end
-    
     return best
 end
 
@@ -532,86 +475,22 @@ local function GetIslandPosition(islandKeyword)
     if string.lower(islandKeyword) == "fishman" then
         islandKeyword = "Underwater City"
     end
-    
-    local targetLower = string.lower(islandKeyword)
-    
-    -- 1. Intentar buscar en _WorldOrigin.Locations (Sea 1)
     local origin = workspace:FindFirstChild("_WorldOrigin")
     local locs = origin and origin:FindFirstChild("Locations")
     if locs then
         for _, v in ipairs(locs:GetChildren()) do
-            if string.find(string.lower(v.Name), targetLower) then
+            if string.find(string.lower(v.Name), string.lower(islandKeyword)) then
                 return v.Position
             end
         end
     end
     
-    -- 2. Fallback: Buscar en workspace.Map (Sea 2 / Sea 3)
-    local map = workspace:FindFirstChild("Map")
-    if map then
-        for _, v in ipairs(map:GetChildren()) do
-            if string.find(string.lower(v.Name), targetLower) then
-                if v:IsA("Model") then
-                    local success, cf = pcall(function() return v:GetModelCFrame() end)
-                    if success and cf then return cf.Position end
-                    local success2, cf2 = pcall(function() return v:GetBoundingBox() end)
-                    if success2 and cf2 then return cf2.Position end
-                    local primary = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
-                    if primary then return primary.Position end
-                elseif v:IsA("BasePart") then
-                    return v.Position
-                end
-            end
-        end
-    end
-    
-    -- 3. Fallback: Buscar en el workspace principal
-    for _, v in ipairs(workspace:GetChildren()) do
-        if string.find(string.lower(v.Name), targetLower) and v.Name ~= "Map" then
-            if v:IsA("Model") then
-                local success, cf = pcall(function() return v:GetModelCFrame() end)
-                if success and cf then return cf.Position end
-                local success2, cf2 = pcall(function() return v:GetBoundingBox() end)
-                if success2 and cf2 then return cf2.Position end
-                local primary = v.PrimaryPart or v:FindFirstChildWhichIsA("BasePart", true)
-                if primary then return primary.Position end
-            elseif v:IsA("BasePart") then
-                return v.Position
-            end
-        end
-    end
-    
-    -- 4. Coordenadas fijas hardcodeadas si todo lo demás falla (para Sea 2 y Sea 1)
-    local HardcodedIslands = {
-        ["kingdom of rose"] = Vector3.new(-1800, 10, 1100),
-        ["cafe"] = Vector3.new(-385, 73, 297),
-        ["green zone"] = Vector3.new(-2400, 10, -2800),
-        ["graveyard"] = Vector3.new(-3200, 10, -3200),
-        ["snow mountain"] = Vector3.new(1000, 50, -4000),
-        ["hot and cold"] = Vector3.new(-5800, 15, -4800),
-        ["cursed ship"] = Vector3.new(900, 10, 3200),
-        ["ice castle"] = Vector3.new(5800, 10, -5800),
-        ["forgotten island"] = Vector3.new(-3000, 10, 4500),
-        ["dark arena"] = Vector3.new(2000, 10, -1000),
-        ["upper sky"] = Vector3.new(-7904, 5634, -1640),
-        ["marineford"] = Vector3.new(-4849, 5, 718),
-        ["prison"] = Vector3.new(4849, 5, 718),
-        ["jungle"] = Vector3.new(-1461, 30, -51),
-        ["pirate"] = Vector3.new(-1162, 5, 3816),
-        ["desert"] = Vector3.new(1094, 5, 6496),
-        ["snow"] = Vector3.new(1350, -87, -1325),
-        ["middle town"] = Vector3.new(-789, 7, 1515)
-    }
-    
-    for name, pos in pairs(HardcodedIslands) do
-        if string.find(name, targetLower) or string.find(targetLower, name) then
-            return pos
-        end
+    if string.lower(islandKeyword) == "upper sky" then
+        return Vector3.new(-7904, 5634, -1640)
     end
     
     return nil
 end
-
 
 local cachedSpawns = {}
 local function GetEnemySpawnPosition(enemyName)
@@ -729,97 +608,68 @@ local function GetQuestGiverPosition(qData)
     
     local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
     
-    -- Usar la posición del jugador como último fallback si no hay spawnPos cargado aún
-    local char = LocalPlayer.Character
-    local hrp = char and char:FindFirstChild("HumanoidRootPart")
-    local refPos = spawnPos or (hrp and hrp.Position) or Vector3.new(0, 0, 0)
-    
-    local bestCF = nil
-    local bestDist = math.huge
-    
-    local function CheckMatch(npcName, giverName)
-        local n = string.lower(npcName)
-        local g = string.lower(giverName)
-        if n == g then return true end
-        
-        -- Si uno contiene un número al final y el otro no (o números distintos), no coinciden
-        local nNum = string.match(n, "%d+")
-        local gNum = string.match(g, "%d+")
-        
-        if gNum and gNum ~= "1" then
-            if nNum ~= gNum then
-                return false
-            end
-        end
-        
-        if string.find(n, g) or string.find(g, n) then
-            return true
-        end
-        return false
-    end
-    
-    -- 1. Intentar buscar en la caché de NPCs (soporta duplicados "Quest Giver" genéricos)
+    -- PERFORMANCE BOOST: Leer del escáner dinámico usando coincidencias de texto (Fix para Area 1 Quest Giver)
     if getgenv().PolarNPCCache then
-        for _, data in ipairs(getgenv().PolarNPCCache) do
-            local npcName = data.Name
-            local cf = data.CFrame
-            
-            if CheckMatch(npcName, qData.giver) then
-                local dist = (cf.Position - refPos).Magnitude
-                if dist < 1500 and dist < bestDist then
-                    bestDist = dist
-                    bestCF = cf
+        local bestGlobalCF = nil
+        local bestGlobalDist = math.huge
+        for npcName, cacheList in pairs(getgenv().PolarNPCCache) do
+            if string.find(string.lower(npcName), string.lower(qData.giver)) then
+                if type(cacheList) == "table" and #cacheList > 0 then
+                    for _, cf in ipairs(cacheList) do
+                        local dist = spawnPos and (cf.Position - spawnPos).Magnitude or 0
+                        if dist < bestGlobalDist then
+                            bestGlobalDist = dist
+                            bestGlobalCF = cf
+                        end
+                    end
                 end
-            elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
-                local dist = (cf.Position - refPos).Magnitude
-                if dist < 1500 and dist < bestDist then
-                    bestDist = dist
-                    bestCF = cf
+            end
+        end
+        if bestGlobalCF then return bestGlobalCF end
+    end
+    
+    if HardcodedGivers[qData.giver] then
+        return HardcodedGivers[qData.giver]
+    end
+    
+    local targetNPC = nil
+    local minDist = math.huge
+    
+    local function GetValidPart(npc)
+        return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
+    end
+    
+    if workspace:FindFirstChild("NPCs") then
+        for _, npc in ipairs(workspace.NPCs:GetChildren()) do
+            local validPart = GetValidPart(npc)
+            if string.find(string.lower(npc.Name), string.lower(qData.giver)) and validPart then
+                local dist = spawnPos and (validPart.Position - spawnPos).Magnitude or 0
+                if dist < minDist then
+                    minDist = dist
+                    targetNPC = npc
+                end
+            end
+        end
+        
+        if not targetNPC and spawnPos then
+            local fallbackDist = math.huge
+            for _, npc in ipairs(workspace.NPCs:GetChildren()) do
+                local validPart = GetValidPart(npc)
+                if string.find(string.lower(npc.Name), "quest") and validPart then
+                    local dist = (validPart.Position - spawnPos).Magnitude
+                    if dist < fallbackDist then
+                        fallbackDist = dist
+                        targetNPC = npc
+                    end
                 end
             end
         end
     end
     
-    if bestCF then return bestCF end
-    
-    -- 2. Fallback: Buscar directamente en el Workspace
-    local npcsFolder = workspace:FindFirstChild("NPCs")
-    if npcsFolder then
-        for _, npc in ipairs(npcsFolder:GetChildren()) do
-            local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
-            if part then
-                local npcName = npc.Name
-                if CheckMatch(npcName, qData.giver) then
-                    local dist = (part.Position - refPos).Magnitude
-                    if dist < 1500 and dist < bestDist then
-                        bestDist = dist
-                        bestCF = part.CFrame
-                    end
-                elseif string.lower(npcName) == "quest giver" or string.find(string.lower(npcName), "quest") then
-                    local dist = (part.Position - refPos).Magnitude
-                    if dist < 1500 and dist < bestDist then
-                        bestDist = dist
-                        bestCF = part.CFrame
-                    end
-                end
-            end
-        end
+    if targetNPC then
+        local validPart = GetValidPart(targetNPC)
+        if validPart then return validPart.CFrame end
     end
-    
-    if bestCF then return bestCF end
-    
-    -- 3. Fallback: Coordenadas hardcodeadas del giver específico
-    local hardcoded = HardcodedGivers[qData.giver]
-    if hardcoded then return hardcoded end
-    
-    -- 4. Fallback de Streaming: Si el NPC no está cargado, devolvemos la posición de la isla/spawn
-    -- para forzar al bot a volar hacia allí, de forma que Roblox renderice/stream in el NPC.
-    if spawnPos then
-        return CFrame.new(spawnPos)
-    elseif refPos then
-        return CFrame.new(refPos)
-    end
-    
     return nil
 end
 
@@ -882,25 +732,6 @@ local AutoMasteryEnabled = false
 local AutoMasteryItem = "Sword"
 local AutoSkillsEnabled = false
 
-local function IsValidWeapon(tool)
-    if not tool or not tool:IsA("Tool") then return false end
-    local name = string.lower(tool.Name)
-    
-    -- Blocklist de items que no son armas de combate (ej. cañas de pescar, llaves, items de evento)
-    local blocklist = {
-        "fishing", "rod", "pescar", "caña", "cana", "toy", "key", "chalice", "fist of darkness", 
-        "cup", "card", "ticket", "compass", "fragment", "ore", 
-        "wood", "leather", "scrap", "scroll", " fruit"
-    }
-    
-    for _, pattern in ipairs(blocklist) do
-        if string.find(name, pattern) then
-            return false
-        end
-    end
-    return true
-end
-
 local function EquipWeapon(targetHealthPercent)
     local char = LocalPlayer.Character
     if not char then return end
@@ -912,7 +743,7 @@ local function EquipWeapon(targetHealthPercent)
 
     local currentTool = char:FindFirstChildOfClass("Tool")
     if currentTool then
-        if currentTool.ToolTip == weaponToEquip and IsValidWeapon(currentTool) then
+        if currentTool.ToolTip == weaponToEquip then
             return
         else
             char.Humanoid:UnequipTools()
@@ -922,7 +753,7 @@ local function EquipWeapon(targetHealthPercent)
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip and IsValidWeapon(tool) then
+            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
                 char.Humanoid:EquipTool(tool)
                 task.wait(0.1) -- FIX ANTI-CHEAT: Esperar a que el arma se equipe antes de atacar
                 return
@@ -930,7 +761,6 @@ local function EquipWeapon(targetHealthPercent)
         end
     end
 end
-
 
 
 -- ==================== AUTO HAKI & AUTO SKILLS ====================
@@ -946,9 +776,12 @@ task.spawn(function()
         if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
             local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
             if anyFarmActive then
-                local busoEnabled = getgenv().PolarAutoBusoEnabled or AutoHakiEnabled
-                if busoEnabled then
-                    if not char:FindFirstChild("HasBuso") then
+                if getgenv().PolarAutoBusoEnabled then
+                    local hasBuso = false
+                    for _, v in ipairs(char:GetChildren()) do
+                        if string.find(string.lower(v.Name), "buso") then hasBuso = true break end
+                    end
+                    if not hasBuso then
                         pcall(function() CommF:InvokeServer("Buso") end)
                     end
                 end
@@ -1035,13 +868,6 @@ end
 task.spawn(function()
     while true do
         task.wait(0.1)
-        
-        -- Evitar ejecución si las misiones del mar no han cargado aún
-        if not getgenv().PolarLevelQuests or #getgenv().PolarLevelQuests == 0 then
-            task.wait(0.4)
-            continue
-        end
-        
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
@@ -1062,14 +888,12 @@ task.spawn(function()
             -- 1. Asegurar plataforma base
             local plat = workspace:FindFirstChild("PolarFarmPlat")
             if not plat then
-                local newPlat = Instance.new("Part")
-                newPlat.Name = "PolarFarmPlat"
-                newPlat.Size = Vector3.new(15, 1, 15)
-                newPlat.Anchored = true
-                newPlat.Transparency = 1
-                newPlat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
-                newPlat.Parent = workspace
-                plat = newPlat
+                plat = Instance.new("Part", workspace)
+                plat.Name = "PolarFarmPlat"
+                plat.Size = Vector3.new(15, 1, 15)
+                plat.Anchored = true
+                plat.Transparency = 1
+                plat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
             end
 
             -- 2. Determinar Objetivo Principal
@@ -1157,34 +981,12 @@ task.spawn(function()
                         hrp.CFrame = giverCF
                         hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
                         task.wait(0.2)
-                        
-                        -- Enviar remoto de aceptación
                         pcall(function() CommF:InvokeServer("StartQuest", qData.q, qData.ql) end)
-                        
-                        -- Sistema Anti-Stuck: Esperar hasta 3s y verificar si la misión se activó
-                        local questActivated = false
-                        for i = 1, 30 do -- 3 segundos (30 * 0.1s)
-                            task.wait(0.1)
-                            if HasQuest() then
-                                questActivated = true
-                                break
-                            end
-                        end
-                        
-                        -- Si la misión falló al activarse, cerrar diálogo y mover jugador
-                        if not questActivated then
-                            warn("[Polar Hub] ⚠️ Anti-Stuck: Falló activación del quest. Declinando diálogo...")
-                            pcall(function() CommF:InvokeServer("StartQuest", "DeclineQuest") end)
-                            -- Teletransportar ligeramente arriba del NPC para romper contacto
-                            hrp.CFrame = giverCF * CFrame.new(0, 20, 0)
-                            task.wait(1)
-                        end
-                        
                         QuestTryCount = QuestTryCount + 1
                         if QuestTryCount > 10 then 
                             getgenv().PolarCurrentBotState = STATE_FARMING 
-                            QuestTryCount = 0
                         end
+                        task.wait(0.5)
                     end
                 else
                     -- FIX EXTREMO: Si el NPC no ha cargado, volar al spawn principal de la isla (Safe Zone) para forzar su renderizado.
@@ -1268,16 +1070,6 @@ task.spawn(function()
                 
                 if firstNPC then
                     local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
-                    
-                    -- EXECUTOR LEVEL 7-8: Network Ownership Bypass (Ejecutar solo una vez por ciclo)
-                    pcall(function()
-                        if setsimulationradius then
-                            setsimulationradius(math.huge, math.huge)
-                        elseif sethiddenproperty then
-                            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-                        end
-                    end)
-                    
                     local targetCF
                     
                     -- AUTO FARM SEGURO Y ESTABLE (Cero Bans / Cero Bugs Físicos):
@@ -1496,7 +1288,7 @@ task.spawn(function()
                 -- Verificar que tiene un arma equipada (no fishing rod)
                 local tool = char:FindFirstChildOfClass("Tool")
                 local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-                if tool and validWeapons[tool.ToolTip] and IsValidWeapon(tool) then
+                if tool and validWeapons[tool.ToolTip] then
                     -- MÉTODO 1: VirtualInputManager Mouse Click (simula click real del ratón)
                     pcall(function()
                         VIM:SendMouseButtonEvent(400, 400, 0, true, game, 1)
@@ -1577,7 +1369,7 @@ task.spawn(function()
             local currentTool = char:FindFirstChildOfClass("Tool")
             local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
             
-            if currentTool and validWeapons[currentTool.ToolTip] and IsValidWeapon(currentTool) and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+            if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
@@ -1595,69 +1387,49 @@ end)
 -- ==================== AUTO CHEST ====================
 local AutoChestEnabled = false
 task.spawn(function()
-    local chests = {}
-    local lastScan = 0
-    
     while true do
         if not AutoChestEnabled then
-            chests = {}
             task.wait(1)
             continue
         end
-        
-        local char = LocalPlayer.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
-        if hrp then
-            -- Filtrar los cofres que ya no existen o no tienen TouchInterest
-            local activeChests = {}
-            for _, chest in ipairs(chests) do
-                if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
-                    table.insert(activeChests, chest)
-                end
-            end
-            chests = activeChests
-            
-            -- Si no quedan cofres en la caché, realizar escaneo con throttle (mínimo cada 5s)
-            if #chests == 0 and tick() - lastScan > 5 then
-                lastScan = tick()
+        task.wait(1)
+        if AutoChestEnabled then
+            local char = LocalPlayer.Character
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if hrp then
+                local chests = {}
                 for _, v in ipairs(workspace:GetDescendants()) do
                     if string.find(v.Name, "Chest") and v:IsA("BasePart") and v:FindFirstChild("TouchInterest") then
                         table.insert(chests, v)
                     end
                 end
                 
-                -- Ordenar por cercanía
-                table.sort(chests, function(a, b)
-                    return (hrp.Position - a.Position).Magnitude < (hrp.Position - b.Position).Magnitude
-                end)
-            end
-            
-            -- Si encontramos cofres, farmear el más cercano y actualizar la lista
-            if #chests > 0 then
-                local chest = chests[1]
-                table.remove(chests, 1) -- Quitar de la lista para no procesarlo de nuevo
-                
-                if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
-                    local chestCF = chest.CFrame
-                    local dist = (hrp.Position - chestCF.Position).Magnitude
-                    if dist > 15 then
-                        BypassTeleport(chestCF)
-                    else
-                        hrp.CFrame = chestCF
+                if #chests > 0 then
+                    table.sort(chests, function(a, b)
+                        return (hrp.Position - a.Position).Magnitude < (hrp.Position - b.Position).Magnitude
+                    end)
+                    
+                    for _, chest in ipairs(chests) do
+                        if not AutoChestEnabled then break end
+                        if chest and chest.Parent and chest:FindFirstChild("TouchInterest") then
+                            local chestCF = chest.CFrame
+                            local dist = (hrp.Position - chestCF.Position).Magnitude
+                            if dist > 15 then
+                                BypassTeleport(chestCF)
+                            else
+                                hrp.CFrame = chestCF
+                            end
+                            task.wait(0.2)
+                            if firetouchinterest and chest:FindFirstChild("TouchInterest") then
+                                firetouchinterest(hrp, chest, 0)
+                                task.wait(0.01)
+                                firetouchinterest(hrp, chest, 1)
+                            end
+                            task.wait(0.2)
+                        end
                     end
-                    task.wait(0.2)
-                    if firetouchinterest and chest:FindFirstChild("TouchInterest") and hrp.Parent then
-                        firetouchinterest(hrp, chest, 0)
-                        task.wait(0.01)
-                        firetouchinterest(hrp, chest, 1)
-                    end
-                    task.wait(0.2)
                 end
-            else
-                task.wait(1) -- Esperar antes de intentar escanear de nuevo
             end
-        else
-            task.wait(1)
         end
     end
 end)
@@ -1868,7 +1640,7 @@ TabStats:Toggle({
     Title = "Auto Haki (Buso)",
     Default = true,
     Callback = function(Value)
-        getgenv().PolarAutoBusoEnabled = Value
+        AutoHakiEnabled = Value
     end
 })
 
@@ -2545,16 +2317,14 @@ task.spawn(function()
     while true do
         task.wait(2)
         if FruitFinderEnabled then
-            for _, v in ipairs(workspace:GetChildren()) do
+            for _, v in ipairs(workspace:GetDescendants()) do
                 if v:IsA("Tool") and string.find(string.lower(v.Name), "fruit") and not foundFruits[v] then
                     foundFruits[v] = true
-                    pcall(function()
-                        game:GetService("StarterGui"):SetCore("SendNotification", {
-                            Title = "🍎 ¡FRUTA ENCONTRADA!",
-                            Text = "Se ha encontrado: " .. v.Name,
-                            Duration = 10
-                        })
-                    end)
+                    game:GetService("StarterGui"):SetCore("SendNotification", {
+                        Title = "🍎 ¡FRUTA ENCONTRADA!",
+                        Text = "Se ha encontrado: " .. v.Name,
+                        Duration = 10
+                    })
                 end
             end
         end
@@ -2595,7 +2365,7 @@ task.spawn(function()
                 local currentTool = char:FindFirstChildOfClass("Tool")
                 local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
                 
-                if currentTool and validWeapons[currentTool.ToolTip] and IsValidWeapon(currentTool) and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+                if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
                     pcall(function()
                         RegisterAttack:FireServer(0)
                         RegisterHit:FireServer(mainTargetPart, targets)
@@ -2638,3 +2408,29 @@ if promptOverlay then
 end
 
 print("✅ Polar Hub cargado exitosamente.")
+
+-- ==================== TELEMETRÍA Y LOGS EN TIEMPO REAL ====================
+task.spawn(function()
+    local HttpService = pcall(function() return game:GetService("HttpService") end) and game:GetService("HttpService")
+    local LogService = game:GetService("LogService")
+    local request_func = (http_request or request or (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request))
+    
+    if request_func and HttpService then
+        LogService.MessageOut:Connect(function(message, messageType)
+            pcall(function()
+                request_func({
+                    Url = "http://127.0.0.1:3000/log",
+                    Method = "POST",
+                    Headers = {
+                        ["Content-Type"] = "application/json"
+                    },
+                    Body = HttpService:JSONEncode({
+                        message = message,
+                        type = tostring(messageType)
+                    })
+                })
+            end)
+        end)
+        print("📡 Polar Hub Telemetría: Puente de logs en tiempo real conectado.")
+    end
+end)
