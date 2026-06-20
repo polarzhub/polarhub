@@ -86,6 +86,21 @@ class MapServerHandler(http.server.BaseHTTPRequestHandler):
             except Exception as e:
                 self.send_response(400)
                 self.end_headers()
+        elif self.path == "/eval_result":
+            try:
+                result_data = json.loads(post_data)
+                success = result_data.get("success", False)
+                if success:
+                    print(f"✅ [ROBLOX EVAL SUCCESS] {result_data.get('result', '')}")
+                else:
+                    print(f"❌ [ROBLOX EVAL FAILURE] {result_data.get('error', '')}")
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/plain')
+                self.end_headers()
+                self.wfile.write(b"Result logged")
+            except Exception as e:
+                self.send_response(400)
+                self.end_headers()
         else:
             self.send_response(404)
             self.end_headers()
@@ -105,6 +120,28 @@ class MapServerHandler(http.server.BaseHTTPRequestHandler):
             else:
                 self.send_response(404)
                 self.end_headers()
+        elif self.path == "/eval":
+            command_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "command.lua")
+            code = ""
+            if os.path.exists(command_file):
+                try:
+                    with open(command_file, "r", encoding="utf-8") as f:
+                        code = f.read().strip()
+                    if code:
+                        # Truncate the file so it only runs once
+                        with open(command_file, "w", encoding="utf-8") as f:
+                            f.write("")
+                except Exception as e:
+                    print(f"Error leyendo/limpiando command.lua: {e}")
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Access-Control-Allow-Origin', '*')
+            self.end_headers()
+            if code:
+                self.wfile.write(code.encode('utf-8'))
+            else:
+                self.wfile.write(b"NO_COMMAND")
         else:
             self.send_response(404)
             self.end_headers()

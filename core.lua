@@ -2432,5 +2432,61 @@ task.spawn(function()
             end)
         end)
         print("📡 Polar Hub Telemetría: Puente de logs en tiempo real conectado.")
+        
+        -- ==================== EVALUACIÓN DE COMANDOS REMOTOS (AI BRIDGE) ====================
+        task.spawn(function()
+            task.wait(2)
+            while true do
+                task.wait(1.5)
+                pcall(function()
+                    local response = request_func({
+                        Url = "http://127.0.0.1:3000/eval",
+                        Method = "GET"
+                    })
+                    if response and response.StatusCode == 200 and response.Body and response.Body ~= "" and response.Body ~= "NO_COMMAND" then
+                        local code = response.Body
+                        print("📥 [Polar Hub AI] Recibido comando remoto para ejecutar...")
+                        local fn, err = loadstring(code)
+                        if not fn then
+                            warn("❌ Error de compilación en comando remoto: " .. tostring(err))
+                            request_func({
+                                Url = "http://127.0.0.1:3000/eval_result",
+                                Method = "POST",
+                                Headers = { ["Content-Type"] = "application/json" },
+                                Body = HttpService:JSONEncode({
+                                    success = false,
+                                    error = "Compilation error: " .. tostring(err)
+                                })
+                            })
+                        else
+                            local success, run_err = pcall(fn)
+                            if not success then
+                                warn("❌ Error de ejecución en comando remoto: " .. tostring(run_err))
+                                request_func({
+                                    Url = "http://127.0.0.1:3000/eval_result",
+                                    Method = "POST",
+                                    Headers = { ["Content-Type"] = "application/json" },
+                                    Body = HttpService:JSONEncode({
+                                        success = false,
+                                        error = "Runtime error: " .. tostring(run_err)
+                                    })
+                                })
+                            else
+                                print("✅ Comando remoto ejecutado con éxito.")
+                                request_func({
+                                    Url = "http://127.0.0.1:3000/eval_result",
+                                    Method = "POST",
+                                    Headers = { ["Content-Type"] = "application/json" },
+                                    Body = HttpService:JSONEncode({
+                                        success = true,
+                                        result = "Executed successfully"
+                                    })
+                                })
+                            end
+                        end
+                    end
+                end)
+            end
+        end)
     end
 end)
