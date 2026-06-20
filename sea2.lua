@@ -273,7 +273,7 @@ task.spawn(function()
                             end
                             task.wait(0.2)
                         
-                        elif not hasRed then
+                        elseif not hasRed then
                             warn("Polar Hub: Buscando Flor Roja (Durante el día)...")
                             local time = game.Lighting.ClockTime
                             if time >= 6 and time <= 18 then
@@ -300,7 +300,7 @@ task.spawn(function()
                                 task.wait(5)
                             end
                         
-                        elif not hasBlue then
+                        elseif not hasBlue then
                             warn("Polar Hub: Buscando Flor Azul (Durante la noche)...")
                             local time = game.Lighting.ClockTime
                             if time < 6 or time > 18 then

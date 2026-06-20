@@ -268,8 +268,8 @@ local function FullAutoSaber()
             local raw = calculateRawPhase()
             if raw == -1 then
                 if HasItem("Relic") then raw = 7
-                elif HasItem("Cup") or HasItem("FilledCup") then raw = 4
-                elif HasItem("Torch") then raw = 3
+                elseif HasItem("Cup") or HasItem("FilledCup") then raw = 4
+                elseif HasItem("Torch") then raw = 3
                 else raw = MaxSaberPhaseReached end
             end
             

@@ -19,7 +19,7 @@ getgenv().PolarNPCCache = {}
 -- Función de detección de mar robusta
 local function DetectSea()
     if PlaceId == 2753915549 then return 1 end
-    if PlaceId == 4442272000 or PlaceId == 79091703265657 then return 2 end
+    if PlaceId == 4442272000 or PlaceId == 79091703265657 or PlaceId == 4442272183 then return 2 end
     if PlaceId == 7449423635 then return 3 end
     
     -- Fallback por carpetas en Workspace (para servidores privados/custom/subplaces)
@@ -33,7 +33,7 @@ local function DetectSea()
     end
     
     if workspace:FindFirstChild("NPCs") then
-        if workspace.NPCs:FindFirstChild("Area 1 Quest Giver") or workspace.NPCs:FindFirstChild("Zombie Quest Giver") or workspace.NPCs:FindFirstChild("Alchemist") then
+        if workspace.NPCs:FindFirstChild("Area 1 Quest Giver") or workspace.NPCs:FindFirstChild("Zombie Quest Giver") or workspace.NPCs:FindFirstChild("Alchemist") or workspace.NPCs:FindFirstChild("Ship Quest Giver") then
             return 2
         end
     end
@@ -75,6 +75,6 @@ elseif detectedSea == 3 then
     print("Polar Hub: Sea 3 detectado (Cargando Sea 2 por defecto).")
     loadstring(game:HttpGet(baseURL .. "sea2.lua"))()
 else
-    warn("Polar Hub: Sea no reconocido. Cargando Sea 1 por defecto.")
+    warn("Polar Hub: Sea no reconocido ("..tostring(PlaceId).."). Cargando Sea 1 por defecto.")
     loadstring(game:HttpGet(baseURL .. "sea1.lua"))()
 end
