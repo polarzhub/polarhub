@@ -261,16 +261,21 @@ function Polar.Teleport:To(targetCFrame)
         end
     end
     
-    -- Cursed Ship
+    -- Cursed Ship (Acceso al sub-lugar desde el Mar 2 Principal)
     if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
         local door = nil
-        for _, child in ipairs(workspace:GetChildren()) do
-            if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
-                for _, sub in ipairs(child:GetDescendants()) do
-                    if sub:IsA("TouchTransmitter") then door = sub.Parent break end
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("TouchTransmitter") then
+                local parent = obj.Parent
+                if parent and parent:IsA("BasePart") then
+                    local parentName = string.lower(parent.Name)
+                    local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
+                    if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
+                        door = parent
+                        break
+                    end
                 end
             end
-            if door then break end
         end
         if door then
             MoveDirectly(door.CFrame)
