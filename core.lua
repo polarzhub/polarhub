@@ -150,35 +150,37 @@ local RegisterHit = Net and pcall(function() return Net["RE/RegisterHit"] end) a
 local RegisterAttack = Net and pcall(function() return Net["RE/RegisterAttack"] end) and Net["RE/RegisterAttack"]
 local enemiesFolder = workspace:FindFirstChild("Enemies")
 
--- ==================== BASE DE DATOS DE MISIONES (SEA 1 INTELIGENTE) ====================
--- ==================== BASE DE DATOS DE JEFES (SEA 1) ====================
-getgenv().PolarSelectedBossToFarm = "Gorilla King"
-getgenv().PolarAutoFarmBossEnabled = false
-getgenv().PolarAutoFarmAllBossesEnabled = false
-getgenv().PolarBossWithQuest = false
-local BotActiveQuest = nil
-getgenv().PolarLastBossCheckedIndex = 1
-local QuestTryCount = 0
+-- ==================== CORE PLATFORM FRAMEWORK (POLAR ENGINE) ====================
+getgenv().Polar = {
+    Data = {
+        AllowedQuests = {},
+        QuestInfo = {},
+        QuestGiver = {},
+        QuestToIsland = {},
+        Bosses = {},
+        NPCCache = {},
+        SpawnCache = {},
+        LastBossCheckedIndex = 1,
+        CurrentState = "IDLE",
+        ActiveQuestName = nil,
+    }
+}
 
-local function ServerHop()
-    local placeId = game.PlaceId
-    local servers = {}
-    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
-    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-    if success and result and result.data then
-        for _, v in ipairs(result.data) do
-            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
-                table.insert(servers, v.id)
-            end
-        end
-    end
-    if #servers > 0 then
-        TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
-    end
+-- Módulo de Jugador
+Polar.Player = {}
+
+function Polar.Player:GetLevel()
+    local data = LocalPlayer:FindFirstChild("Data")
+    return data and data:FindFirstChild("Level") and data.Level.Value or 1
 end
 
--- ==================== HYBRID SAFE TELEPORT ====================
+-- Módulo de Teletransporte
+Polar.Teleport = {}
+
 local function MoveDirectly(targetCFrame)
+    if typeof(targetCFrame) == "Vector3" then
+        targetCFrame = CFrame.new(targetCFrame)
+    end
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
@@ -217,7 +219,6 @@ local function MoveDirectly(targetCFrame)
             if tpCheckConn then tpCheckConn:Disconnect() end
         end
         
-        -- SISTEMA ANTI-ATASCO Y ANTI-AGUA (RUTA EN U / V)
         if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
             local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
             local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
@@ -235,16 +236,18 @@ local function MoveDirectly(targetCFrame)
     end
 end
 
-local function BypassTeleport(targetCFrame)
+function Polar.Teleport:To(targetCFrame)
+    if typeof(targetCFrame) == "Vector3" then
+        targetCFrame = CFrame.new(targetCFrame)
+    end
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
     
-    -- === OPTIMIZACION: TP a Isla Submarina mediante Remolino ===
+    -- Teletransporte especial para Sea 1 / Sea 2 (Isla Submarina, Barco Maldito)
     if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
         local whirlpool = workspace.Map:FindFirstChild("Whirlpool", true) or workspace:FindFirstChild("Whirlpool", true)
         local wpPos = whirlpool and (whirlpool:IsA("Model") and whirlpool:GetModelCFrame().Position or whirlpool.Position) or Vector3.new(3864.68, 6.73, -1926.92)
-        
         local dist2D = Vector2.new(hrp.Position.X - wpPos.X, hrp.Position.Z - wpPos.Z).Magnitude
         if dist2D > 100 then
             targetCFrame = CFrame.new(wpPos.X, math.max(hrp.Position.Y, 150), wpPos.Z)
@@ -253,38 +256,18 @@ local function BypassTeleport(targetCFrame)
         end
     end
     
-    -- === OPTIMIZACION: TP a Barco Maldito (Cursed Ship) mediante Puerta ===
+    -- Cursed Ship
     if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
         local door = nil
-        pcall(function()
-            for _, child in ipairs(workspace:GetChildren()) do
-                if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
-                    for _, sub in ipairs(child:GetDescendants()) do
-                        if sub:IsA("TouchTransmitter") then
-                            door = sub.Parent
-                            break
-                        end
-                    end
-                end
-                if door then break end
-            end
-            if not door and workspace:FindFirstChild("Map") then
-                for _, child in ipairs(workspace.Map:GetChildren()) do
-                    if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
-                        for _, sub in ipairs(child:GetDescendants()) do
-                            if sub:IsA("TouchTransmitter") then
-                                door = sub.Parent
-                                break
-                            end
-                        end
-                    end
-                    if door then break end
+        for _, child in ipairs(workspace:GetChildren()) do
+            if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
+                for _, sub in ipairs(child:GetDescendants()) do
+                    if sub:IsA("TouchTransmitter") then door = sub.Parent break end
                 end
             end
-        end)
-        
+            if door then break end
+        end
         if door then
-            print("🚀 [Polar Hub] Entrando al Barco Maldito mediante teletransporte de puerta...")
             MoveDirectly(door.CFrame)
             task.wait(0.2)
             pcall(function()
@@ -297,59 +280,273 @@ local function BypassTeleport(targetCFrame)
             hrp = char and char:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
         end
-    elseif targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
-        local exitDoor = nil
-        pcall(function()
-            for _, child in ipairs(workspace:GetChildren()) do
-                if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
-                    for _, sub in ipairs(child:GetDescendants()) do
-                        if sub:IsA("TouchTransmitter") then
-                            exitDoor = sub.Parent
-                            break
-                        end
-                    end
-                end
-                if exitDoor then break end
-            end
-            if not exitDoor and workspace:FindFirstChild("Map") then
-                for _, child in ipairs(workspace.Map:GetChildren()) do
-                    if string.find(string.lower(child.Name), "cursed") or string.find(string.lower(child.Name), "ship") then
-                        for _, sub in ipairs(child:GetDescendants()) do
-                            if sub:IsA("TouchTransmitter") then
-                                exitDoor = sub.Parent
-                                break
-                            end
-                        end
-                    end
-                    if exitDoor then break end
-                end
-            end
-        end)
-        
-        if exitDoor then
-            print("🚀 [Polar Hub] Saliendo del Barco Maldito...")
-            MoveDirectly(exitDoor.CFrame)
-            task.wait(0.2)
-            pcall(function()
-                firetouchinterest(hrp, exitDoor, 0)
-                task.wait(0.1)
-                firetouchinterest(hrp, exitDoor, 1)
-            end)
-            task.wait(1.5)
-            char = LocalPlayer.Character
-            hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-        end
     end
     
     MoveDirectly(targetCFrame)
 end
 
--- ==================== ULTIMATE GLOBAL BYPASS (HOOKMETAMETHOD LVL 8) ====================
--- Intercepta TODAS las llamadas a DistanceFromCharacter del juego completo.
--- Esto hace que el servidor CREA que estás al lado de cualquier NPC, ya sea
--- para comprar items, agarrar misiones, o interactuar con prompts.
--- Se activa UNA VEZ al cargar el script y nunca se desactiva.
+function Polar.Teleport:ToIsland(islandName)
+    if not islandName or islandName == "" then return end
+    
+    local origin = workspace:FindFirstChild("_WorldOrigin")
+    local locs = origin and origin:FindFirstChild("Locations")
+    local pos = nil
+    
+    if locs then
+        for _, v in ipairs(locs:GetChildren()) do
+            if string.find(string.lower(v.Name), string.lower(islandName)) then
+                pos = v.Position
+                break
+            end
+        end
+    end
+    
+    -- Fallbacks absolutos de islas
+    if not pos then
+        local fallbacks = {
+            ["town"] = Vector3.new(-1000, 15, 1000),
+            ["jungle"] = Vector3.new(-1461, 30, -51),
+            ["pirate"] = Vector3.new(-1134, 14, 3880),
+            ["desert"] = Vector3.new(1094, 20, 4344),
+            ["snow"] = Vector3.new(1384, 90, -1300),
+            ["marine"] = Vector3.new(-3122, 10, 4048),
+            ["sky"] = Vector3.new(-1643, 368, -52),
+            ["prison"] = Vector3.new(4875, 5, 743),
+            ["colosseum"] = Vector3.new(-1500, 7, 2500),
+            ["magma"] = Vector3.new(-5259, 37, 4050),
+            ["fishman"] = Vector3.new(3864, 6, -1926),
+            ["upper sky"] = Vector3.new(-7904, 5634, -1640),
+            ["fountain"] = Vector3.new(5259, 37, 4050),
+            ["kingdom of rose"] = Vector3.new(-429, 73, 299),
+            ["green zone"] = Vector3.new(-2840, 73, -2990),
+            ["graveyard"] = Vector3.new(-5154, 8, -714),
+            ["snow mountain"] = Vector3.new(639, 44, -5137),
+            ["hot and cold"] = Vector3.new(-312, 190, -4933),
+            ["cursed ship"] = Vector3.new(943, 121, 1269),
+            ["ice castle"] = Vector3.new(785, 142, 608),
+            ["forgotten island"] = Vector3.new(-2544, 256, -429)
+        }
+        pos = fallbacks[string.lower(islandName)]
+    end
+    
+    if pos then
+        print("[Polar Hub] 🚀 Volando hacia isla: " .. islandName)
+        Polar.Teleport:To(CFrame.new(pos.X, pos.Y + 250, pos.Z))
+        task.wait(1.5) -- Pausa para que carguen los assets (streaming enabled bypass)
+    end
+end
+
+-- Módulo del Mundo
+Polar.World = {}
+
+function Polar.World:FindNPC(npcName)
+    if not npcName or npcName == "" then return nil end
+    if Polar.Data.NPCCache[npcName] then return Polar.Data.NPCCache[npcName] end
+    
+    -- Buscar en NPCs folder
+    local npcs = workspace:FindFirstChild("NPCs")
+    if npcs then
+        local npc = npcs:FindFirstChild(npcName)
+        if npc then
+            local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
+            if part then
+                Polar.Data.NPCCache[npcName] = part.CFrame
+                return part.CFrame
+            end
+        end
+    end
+    
+    -- Buscar globalmente
+    for _, v in ipairs(workspace:GetDescendants()) do
+        if v:IsA("Model") and string.find(string.lower(v.Name), string.lower(npcName)) then
+            local part = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head")
+            if part then
+                Polar.Data.NPCCache[npcName] = part.CFrame
+                return part.CFrame
+            end
+        end
+    end
+    return nil
+end
+
+function Polar.World:GetEnemySpawnPosition(enemyName)
+    if not enemyName then return nil end
+    if Polar.Data.SpawnCache[enemyName] then return Polar.Data.SpawnCache[enemyName] end
+    
+    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
+    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
+    
+    if enemySpawns then
+        local bestSpawn = nil
+        local bestLenDiff = math.huge
+        for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
+            if string.find(string.lower(spawnPart.Name), string.lower(enemyName)) then
+                local diff = math.abs(#spawnPart.Name - #enemyName)
+                if diff < bestLenDiff then
+                    bestLenDiff = diff
+                    bestSpawn = spawnPart.Position
+                end
+            end
+        end
+        if bestSpawn then
+            Polar.Data.SpawnCache[enemyName] = bestSpawn
+            return bestSpawn
+        end
+    end
+    return nil
+end
+
+function Polar.World:IsEnemyAlive(enemyName)
+    if enemiesFolder then
+        for _, npc in ipairs(enemiesFolder:GetChildren()) do
+            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
+                return true
+            end
+        end
+    end
+    return false
+end
+
+-- Módulo de Misiones
+Polar.Quest = {}
+
+local QuestsTable = nil
+function Polar.Quest:GetQuestsModule()
+    if QuestsTable then return QuestsTable end
+    local success, result = pcall(function()
+        return require(game:GetService("ReplicatedStorage"):WaitForChild("Quests"))
+    end)
+    if success and result then
+        QuestsTable = result
+        return QuestsTable
+    end
+    return nil
+end
+
+function Polar.Quest:GetBestQuest()
+    local level = Polar.Player:GetLevel()
+    local quests = Polar.Quest:GetQuestsModule()
+    local allowed = Polar.Data.AllowedQuests
+    
+    if not allowed or #allowed == 0 then return nil end
+    
+    local bestQuestName = nil
+    local bestQuestIndex = 1
+    local bestQuestData = nil
+    local maxLevel = -1
+    
+    if quests then
+        for _, qName in ipairs(allowed) do
+            local qDataList = quests[qName]
+            if qDataList then
+                for index, qData in ipairs(qDataList) do
+                    if qData.LevelReq and level >= qData.LevelReq and qData.LevelReq > maxLevel then
+                        maxLevel = qData.LevelReq
+                        bestQuestName = qName
+                        bestQuestIndex = index
+                        bestQuestData = qData
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Fallback si falla el modulo del juego
+    if not bestQuestName then
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if level >= qData.lvl and qData.lvl > maxLevel then
+                maxLevel = qData.lvl
+                bestQuestName = qData.q
+                bestQuestIndex = qData.ql
+                bestQuestData = { Name = qData.name, LevelReq = qData.lvl }
+            end
+        end
+    end
+    
+    if bestQuestName then
+        return {
+            qName = bestQuestName,
+            index = bestQuestIndex,
+            enemyName = bestQuestData and bestQuestData.Name or (Polar.Data.QuestInfo[1] and Polar.Data.QuestInfo[1].name),
+            island = Polar.Data.QuestToIsland[bestQuestName] or ""
+        }
+    end
+    return nil
+end
+
+function Polar.Quest:HasQuest()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+        if pgui.Main.Quest.Visible then
+            local title = pgui.Main.Quest:FindFirstChild("Container") 
+                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
+                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+            if title and title.Text then
+                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
+                    return false
+                end
+                return true
+            end
+        end
+    end
+    return false
+end
+
+function Polar.Quest:GetTargetEnemyNameFromQuest()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
+        if pgui.Main.Quest.Visible then
+            local title = pgui.Main.Quest:FindFirstChild("Container") 
+                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
+                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
+            if title and title.Text then
+                local questText = title.Text
+                local bestMatch = nil
+                local bestLen = 0
+                
+                -- Buscar la coincidencia en nuestra base
+                for _, qData in ipairs(Polar.Data.QuestInfo) do
+                    if string.find(string.lower(questText), string.lower(qData.name)) then
+                        if #qData.name > bestLen then
+                            bestLen = #qData.name
+                            bestMatch = qData.name
+                        end
+                    end
+                end
+                
+                for _, bData in ipairs(Polar.Data.Bosses) do
+                    if string.find(string.lower(questText), string.lower(bData.name)) then
+                        if #bData.name > bestLen then
+                            bestLen = #bData.name
+                            bestMatch = bData.name
+                        end
+                    end
+                end
+                
+                return bestMatch
+            end
+        end
+    end
+    return nil
+end
+
+function Polar.World:GetQuestGiverCFrame(questName)
+    local giverName = Polar.Data.QuestGiver[questName]
+    if not giverName then return nil end
+    
+    local cf = Polar.World:FindNPC(giverName)
+    if cf then return cf end
+    
+    local islandName = Polar.Data.QuestToIsland[questName]
+    if islandName then
+        Polar.Teleport:ToIsland(islandName)
+        cf = Polar.World:FindNPC(giverName)
+        if cf then return cf end
+    end
+    return nil
+end
+
+-- Bypass Global de Distancia
 local bypassHookInstalled = false
 local function InstallGlobalBypass()
     if bypassHookInstalled then return end
@@ -363,469 +560,127 @@ local function InstallGlobalBypass()
             return oldNamecall(self, ...)
         end)
         bypassHookInstalled = true
-        print("[Polar Hub] ✅ Bypass Global de Distancia instalado (hookmetamethod lvl 8)")
+        print("[Polar Hub] ✅ Bypass Global de Distancia activo.")
     end)
 end
-InstallGlobalBypass() -- SE ACTIVA INMEDIATAMENTE
-
-
+InstallGlobalBypass()
 
 local function BuyItem(action, arg1, arg2, npcName)
     InstallGlobalBypass()
-    
     task.spawn(function()
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if not hrp then return end
         
         local oldCFrame = hrp.CFrame
+        local npcCF = Polar.World:FindNPC(npcName)
         
-        -- Indexar al máximo para conseguir las coordenadas reales del NPC
-        local targetNPC = nil
-        if npcName then
-            -- Búsqueda exhaustiva sin causar lag
+        if npcCF then
+            Polar.Teleport:To(npcCF * CFrame.new(0, 0, 3))
+            task.wait(0.5)
             for _, v in ipairs(workspace:GetDescendants()) do
-                if v:IsA("Model") and string.find(string.lower(v.Name), string.lower(npcName)) and v:FindFirstChild("HumanoidRootPart") then
-                    targetNPC = v
-                    break
-                end
-            end
-        end
-        
-        -- Llegar más rápido a la ubicación usando el Tween Real del HUB
-        if targetNPC then
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Polar Hub | Viajando",
-                    Text = "Bypass activo: Volando hacia " .. npcName .. "...",
-                    Duration = 2
-                })
-            end)
-            
-            local targetCF = targetNPC.HumanoidRootPart.CFrame * CFrame.new(0, 0, 3)
-            -- Usar la potente función del ejecutor de antes para el TP seguro
-            BypassTeleport(targetCF)
-            task.wait(0.5) -- Pausa para estabilizar la posición y red
-            
-            -- Activar Proximity Prompts si existen (Funciones del ejecutor nivel 8)
-            for _, v in ipairs(targetNPC:GetDescendants()) do
-                if v:IsA("ProximityPrompt") and fireproximityprompt then
-                    pcall(function() fireproximityprompt(v) end)
+                if v:IsA("Model") and string.find(string.lower(v.Name), string.lower(npcName)) then
+                    for _, prompt in ipairs(v:GetDescendants()) do
+                        if prompt:IsA("ProximityPrompt") and fireproximityprompt then
+                            pcall(function() fireproximityprompt(prompt) end)
+                        end
+                    end
                 end
             end
             task.wait(0.5)
         end
         
-        -- Ejecutar la compra con spoof normal
-        local success, result = pcall(function()
-            if arg2 then
-                return CommF:InvokeServer(action, arg1, arg2)
-            elseif arg1 then
-                return CommF:InvokeServer(action, arg1)
-            else
-                return CommF:InvokeServer(action)
-            end
+        pcall(function()
+            if arg2 then CommF:InvokeServer(action, arg1, arg2)
+            elseif arg1 then CommF:InvokeServer(action, arg1)
+            else CommF:InvokeServer(action) end
         end)
         
-        -- Regresar a la posición original
-        if targetNPC then
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Polar Hub | Compra",
-                    Text = success and "Compra inyectada. Volviendo..." or "Hubo un error. Volviendo...",
-                    Duration = 2
-                })
-            end)
-            
+        if npcCF then
             task.wait(0.5)
-            BypassTeleport(oldCFrame)
-        else
-            pcall(function()
-                game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "Polar Hub | Aviso",
-                    Text = "NPC no encontrado, compra remota inyectada.",
-                    Duration = 2
-                })
-            end)
+            Polar.Teleport:To(oldCFrame)
         end
     end)
 end
 
--- ==================== INTELIGENCIA ARTIFICIAL DE MISIONES ====================
-local function HasQuest()
-    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
-        if pgui.Main.Quest.Visible then
-            local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
-            if title and title.Text then
-                -- FIX: Blox Fruits deja el UI de la quest visible varios segundos diciendo "Quest Completed!".
-                -- Si no tiene un contador válido como (0/9), significa que la misión ya no está activa.
-                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
-                    return false
-                end
-                
-                -- Si no encontramos ningún nombre de enemigo en el texto, asumimos que no hay misión activa.
-                local bestMatch = nil
-                for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    if string.find(string.lower(title.Text), string.lower(qData.name)) then
-                        bestMatch = qData.name
-                        break
-                    end
-                end
-                
-                if bestMatch then
-                    return true
-                end
-            end
-            return true
-        end
-    end
-    return false
-end
+-- Exportar funciones globales
+getgenv().PolarBuyItem = BuyItem
+getgenv().PolarBypassTeleport = function(cf) Polar.Teleport:To(cf) end
+getgenv().PolarIsEnemyAlive = function(name) return Polar.World:IsEnemyAlive(name) end
+getgenv().PolarNPCCache = Polar.Data.NPCCache
+getgenv().PolarLevelQuests = Polar.Data.QuestInfo
+getgenv().PolarBosses = Polar.Data.Bosses
 
-local function GetTargetEnemyNameFromQuest()
-    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
-        if pgui.Main.Quest.Visible then
-            local title = pgui.Main.Quest:FindFirstChild("Container") 
-                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
-                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
-            if title and title.Text then
-                local questText = title.Text
-                local bestMatch = nil
-                local bestLen = 0
-                
-                -- FIX: Buscar la coincidencia de mayor longitud. 
-                -- Evita que "Desert Bandit" se confunda con "Bandit".
-                for _, qData in ipairs(getgenv().PolarLevelQuests) do
-                    if string.find(string.lower(questText), string.lower(qData.name)) then
-                        if #qData.name > bestLen then
-                            bestLen = #qData.name
-                            bestMatch = qData.name
-                        end
-                    end
-                end
-                
-                for _, bData in ipairs(getgenv().PolarBosses) do
-                    if string.find(string.lower(questText), string.lower(bData.name)) then
-                        if #bData.name > bestLen then
-                            bestLen = #bData.name
-                            bestMatch = bData.name
-                        end
-                    end
-                end
-                
-                if enemiesFolder then
-                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                        if string.find(string.lower(questText), string.lower(npc.Name)) then
-                            if #npc.Name > bestLen then
-                                bestLen = #npc.Name
-                                bestMatch = npc.Name
-                            end
-                        end
-                    end
-                end
-                
-                return bestMatch
-            end
-        end
-    end
-    return nil
-end
-
-local function IsEnemyAlive(enemyName)
-    if enemiesFolder then
-        for _, npc in ipairs(enemiesFolder:GetChildren()) do
-            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
-                return true
-            end
-        end
-    end
-    return false
-end
-
-local function GetBestQuestData()
-    local data = LocalPlayer:FindFirstChild("Data")
-    local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
-    local best = getgenv().PolarLevelQuests[1]
-    
-    for i = 1, #getgenv().PolarLevelQuests do
-        local q = getgenv().PolarLevelQuests[i]
-        if lvl >= q.lvl then
-            if q.isBoss then
-                if IsEnemyAlive(q.name) then
-                    best = q
-                end
-            else
-                best = q
-            end
-        else
-            break
-        end
-    end
-    return best
-end
-
-local function GetIslandPosition(islandKeyword)
-    if string.lower(islandKeyword) == "fishman" then
-        islandKeyword = "Underwater City"
-    end
-    local origin = workspace:FindFirstChild("_WorldOrigin")
-    local locs = origin and origin:FindFirstChild("Locations")
-    if locs then
-        for _, v in ipairs(locs:GetChildren()) do
-            if string.find(string.lower(v.Name), string.lower(islandKeyword)) then
-                return v.Position
-            end
-        end
-    end
-    
-    if string.lower(islandKeyword) == "upper sky" then
-        return Vector3.new(-7904, 5634, -1640)
-    end
-    
-    return nil
-end
-
-local cachedSpawns = {}
-local function GetEnemySpawnPosition(enemyName)
-    if cachedSpawns[enemyName] and cachedSpawns[enemyName].Y > 0 then 
-        return cachedSpawns[enemyName] 
-    end
-    
-    if string.lower(enemyName) == "mob leader" then
-        local rs = game:GetService("ReplicatedStorage")
-        local wp = workspace:FindFirstChild("_WorldOrigin")
-        local es = wp and wp:FindFirstChild("EnemySpawns")
-        
-        local targets = {
-            es and es:FindFirstChild("Mob Leader [Lv. 120] [Boss]"),
-            rs:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and rs.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Mob Leader"),
-            rs:FindFirstChild("Mob Leader"),
-            workspace.Map:FindFirstChild("MobBoss")
-        }
-        
-        for _, t in ipairs(targets) do
-            if t then
-                if t:IsA("BasePart") then
-                    cachedSpawns[enemyName] = t.Position
-                    return t.Position
-                else
-                    local bp = t:FindFirstChildWhichIsA("BasePart", true)
-                    if bp then
-                        cachedSpawns[enemyName] = bp.Position
-                        return bp.Position
-                    end
-                end
-            end
-        end
-        return Vector3.new(-2880.71, 6.44, 5430.85) -- Fallback absoluto exacto (V9 Scanner)
-    elseif string.lower(enemyName) == "saber expert" then
-        local rs = game:GetService("ReplicatedStorage")
-        local wp = workspace:FindFirstChild("_WorldOrigin")
-        local es = wp and wp:FindFirstChild("EnemySpawns")
-        
-        local targets = {
-            es and es:FindFirstChild("Saber Expert [Lv. 200] [Boss]"),
-            rs:FindFirstChild("FortBuilderReplicatedSpawnPositionsFolder") and rs.FortBuilderReplicatedSpawnPositionsFolder:FindFirstChild("Saber Expert"),
-            rs:FindFirstChild("Saber Expert")
-        }
-        
-        for _, t in ipairs(targets) do
-            if t then
-                if t:IsA("BasePart") then
-                    cachedSpawns[enemyName] = t.Position
-                    return t.Position
-                else
-                    local bp = t:FindFirstChildWhichIsA("BasePart", true)
-                    if bp then
-                        cachedSpawns[enemyName] = bp.Position
-                        return bp.Position
-                    end
-                end
-            end
-        end
-        return Vector3.new(-1461, 30, -51) -- Fallback absoluto (Jungle)
-    end
-
-    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
-    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
-    
-    if enemySpawns then
-        local bestSpawn = nil
-        local bestLenDiff = math.huge
-        for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
-            if string.find(string.lower(spawnPart.Name), string.lower(enemyName)) then
-                if spawnPart.Position.Y > 0 then
-                    local diff = math.abs(#spawnPart.Name - #enemyName)
-                    if diff < bestLenDiff then
-                        bestLenDiff = diff
-                        bestSpawn = spawnPart.Position
-                    end
-                end
-            end
-        end
-        if bestSpawn then
-            cachedSpawns[enemyName] = bestSpawn
-            return bestSpawn
-        end
-    end
-    
-    if enemiesFolder then
-        local bestSpawn = nil
-        local bestLenDiff = math.huge
-        for _, npc in ipairs(enemiesFolder:GetChildren()) do
-            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("HumanoidRootPart") then
-                local pos = npc.HumanoidRootPart.Position
-                if pos.Y > 0 then
-                    local diff = math.abs(#npc.Name - #enemyName)
-                    if diff < bestLenDiff then
-                        bestLenDiff = diff
-                        bestSpawn = pos
-                    end
-                end
-            end
-        end
-        if bestSpawn then
-            cachedSpawns[enemyName] = bestSpawn
-            return bestSpawn
-        end
-    end
-    return nil
-end
-
-local HardcodedGivers = {
-    ["Freezeburg Quest Giver"] = CFrame.new(5259.771, 37.713, 4050.025)
-}
-
-local function GetQuestGiverPosition(qData)
-    if not qData or not qData.giver then return nil end
-    
-    local spawnPos = GetEnemySpawnPosition(qData.name) or GetIslandPosition(qData.island)
-    
-    -- PERFORMANCE BOOST: Leer del escáner dinámico usando coincidencias de texto (Fix para Area 1 Quest Giver)
-    if getgenv().PolarNPCCache then
-        local bestGlobalCF = nil
-        local bestGlobalDist = math.huge
-        for npcName, cacheList in pairs(getgenv().PolarNPCCache) do
-            if string.find(string.lower(npcName), string.lower(qData.giver)) then
-                if type(cacheList) == "table" and #cacheList > 0 then
-                    for _, cf in ipairs(cacheList) do
-                        local dist = spawnPos and (cf.Position - spawnPos).Magnitude or 0
-                        if dist < bestGlobalDist then
-                            bestGlobalDist = dist
-                            bestGlobalCF = cf
-                        end
-                    end
-                end
-            end
-        end
-        if bestGlobalCF then return bestGlobalCF end
-    end
-    
-    if HardcodedGivers[qData.giver] then
-        return HardcodedGivers[qData.giver]
-    end
-    
-    local targetNPC = nil
-    local minDist = math.huge
-    
-    local function GetValidPart(npc)
-        return npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChild("Torso")
-    end
-    
-    if workspace:FindFirstChild("NPCs") then
-        for _, npc in ipairs(workspace.NPCs:GetChildren()) do
-            local validPart = GetValidPart(npc)
-            if string.find(string.lower(npc.Name), string.lower(qData.giver)) and validPart then
-                local dist = spawnPos and (validPart.Position - spawnPos).Magnitude or 0
-                if dist < minDist then
-                    minDist = dist
-                    targetNPC = npc
-                end
-            end
-        end
-        
-        if not targetNPC and spawnPos then
-            local fallbackDist = math.huge
-            for _, npc in ipairs(workspace.NPCs:GetChildren()) do
-                local validPart = GetValidPart(npc)
-                if string.find(string.lower(npc.Name), "quest") and validPart then
-                    local dist = (validPart.Position - spawnPos).Magnitude
-                    if dist < fallbackDist then
-                        fallbackDist = dist
-                        targetNPC = npc
-                    end
-                end
-            end
-        end
-    end
-    
-    if targetNPC then
-        local validPart = GetValidPart(targetNPC)
-        if validPart then return validPart.CFrame end
-    end
-    return nil
-end
-
-
-
--- ==================== ESP OPTIMIZADO ====================
-local ESPEnabled = false
-local function CreateESP(target, name)
-    if not target:FindFirstChild("Head") or target.Head:FindFirstChild("Polar_ESP") then return end
-    local billboard = Instance.new("BillboardGui")
-    billboard.Name = "Polar_ESP"
-    billboard.Adornee = target:WaitForChild("Head")
-    billboard.Size = UDim2.new(0, 100, 0, 50)
-    billboard.StudsOffset = Vector3.new(0, 2, 0)
-    billboard.AlwaysOnTop = true
-    billboard.Parent = target.Head
-    local label = Instance.new("TextLabel")
-    label.BackgroundTransparency = 1
-    label.Size = UDim2.new(1, 0, 1, 0)
-    label.Text = name or target.Name
-    label.Font = Enum.Font.GothamBold
-    label.TextSize = 14
-    label.TextColor3 = Color3.new(0, 1, 1)
-    label.TextStrokeTransparency = 0.5
-    label.Parent = billboard
-end
-local function ClearESP()
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p.Character and p.Character:FindFirstChild("Head") then
-            local e = p.Character.Head:FindFirstChild("Polar_ESP")
-            if e then e:Destroy() end
-        end
-    end
-    if enemiesFolder then
-        for _, n in ipairs(enemiesFolder:GetChildren()) do
-            if n:FindFirstChild("Head") then
-                local e = n.Head:FindFirstChild("Polar_ESP")
-                if e then e:Destroy() end
-            end
-        end
-    end
-end
-local function UpdateESPState()
-    if not ESPEnabled then return ClearESP() end
-    for _, p in ipairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then CreateESP(p.Character, p.Name) end
-    end
-    if enemiesFolder then
-        for _, n in ipairs(enemiesFolder:GetChildren()) do CreateESP(n, n.Name) end
-    end
-end
-Players.PlayerAdded:Connect(function(p) p.CharacterAdded:Connect(function(c) if ESPEnabled then task.wait(1) CreateESP(c, p.Name) end end) end)
-for _, p in ipairs(Players:GetPlayers()) do p.CharacterAdded:Connect(function(c) if ESPEnabled then task.wait(1) CreateESP(c, p.Name) end end) end
-if enemiesFolder then enemiesFolder.ChildAdded:Connect(function(c) if ESPEnabled then task.wait(0.5) CreateESP(c, c.Name) end end) end
-
-
--- ==================== AUTO EQUIPAR ====================
+-- ==================== COMPATIBILIDAD DE VARIABLES ====================
 local SelectedWeaponType = "Melee" 
 local AutoMasteryEnabled = false
 local AutoMasteryItem = "Sword"
 local AutoSkillsEnabled = false
+local AutoFarmEnabled = false
+local AutoFarmNearestEnabled = false
+getgenv().PolarAutoFarmBossEnabled = false
+getgenv().PolarAutoFarmAllBossesEnabled = false
+getgenv().PolarBossWithQuest = false
+getgenv().PolarLastBossCheckedIndex = 1
+getgenv().PolarSelectedBossToFarm = "Gorilla King"
+getgenv().PolarAutoMobLeaderEnabled = false
+getgenv().PolarAutoSaberExpertEnabled = false
+getgenv().PolarCurrentBotState = "IDLE"
+local STATE_IDLE = "IDLE"
+local STATE_FARMING = "FARMING"
+local STATE_WAITING = "WAITING"
+local STATE_GETTING_QUEST = "GETTING_QUEST"
+
+local function ServerHop()
+    local placeId = game.PlaceId
+    local servers = {}
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        for _, v in ipairs(result.data) do
+            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
+                table.insert(servers, v.id)
+            end
+        end
+    end
+    if #servers > 0 then
+        TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+    end
+end
+
+local function MatchEnemyName(npcName, targetName)
+    if npcName == targetName then return true end
+    local lowerNpc = string.lower(npcName)
+    local lowerTarget = string.lower(targetName)
+    if string.find(lowerNpc, lowerTarget) then
+        if lowerTarget == "gorilla" and string.find(lowerNpc, "king") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "desert") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "snow") then return false end
+        if lowerTarget == "bandit" and string.find(lowerNpc, "sky") then return false end
+        return true
+    end
+    return false
+end
+
+local function GetCurrentTargetEnemyName()
+    if getgenv().PolarAutoSaberExpertEnabled then return "Saber Expert" end
+    if getgenv().PolarAutoMobLeaderEnabled then return "Mob Leader" end
+    if AutoFarmNearestEnabled then return "NearestNPC" end
+    if getgenv().PolarAutoFarmAllBossesEnabled then
+        for _, b in ipairs(Polar.Data.Bosses) do
+            if Polar.World:IsEnemyAlive(b.name) then return b.name end
+        end
+        if getgenv().PolarLastBossCheckedIndex > #Polar.Data.Bosses then
+            ServerHop()
+            return "Buscando Jefes..."
+        end
+        return Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex].name
+    end
+    if getgenv().PolarAutoFarmBossEnabled then return getgenv().PolarSelectedBossToFarm end
+    
+    local bestQuest = Polar.Quest:GetBestQuest()
+    return bestQuest and bestQuest.enemyName
+end
 
 local function EquipWeapon(targetHealthPercent)
     local char = LocalPlayer.Character
@@ -850,519 +705,337 @@ local function EquipWeapon(targetHealthPercent)
         for _, tool in ipairs(backpack:GetChildren()) do
             if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
                 char.Humanoid:EquipTool(tool)
-                task.wait(0.1) -- FIX ANTI-CHEAT: Esperar a que el arma se equipe antes de atacar
+                task.wait(0.1)
                 return
             end
         end
     end
 end
 
-
--- ==================== AUTO HAKI & AUTO SKILLS ====================
-getgenv().PolarAutoBusoEnabled = false
-getgenv().PolarAutoKenEnabled = false
-getgenv().PolarAutoSkillsEnabled = false
-
-task.spawn(function()
-    local VirtualInputManager = game:GetService("VirtualInputManager")
-    while true do
-        task.wait(2)
-        local char = LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") and char.Humanoid.Health > 0 then
-            local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
-            if anyFarmActive then
-                if getgenv().PolarAutoBusoEnabled then
-                    local hasBuso = false
-                    for _, v in ipairs(char:GetChildren()) do
-                        if string.find(string.lower(v.Name), "buso") then hasBuso = true break end
-                    end
-                    if not hasBuso then
-                        pcall(function() CommF:InvokeServer("Buso") end)
-                    end
-                end
-                
-                if getgenv().PolarAutoKenEnabled then
-                    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-                    if pgui and not pgui:FindFirstChild("KenGUI") then
-                        pcall(function()
-                            VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.E, false, game)
-                            task.wait(0.1)
-                            VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.E, false, game)
-                        end)
-                    end
-                end
-                
-                if getgenv().PolarAutoSkillsEnabled and getgenv().PolarCurrentBotState == "FARMING" then
-                    pcall(function()
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.Z, false, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.Z, false, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.X, false, game)
-                        task.wait(0.1)
-                        VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.X, false, game)
-                    end)
-                end
-            end
-        end
-    end
-end)
-
--- ==================== AUTO STATS ====================
--- Usaremos la función nativa que ya existe: ToggleStat
-
--- ==================== MÁQUINA DE ESTADOS (STATE MACHINE) ====================
-local STATE_IDLE = "IDLE"
-local STATE_GETTING_QUEST = "GETTING_QUEST"
-local STATE_FARMING = "FARMING"
-local STATE_WAITING = "WAITING"
-getgenv().PolarCurrentBotState = STATE_IDLE
-
-local FarmAnchorCF = nil
-local FarmAnchorNPC = nil
-
--- ==================== CEREBRO AUTO FARM ====================
-local AutoFarmEnabled = false
-getgenv().PolarFastAttackEnabled = false
-local AutoFarmNearestEnabled = false
-getgenv().PolarAutoMobLeaderEnabled = false
-getgenv().PolarAutoSaberExpertEnabled = false
-
-local function MatchEnemyName(npcName, targetName)
-    if npcName == targetName then return true end
-    local lowerNpc = string.lower(npcName)
-    local lowerTarget = string.lower(targetName)
-    if string.find(lowerNpc, lowerTarget) then
-        if lowerTarget == "gorilla" and string.find(lowerNpc, "king") then return false end
-        if lowerTarget == "bandit" and string.find(lowerNpc, "desert") then return false end
-        if lowerTarget == "bandit" and string.find(lowerNpc, "snow") then return false end
-        if lowerTarget == "bandit" and string.find(lowerNpc, "sky") then return false end
-        return true
-    end
-    return false
-end
-
-local function GetCurrentTargetEnemyName()
-    if getgenv().PolarAutoSaberExpertEnabled then return "Saber Expert" end
-    if getgenv().PolarAutoMobLeaderEnabled then return "Mob Leader" end
-    if AutoFarmNearestEnabled then return "NearestNPC" end
-    if getgenv().PolarAutoFarmAllBossesEnabled then
-        for _, b in ipairs(getgenv().PolarBosses) do
-            if IsEnemyAlive(b.name) then return b.name end
-        end
-        if getgenv().PolarLastBossCheckedIndex > #getgenv().PolarBosses then
-            ServerHop()
-            return "Buscando Jefes..."
-        end
-        return getgenv().PolarBosses[getgenv().PolarLastBossCheckedIndex].name
-    end
-    if getgenv().PolarAutoFarmBossEnabled then return getgenv().PolarSelectedBossToFarm end
-    return GetTargetEnemyNameFromQuest() or GetBestQuestData().name
-end
-
+-- ==================== CEREBRO AUTO FARM CENTRAL ====================
+local QuestTryCount = 0
 task.spawn(function()
     while true do
         task.wait(0.1)
         local char = LocalPlayer.Character
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         local hum = char and char:FindFirstChild("Humanoid")
-        if not hrp then continue end
+        if not hrp or not hum or hum.Health <= 0 then continue end
         
         local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
         
         if not anyFarmActive then
-            getgenv().PolarCurrentBotState = STATE_IDLE
+            Polar.Data.CurrentState = "IDLE"
+            getgenv().PolarCurrentBotState = "IDLE"
             local plat = workspace:FindFirstChild("PolarFarmPlat")
             if plat then plat:Destroy() end
             task.wait(1)
             continue
         end
 
-        if anyFarmActive and char and hrp and hum and hum.Health > 0 then
+        -- 1. Asegurar plataforma base
+        local plat = workspace:FindFirstChild("PolarFarmPlat")
+        if not plat then
+            plat = Instance.new("Part", workspace)
+            plat.Name = "PolarFarmPlat"
+            plat.Size = Vector3.new(15, 1, 15)
+            plat.Anchored = true
+            plat.Transparency = 1
+            plat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+        end
+
+        -- 2. Determinar Objetivo Principal y Misión
+        local targetEnemyName = nil
+        local activeBossQuestData = nil
+        local isHuntingBoss = getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled
+        local needsQuest = not (getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled)
+        
+        -- Resolver Objetivo
+        if getgenv().PolarAutoSaberExpertEnabled then
+            targetEnemyName = "Saber Expert"
+        elseif getgenv().PolarAutoMobLeaderEnabled then
+            targetEnemyName = "Mob Leader"
+        elseif AutoFarmNearestEnabled then
+            local minDist = math.huge
+            local nearestName = nil
+            if enemiesFolder then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                    local nHum = npc:FindFirstChild("Humanoid")
+                    if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                        local d = (nHrp.Position - hrp.Position).Magnitude
+                        if d < minDist then
+                            minDist = d
+                            nearestName = npc.Name
+                        end
+                    end
+                end
+            end
+            targetEnemyName = nearestName or "Buscando Enemigos..."
+        elseif getgenv().PolarAutoFarmAllBossesEnabled then
+            for _, b in ipairs(Polar.Data.Bosses) do
+                if Polar.World:IsEnemyAlive(b.name) then
+                    targetEnemyName = b.name
+                    activeBossQuestData = b
+                    break
+                end
+            end
+            if not targetEnemyName then
+                if getgenv().PolarLastBossCheckedIndex > #Polar.Data.Bosses then
+                    ServerHop()
+                    targetEnemyName = "Buscando Jefes..."
+                else
+                    targetEnemyName = Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex].name
+                    activeBossQuestData = Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex]
+                end
+            end
+        elseif getgenv().PolarAutoFarmBossEnabled then
+            targetEnemyName = getgenv().PolarSelectedBossToFarm
+            for _, b in ipairs(Polar.Data.Bosses) do
+                if b.name == targetEnemyName then activeBossQuestData = b break end
+            end
+        else
+            -- AutoFarm de Niveles
+            local bestQuest = Polar.Quest:GetBestQuest()
+            targetEnemyName = bestQuest and bestQuest.enemyName
+        end
+        
+        -- Control de Misiones para Jefes
+        if isHuntingBoss then
+            if not getgenv().PolarBossWithQuest or (activeBossQuestData and not activeBossQuestData.q) then
+                needsQuest = false
+            end
+        end
+        
+        if targetEnemyName == "Buscando Jefes..." or targetEnemyName == "Buscando Enemigos..." or not targetEnemyName then
+            Polar.Data.CurrentState = "IDLE"
+            getgenv().PolarCurrentBotState = "IDLE"
+            task.wait(1)
+            continue
+        end
+
+        -- ==================== ESTADOS DE LA MÁQUINA DE AUTOFARM ====================
+        if Polar.Data.CurrentState == "IDLE" then
+            QuestTryCount = 0
+            if needsQuest and not Polar.Quest:HasQuest() then
+                Polar.Data.CurrentState = "GETTING_QUEST"
+                getgenv().PolarCurrentBotState = "GETTING_QUEST"
+            else
+                Polar.Data.CurrentState = "FARMING"
+                getgenv().PolarCurrentBotState = "FARMING"
+            end
+        end
+        
+        if Polar.Data.CurrentState == "GETTING_QUEST" then
+            if Polar.Quest:HasQuest() then
+                Polar.Data.CurrentState = "FARMING"
+                getgenv().PolarCurrentBotState = "FARMING"
+                continue
+            end
             
-            -- 1. Asegurar plataforma base
-            local plat = workspace:FindFirstChild("PolarFarmPlat")
-            if not plat then
-                plat = Instance.new("Part", workspace)
-                plat.Name = "PolarFarmPlat"
-                plat.Size = Vector3.new(15, 1, 15)
-                plat.Anchored = true
-                plat.Transparency = 1
-                plat.CFrame = hrp.CFrame * CFrame.new(0, -3.5, 0)
+            local bestQuest = Polar.Quest:GetBestQuest()
+            local qData = activeBossQuestData or bestQuest
+            
+            if not qData or not qData.qName then
+                Polar.Data.CurrentState = "FARMING"
+                getgenv().PolarCurrentBotState = "FARMING"
+                continue
+            end
+            
+            local giverCF = Polar.World:GetQuestGiverCFrame(qData.qName)
+            
+            if giverCF then
+                if (hrp.Position - giverCF.Position).Magnitude > 15 then
+                    Polar.Teleport:To(giverCF)
+                else
+                    hrp.CFrame = giverCF
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    task.wait(0.2)
+                    pcall(function() CommF:InvokeServer("StartQuest", qData.qName, qData.index) end)
+                    QuestTryCount = QuestTryCount + 1
+                    if QuestTryCount > 10 then
+                        Polar.Data.CurrentState = "FARMING"
+                        getgenv().PolarCurrentBotState = "FARMING"
+                    end
+                    task.wait(0.5)
+                end
+            else
+                local islandName = Polar.Data.QuestToIsland[qData.qName]
+                if islandName then
+                    Polar.Teleport:ToIsland(islandName)
+                else
+                    Polar.Data.CurrentState = "FARMING"
+                    getgenv().PolarCurrentBotState = "FARMING"
+                end
+            end
+            continue
+        end
+        
+        if Polar.Data.CurrentState == "FARMING" then
+            getgenv().PolarCurrentBotState = "FARMING"
+            -- Abandonar misión incorrecta si es necesario
+            if needsQuest then
+                if Polar.Quest:HasQuest() then
+                    local currentQuestTarget = Polar.Quest:GetTargetEnemyNameFromQuest()
+                    local expectedTarget = activeBossQuestData and activeBossQuestData.name or (Polar.Quest:GetBestQuest() and Polar.Quest:GetBestQuest().enemyName)
+                    
+                    if currentQuestTarget and expectedTarget and not MatchEnemyName(currentQuestTarget, expectedTarget) and not MatchEnemyName(expectedTarget, currentQuestTarget) then
+                        pcall(function() CommF:InvokeServer("AbandonQuest") end)
+                        Polar.Data.CurrentState = "GETTING_QUEST"
+                        getgenv().PolarCurrentBotState = "GETTING_QUEST"
+                        QuestTryCount = 0
+                        task.wait(1)
+                        continue
+                    end
+                else
+                    Polar.Data.CurrentState = "GETTING_QUEST"
+                    getgenv().PolarCurrentBotState = "GETTING_QUEST"
+                    QuestTryCount = 0
+                    continue
+                end
             end
 
-            -- 2. Determinar Objetivo Principal
-            local targetEnemyName = GetCurrentTargetEnemyName()
-            local bestQuestData = GetBestQuestData()
-            local activeBossQuestData = nil
-            local isHuntingBoss = getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled
+            -- Buscar enemigo
+            local firstNPC = nil
+            local minDist = math.huge
             
-            -- Manejo de AutoFarmNearest
-            if AutoFarmNearestEnabled then
-                local minDist = math.huge
-                local nearestName = nil
-                if enemiesFolder then
-                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
+            if enemiesFolder then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    if MatchEnemyName(npc.Name, targetEnemyName) then
                         local nHrp = npc:FindFirstChild("HumanoidRootPart")
                         local nHum = npc:FindFirstChild("Humanoid")
                         if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
                             local d = (nHrp.Position - hrp.Position).Magnitude
                             if d < minDist then
                                 minDist = d
-                                nearestName = npc.Name
+                                firstNPC = npc
                             end
                         end
                     end
                 end
-                targetEnemyName = nearestName or "Buscando Enemigos..."
             end
             
-            -- Manejo de Jefes
-            if getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoMobLeaderEnabled or getgenv().PolarAutoSaberExpertEnabled then
-                for _, b in ipairs(getgenv().PolarBosses) do
-                    if b.name == targetEnemyName then
-                        activeBossQuestData = b
-                        break
-                    end
+            if firstNPC then
+                local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
+                local targetCF = nHrp.CFrame * CFrame.new(0, isHuntingBoss and 18 or 12, 0)
+                targetCF = CFrame.new(targetCF.Position) -- Mantener estable
+                
+                plat.CFrame = targetCF
+                if (hrp.Position - plat.Position).Magnitude > 15 then
+                    Polar.Teleport:To(plat.CFrame * CFrame.new(0, 3.5, 0))
                 end
-            end
-            
-            local needsQuest = not (getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled)
-            if (getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoFarmBossEnabled) then
-                if not getgenv().PolarBossWithQuest then
-                    needsQuest = false
-                elseif activeBossQuestData and not activeBossQuestData.q then
-                    needsQuest = false
-                end
-            end
-            
-            if targetEnemyName == "Buscando Jefes..." then
-                getgenv().PolarCurrentBotState = STATE_IDLE
-                task.wait(1)
-                continue
-            end
-
-            -- ==================== INICIO MÁQUINA DE ESTADOS ====================
-            if getgenv().PolarCurrentBotState == STATE_IDLE then
-                QuestTryCount = 0
-                if needsQuest and not HasQuest() then
-                    getgenv().PolarCurrentBotState = STATE_GETTING_QUEST
-                else
-                    getgenv().PolarCurrentBotState = STATE_FARMING
-                end
-            end
-            
-            if getgenv().PolarCurrentBotState == STATE_GETTING_QUEST then
-                if HasQuest() then
-                    getgenv().PolarCurrentBotState = STATE_FARMING
-                    continue
+                hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                
+                -- Congelar enemigo principal
+                local oHum = firstNPC:FindFirstChild("Humanoid")
+                if oHum then oHum.WalkSpeed = 0 oHum.JumpPower = 0 end
+                
+                local primaryBv = nHrp:FindFirstChild("Polar_AntiGlitch")
+                if not primaryBv then
+                    primaryBv = Instance.new("BodyVelocity")
+                    primaryBv.Name = "Polar_AntiGlitch"
+                    primaryBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                    primaryBv.Velocity = Vector3.new(0, 0, 0)
+                    primaryBv.Parent = nHrp
                 end
                 
-                local qData = activeBossQuestData or bestQuestData
-                local playerLvl = LocalPlayer:FindFirstChild("Data") and LocalPlayer.Data:FindFirstChild("Level") and LocalPlayer.Data.Level.Value or 1
-                if getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoFarmBossEnabled then
-                    if not getgenv().PolarBossWithQuest or not qData.q or (qData.lvl and playerLvl < qData.lvl) then
-                        getgenv().PolarCurrentBotState = STATE_FARMING
-                        continue
-                    end
-                end
-                
-                BotActiveQuest = qData.name
-                local giverCF = GetQuestGiverPosition(qData)
-                if giverCF then
-                    if (hrp.Position - giverCF.Position).Magnitude > 15 then
-                        BypassTeleport(giverCF)
-                    else
-                        hrp.CFrame = giverCF
-                        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
-                        task.wait(0.2)
-                        pcall(function() CommF:InvokeServer("StartQuest", qData.q, qData.ql) end)
-                        QuestTryCount = QuestTryCount + 1
-                        if QuestTryCount > 10 then 
-                            getgenv().PolarCurrentBotState = STATE_FARMING 
-                        end
-                        task.wait(0.5)
-                    end
-                else
-                    -- FIX EXTREMO: Si el NPC no ha cargado, volar al spawn principal de la isla (Safe Zone) para forzar su renderizado.
-                    local loadPos = GetIslandPosition(qData.island) or GetEnemySpawnPosition(qData.name)
-                    if loadPos then
-                        local targetCF = CFrame.new(loadPos) * CFrame.new(0, 30, 0)
-                        if (hrp.Position - targetCF.Position).Magnitude > 50 then
-                            BypassTeleport(targetCF)
-                        else
-                            hrp.CFrame = targetCF
-                            hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                            task.wait(1)
-                        end
-                    else
-                        getgenv().PolarCurrentBotState = STATE_FARMING
-                    end
-                end
-                continue
-            end
-            
-            if getgenv().PolarCurrentBotState == STATE_FARMING then
-                -- Validación Continua de Misión
-                if needsQuest and HasQuest() then
-                    local currentQuestTarget = GetTargetEnemyNameFromQuest()
-                    local expectedTarget = activeBossQuestData and activeBossQuestData.name or bestQuestData.name
-                    
-                    if currentQuestTarget and currentQuestTarget ~= expectedTarget and not MatchEnemyName(currentQuestTarget, expectedTarget) and not MatchEnemyName(expectedTarget, currentQuestTarget) then
-                        
-                        warn("==================================================")
-                        warn("[Polar DEBUG EXTREMO] ⚠️ ABANDONANDO MISIÓN ⚠️")
-                        warn("-> Misión que deberíamos tener (expectedTarget):", tostring(expectedTarget))
-                        warn("-> Misión detectada en pantalla (currentQuestTarget):", tostring(currentQuestTarget))
-                        warn("-> MatchEnemyName devolvió FALSE para ambos casos.")
-                        
-                        local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-                        if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
-                            local title = pgui.Main.Quest:FindFirstChild("Container") and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
-                            if title and title.Text then
-                                warn("-> TEXTO REAL EN LA UI DE ROBLOX:", tostring(title.Text))
-                            end
-                        end
-                        warn("==================================================")
-                        
-                        pcall(function() CommF:InvokeServer("AbandonQuest") end)
-                        BotActiveQuest = nil
-                        getgenv().PolarCurrentBotState = STATE_GETTING_QUEST
-                        QuestTryCount = 0
-                        task.wait(1)
-                        continue
-                    end
-                elseif needsQuest and not HasQuest() then
-                    if BotActiveQuest ~= nil then
-                        warn("[Polar DEBUG EXTREMO] ❓ HasQuest() se volvió FALSE de repente! (La UI de la misión desapareció)")
-                    end
-                    getgenv().PolarCurrentBotState = STATE_GETTING_QUEST
-                    QuestTryCount = 0
-                    continue
-                end
-
-                local targetRealName = BotActiveQuest or targetEnemyName
-                if targetEnemyName == "NearestNPC" or AutoFarmNearestEnabled then targetRealName = targetEnemyName end
-                
-                local firstNPC = nil
-                local minDist = math.huge
-                
-                if enemiesFolder then
+                -- Agrupar otros enemigos cercanos
+                if not isHuntingBoss then
+                    local broughtCount = 1
                     for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                        if MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name) then
-                            local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                            local nHum = npc:FindFirstChild("Humanoid")
-                            if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
-                                local d = (nHrp.Position - hrp.Position).Magnitude
-                                if d < minDist then
-                                    minDist = d
-                                    firstNPC = npc
+                        if npc ~= firstNPC and MatchEnemyName(npc.Name, targetEnemyName) then
+                            local tHrp = npc:FindFirstChild("HumanoidRootPart")
+                            local tHum = npc:FindFirstChild("Humanoid")
+                            if tHrp and tHum and tHum.Health > 0 then
+                                pcall(function()
+                                    if setsimulationradius then setsimulationradius(math.huge, math.huge)
+                                    elseif sethiddenproperty then sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) end
+                                end)
+                                
+                                if (tHrp.Position - nHrp.Position).Magnitude <= 350 then
+                                    if broughtCount < 6 then
+                                        broughtCount = broughtCount + 1
+                                        
+                                        local secBv = tHrp:FindFirstChild("Polar_AntiGlitch")
+                                        if not secBv then
+                                            secBv = Instance.new("BodyVelocity")
+                                            secBv.Name = "Polar_AntiGlitch"
+                                            secBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+                                            secBv.Velocity = Vector3.new(0, 0, 0)
+                                            secBv.Parent = tHrp
+                                        end
+                                        
+                                        for _, part in ipairs(npc:GetDescendants()) do
+                                            if part:IsA("BasePart") then part.CanCollide = false end
+                                        end
+                                        tHrp.CFrame = nHrp.CFrame
+                                        tHrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                                        tHum.WalkSpeed = 0
+                                        tHum.JumpPower = 0
+                                        tHum.PlatformStand = true
+                                    end
                                 end
                             end
                         end
                     end
                 end
-                
-                if firstNPC then
-                    local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
-                    local targetCF
-                    
-                    -- AUTO FARM SEGURO Y ESTABLE (Cero Bans / Cero Bugs Físicos):
-                    -- En lugar de arrastrar NPCs al aire (lo que causa bugs de Anti-Cheat y colisiones en casas),
-                    -- el jugador VA directo hacia el NPC y se coloca de manera estable arriba de él.
-                    if isHuntingBoss then
-                        targetCF = nHrp.CFrame * CFrame.new(0, 18, 0)
-                    else
-                        targetCF = nHrp.CFrame * CFrame.new(0, 12, 0)
+            else
+                Polar.Data.CurrentState = "WAITING"
+                getgenv().PolarCurrentBotState = "WAITING"
+            end
+        end
+        
+        if Polar.Data.CurrentState == "WAITING" then
+            getgenv().PolarCurrentBotState = "WAITING"
+            -- Verificar reaparición
+            local enemySpawned = false
+            if enemiesFolder then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    if MatchEnemyName(npc.Name, targetEnemyName) then
+                        local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                        local nHum = npc:FindFirstChild("Humanoid")
+                        if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                            enemySpawned = true
+                            break
+                        end
                     end
-                    
-                    -- Limpiar la rotación para que la plataforma no se incline si el NPC se cae, manteniendo la cámara estable.
-                    targetCF = CFrame.new(targetCF.Position)
-                    
+                end
+            end
+            
+            if enemySpawned then
+                Polar.Data.CurrentState = "FARMING"
+                getgenv().PolarCurrentBotState = "FARMING"
+            else
+                local spawnPos = Polar.World:GetEnemySpawnPosition(targetEnemyName)
+                if spawnPos then
+                    local targetCF = CFrame.new(spawnPos) * CFrame.new(0, 30, 0)
                     plat.CFrame = targetCF
-                    
-                    if (hrp.Position - plat.Position).Magnitude > 15 then
-                        BypassTeleport(plat.CFrame * CFrame.new(0, 3.5, 0))
-                    end
-                    -- Mantener la velocidad en cero para que no resbale de la plataforma
-                    hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                    
-                    -- Congelar al NPC principal en su lugar original y ANULAR sus físicas
-                    local oHum = firstNPC:FindFirstChild("Humanoid")
-                    if oHum then 
-                        oHum.WalkSpeed = 0 
-                        oHum.JumpPower = 0 
-                    end
-                    
-                    -- Restaurando BodyVelocity (El método que el usuario amó)
-                    -- Congelar al NPC principal en su lugar original
-                    local primaryBv = nHrp:FindFirstChild("Polar_AntiGlitch")
-                    if not primaryBv then
-                        primaryBv = Instance.new("BodyVelocity")
-                        primaryBv.Name = "Polar_AntiGlitch"
-                        primaryBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                        primaryBv.Velocity = Vector3.new(0, 0, 0)
-                        primaryBv.Parent = nHrp
-                    end
-                    
-                    if not isHuntingBoss then
-                        local broughtCount = 1 -- Ya tenemos el principal
-                        for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                            if npc ~= firstNPC and (MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name)) then
-                                local targetHrp = npc:FindFirstChild("HumanoidRootPart")
-                                local targetHum = npc:FindFirstChild("Humanoid")
-                                if targetHrp and targetHum and targetHum.Health > 0 then
-                                    
-                                    -- EXECUTOR LEVEL 7-8: Network Ownership Bypass
-                                    -- Fuerza al servidor a darnos control de los NPCs lejanos
-                                    pcall(function()
-                                        if setsimulationradius then
-                                            setsimulationradius(math.huge, math.huge)
-                                        elseif sethiddenproperty then
-                                            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-                                        end
-                                    end)
-                                    
-                                    -- Rango masivo (350 studs) para limpiar la isla rapidísimo
-                                    if (targetHrp.Position - nHrp.Position).Magnitude <= 350 then
-                                        if broughtCount < 6 then -- Jalar hasta 6 NPCs al mismo tiempo
-                                            broughtCount = broughtCount + 1
-                                            
-                                            local secBv = targetHrp:FindFirstChild("Polar_AntiGlitch")
-                                            if not secBv then
-                                                secBv = Instance.new("BodyVelocity")
-                                                secBv.Name = "Polar_AntiGlitch"
-                                                secBv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-                                                secBv.Velocity = Vector3.new(0, 0, 0)
-                                                secBv.Parent = targetHrp
-                                            end
-                                            
-                                            -- Executor Hack: Stacking Perfecto
-                                            -- Amontonarlos en el EXACTO MISMO PIXEL sin empujarse
-                                            for _, part in ipairs(npc:GetDescendants()) do
-                                                if part:IsA("BasePart") then
-                                                    part.CanCollide = false
-                                                end
-                                            end
-                                            
-                                            targetHrp.CFrame = nHrp.CFrame
-                                            targetHrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                                            
-                                            targetHum.WalkSpeed = 0
-                                            targetHum.JumpPower = 0
-                                            -- Deshabilitar Inteligencia Artificial del enemigo
-                                            targetHum.PlatformStand = true
-                                        end
-                                    end
-                                end
-                            end
-                        end
-                    end
-                else
-                    getgenv().PolarCurrentBotState = STATE_WAITING
-                end
-            end
-            
-            if getgenv().PolarCurrentBotState == STATE_WAITING then
-                local targetRealName = BotActiveQuest or targetEnemyName
-                if targetEnemyName == "NearestNPC" or AutoFarmNearestEnabled then targetRealName = targetEnemyName end
-                
-                -- Verificar reaparición
-                local enemySpawned = false
-                if enemiesFolder then
-                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                        if MatchEnemyName(npc.Name, targetRealName) or (AutoFarmNearestEnabled and targetRealName == npc.Name) then
-                            local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                            local nHum = npc:FindFirstChild("Humanoid")
-                            if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
-                                enemySpawned = true
-                                break
-                            end
-                        end
-                    end
-                end
-                
-                if enemySpawned then
-                    getgenv().PolarCurrentBotState = STATE_FARMING
-                else
-                    local spawnPos = GetEnemySpawnPosition(targetRealName)
-                    if spawnPos then
-                        local targetCF = CFrame.new(spawnPos) * CFrame.new(0, 30, 0)
-                        plat.CFrame = targetCF
-                        if (hrp.Position - targetCF.Position).Magnitude > 20 then
-                            BypassTeleport(targetCF * CFrame.new(0, 3.5, 0))
-                        else
-                            hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                            task.wait(1) -- FIX: Previene que el loop sin espera te deje flotando congelado en el aire
-                            if getgenv().PolarAutoFarmAllBossesEnabled then
-                                if not IsEnemyAlive(targetRealName) then
-                                    getgenv().PolarLastBossCheckedIndex = getgenv().PolarLastBossCheckedIndex + 1
-                                    getgenv().PolarCurrentBotState = STATE_IDLE
-                                end
-                            end
-                        end
+                    if (hrp.Position - targetCF.Position).Magnitude > 20 then
+                        Polar.Teleport:To(targetCF * CFrame.new(0, 3.5, 0))
                     else
-                        local targetCF = nil
-                        if AutoFarmNearestEnabled then
-                            local closestDist = math.huge
-                            local islandPos = nil
-                            for _, quest in ipairs(getgenv().PolarLevelQuests) do
-                                local p = GetIslandPosition(quest.island)
-                                if p then
-                                    local d = (hrp.Position - p).Magnitude
-                                    if d < closestDist then
-                                        closestDist = d
-                                        islandPos = p
-                                    end
-                                end
-                            end
-                            if islandPos then targetCF = CFrame.new(islandPos) end
-                        else
-                            local qData = activeBossQuestData or bestQuestData
-                            
-                            -- Fix: Esperar cerca del spawn o del Quest Giver. 
-                            -- Si vamos al centro de la isla en Magma, caemos justo en el Magma Admiral (Boss).
-                            local spawnP = GetEnemySpawnPosition(qData.name)
-                            local giverP = GetQuestGiverPosition(qData)
-                            local islP = GetIslandPosition(qData.island)
-                            
-                            if spawnP then
-                                targetCF = CFrame.new(spawnP)
-                            elseif giverP then
-                                targetCF = giverP
-                            elseif islP then
-                                targetCF = CFrame.new(islP)
-                            end
-                        end
-                        
-                        if targetCF then
-                            targetCF = targetCF * CFrame.new(0, 30, 0)
-                            plat.CFrame = targetCF
-                            if (hrp.Position - targetCF.Position).Magnitude > 50 then
-                                BypassTeleport(targetCF * CFrame.new(0, 3.5, 0))
-                            else
-                                hrp.CFrame = targetCF * CFrame.new(0, 3.5, 0)
-                                hrp.AssemblyLinearVelocity = Vector3.new(0,0,0)
-                                if getgenv().PolarAutoFarmAllBossesEnabled then
-                                    task.wait(1)
-                                    if not IsEnemyAlive(targetRealName) then
-                                        getgenv().PolarLastBossCheckedIndex = getgenv().PolarLastBossCheckedIndex + 1
-                                        getgenv().PolarCurrentBotState = STATE_IDLE
-                                    end
-                                end
+                        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                        task.wait(1)
+                        if getgenv().PolarAutoFarmAllBossesEnabled then
+                            if not Polar.World:IsEnemyAlive(targetEnemyName) then
+                                getgenv().PolarLastBossCheckedIndex = getgenv().PolarLastBossCheckedIndex + 1
+                                Polar.Data.CurrentState = "IDLE"
+                                getgenv().PolarCurrentBotState = "IDLE"
                             end
                         end
                     end
+                else
+                    -- Si no se encuentra el spawn, volar a la isla para que spawnee
+                    local bestQuest = Polar.Quest:GetBestQuest()
+                    local islandName = activeBossQuestData and activeBossQuestData.island or (bestQuest and bestQuest.island)
+                    if islandName then
+                        Polar.Teleport:ToIsland(islandName)
+                    end
                 end
             end
-            
-        else
-            getgenv().PolarCurrentBotState = STATE_IDLE
-            local plat = workspace:FindFirstChild("PolarFarmPlat")
-            if plat then plat:Destroy() end
         end
     end
 end)
+
 
 
 -- ==================== AUTO-CLICK COMBAT ENGINE (NIVEL ATERRADOR) ====================
