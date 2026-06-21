@@ -180,7 +180,7 @@ local function MoveDirectly(targetCFrame)
     if not hrp then return end
     
     local dist = (hrp.Position - targetCFrame.Position).Magnitude
-    if dist < 50 then
+    if dist < 95 then
         char:PivotTo(targetCFrame)
     else
         local bp = Instance.new("BodyVelocity", hrp)
@@ -917,7 +917,7 @@ task.spawn(function()
                         Polar.Data.CurrentState = "FARMING"
                         getgenv().PolarCurrentBotState = "FARMING"
                     end
-                    task.wait(0.5)
+                    task.wait(0.25)
                 end
             else
                 local islandName = Polar.Data.QuestToIsland[qData.qName]
@@ -944,7 +944,7 @@ task.spawn(function()
                         Polar.Data.CurrentState = "GETTING_QUEST"
                         getgenv().PolarCurrentBotState = "GETTING_QUEST"
                         QuestTryCount = 0
-                        task.wait(1)
+                        task.wait(0.4)
                         continue
                     end
                 else
@@ -1201,7 +1201,7 @@ task.spawn(function()
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
-                    for _ = 1, 3 do
+                    for _ = 1, 5 do
                         RegisterAttack:FireServer(0)
                         RegisterHit:FireServer(mainTargetPart, targets)
                     end
