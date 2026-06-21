@@ -64,10 +64,7 @@ task.spawn(function()
             for _, npc in ipairs(NPCsFolder:GetChildren()) do
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
-                    if not getgenv().PolarNPCCache[npc.Name] then
-                        getgenv().PolarNPCCache[npc.Name] = {}
-                    end
-                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
                 end
             end
             print("[Polar Hub] 🔍 Scanner: " .. #NPCsFolder:GetChildren() .. " NPCs mapeados desde workspace.NPCs")
@@ -131,10 +128,7 @@ task.spawn(function()
                 local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
                 if part then
                     if not getgenv().PolarNPCCache then getgenv().PolarNPCCache = {} end
-                    if not getgenv().PolarNPCCache[npc.Name] then
-                        getgenv().PolarNPCCache[npc.Name] = {}
-                    end
-                    table.insert(getgenv().PolarNPCCache[npc.Name], part.CFrame)
+                    getgenv().PolarNPCCache[npc.Name] = part.CFrame
                 end
             end)
             print("[Polar Hub] 👁️ Scanner: Vigilancia de NPCs en tiempo real ACTIVADA")
@@ -354,7 +348,13 @@ Polar.World = {}
 
 function Polar.World:FindNPC(npcName)
     if not npcName or npcName == "" then return nil end
-    if Polar.Data.NPCCache[npcName] then return Polar.Data.NPCCache[npcName] end
+    local cached = Polar.Data.NPCCache[npcName]
+    if cached then
+        if typeof(cached) == "table" or type(cached) == "table" then
+            return cached[1]
+        end
+        return cached
+    end
     
     -- Buscar en NPCs folder
     local npcs = workspace:FindFirstChild("NPCs")
