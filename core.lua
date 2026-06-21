@@ -21,7 +21,7 @@ local Window = WindUI:CreateWindow({
     Folder = "PolarHub",
     Size = UDim2.fromOffset(580, 460),
     Transparent = true,
-    Theme = "Dark",
+    Theme = "Sky",
     OpenButton = {
 		Title = "❄️ POLAR HUB",
 		CornerRadius = UDim.new(0, 8),
@@ -2061,6 +2061,29 @@ pcall(function()
 end)
 
 -- ===== TAB MISC =====
+TabMisc:Section({ Title = "Personalización de la Interfaz" })
+
+local themesList = {}
+pcall(function()
+    for themeName, _ in pairs(WindUI:GetThemes()) do
+        table.insert(themesList, themeName)
+    end
+end)
+if #themesList == 0 then
+    themesList = {"Dark", "Light", "Rose", "Plant", "Red", "Indigo", "Sky", "Violet", "Amber", "Emerald", "Midnight", "Crimson", "Monokai Pro", "Cotton Candy", "Rainbow"}
+end
+table.sort(themesList)
+
+TabMisc:Dropdown({
+    Title = "Tema Visual",
+    Desc = "Cambia el color de acento de la interfaz en tiempo real.",
+    Values = themesList,
+    Value = "Sky",
+    Callback = function(selected)
+        pcall(function() WindUI:SetTheme(selected) end)
+    end
+})
+
 TabMisc:Section({ Title = "Utilidades Extra" })
 
 local FruitFinderEnabled = false
