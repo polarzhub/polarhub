@@ -750,7 +750,7 @@ local function EquipWeapon(targetHealthPercent)
     local backpack = LocalPlayer:FindFirstChild("Backpack")
     if backpack then
         for _, tool in ipairs(backpack:GetChildren()) do
-            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip then
+            if tool:IsA("Tool") and tool.ToolTip == weaponToEquip and tool.Name ~= "Fishing Rod" then
                 char.Humanoid:EquipTool(tool)
                 task.wait(0.1)
                 return
@@ -1116,7 +1116,7 @@ task.spawn(function()
                 -- Verificar que tiene un arma equipada (no fishing rod)
                 local tool = char:FindFirstChildOfClass("Tool")
                 local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-                if tool and validWeapons[tool.ToolTip] then
+                if tool and validWeapons[tool.ToolTip] and tool.Name ~= "Fishing Rod" then
                     -- MÉTODO 1: VirtualInputManager Mouse Click (simula click real del ratón)
                     pcall(function()
                         VIM:SendMouseButtonEvent(400, 400, 0, true, game, 1)
@@ -1197,7 +1197,7 @@ task.spawn(function()
             local currentTool = char:FindFirstChildOfClass("Tool")
             local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
             
-            if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
+            if currentTool and validWeapons[currentTool.ToolTip] and currentTool.Name ~= "Fishing Rod" and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
