@@ -286,13 +286,57 @@ function Polar.Teleport:To(targetCFrame)
         end
     end
     
+    -- Barco Maldito (Salida hacia el Mar 2 Principal si el objetivo está fuera)
+    if targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
+        local door = nil
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("TouchTransmitter") then
+                local parent = obj.Parent
+                if parent and parent:IsA("BasePart") then
+                    local parentName = string.lower(parent.Name)
+                    if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
+                        door = parent
+                        break
+                    end
+                end
+            end
+        end
+        if not door then
+            -- Fallback: Encontrar cualquier TouchTransmitter cerca de las escaleras de spawn en el barco
+            for _, obj in ipairs(workspace:GetDescendants()) do
+                if obj:IsA("TouchTransmitter") then
+                    local parent = obj.Parent
+                    if parent and parent:IsA("BasePart") and (parent.Position - Vector3.new(920, 125, 32800)).Magnitude < 100 then
+                        door = parent
+                        break
+                    end
+                end
+            end
+        end
+        if door then
+            MoveDirectly(door.CFrame)
+            task.wait(0.2)
+            pcall(function()
+                firetouchinterest(hrp, door, 0)
+                task.wait(0.1)
+                firetouchinterest(hrp, door, 1)
+            end)
+            task.wait(5) -- Esperar a que cargue el mapa principal
+            char = LocalPlayer.Character
+            hrp = char and char:FindFirstChild("HumanoidRootPart")
+            if not hrp then return end
+        end
+    end
+    
     MoveDirectly(targetCFrame)
 end
 
 function Polar.Teleport:ToIsland(islandName)
     if not islandName or islandName == "" then return end
-    if game.PlaceId == 4442272183 or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position.Z > 25000) then
-        return -- No viajar entre islas si ya estamos en el sub-lugar del Barco Maldito
+    
+    local inCursedShip = game.PlaceId == 4442272183 or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position.Z > 25000)
+    if inCursedShip and string.lower(islandName) == "cursed ship" then
+        return -- Ya estamos en el barco, no es necesario viajar
     end
     
     local origin = workspace:FindFirstChild("_WorldOrigin")
