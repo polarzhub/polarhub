@@ -279,10 +279,8 @@ function Polar.Teleport:To(targetCFrame)
                 task.wait(0.1)
                 firetouchinterest(hrp, door, 1)
             end)
-            task.wait(1.5)
-            char = LocalPlayer.Character
-            hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+            task.wait(999999)
+            return
         end
     end
     
@@ -321,10 +319,8 @@ function Polar.Teleport:To(targetCFrame)
                 task.wait(0.1)
                 firetouchinterest(hrp, door, 1)
             end)
-            task.wait(5) -- Esperar a que cargue el mapa principal
-            char = LocalPlayer.Character
-            hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
+            task.wait(999999)
+            return
         end
     end
     
