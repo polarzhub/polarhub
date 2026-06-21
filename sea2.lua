@@ -16,7 +16,7 @@ local TabQuest = Polar.TabQuest or getgenv().PolarTabQuest
 Polar.Data.AllowedQuests = {
     "RoseQuest", "RoseQuest2", "MarineQuest3", "ZombieQuest", 
     "SnowMountainQuest", "IceSideQuest", "FireSideQuest", 
-    "ShipQuest1", "ShipQuest2", "FrostQuest", "ForgottenQuest"
+    "ShipQuest1", "FrostQuest", "ForgottenQuest"
 }
 
 Polar.Data.QuestInfo = {
@@ -39,8 +39,8 @@ Polar.Data.QuestInfo = {
     {lvl = 1250, q = "ShipQuest1", ql = 1, name = "Ship Deckhand", giver = "Rear Crew Quest Giver", island = "Cursed Ship"},
     {lvl = 1275, q = "ShipQuest1", ql = 2, name = "Ship Engineer", giver = "Rear Crew Quest Giver", island = "Cursed Ship"},
     {lvl = 1275, q = "FireSideQuest", ql = 3, name = "Smoke Admiral", giver = "Fire Quest Giver", island = "Hot and Cold", isBoss = true},
-    {lvl = 1300, q = "ShipQuest2", ql = 1, name = "Ship Steward", giver = "Front Crew Quest Giver", island = "Cursed Ship"},
-    {lvl = 1325, q = "ShipQuest2", ql = 2, name = "Ship Officer", giver = "Front Crew Quest Giver", island = "Cursed Ship"},
+    {lvl = 1300, q = "ShipQuest1", ql = 3, name = "Ship Steward", giver = "Front Crew Quest Giver", island = "Cursed Ship"},
+    {lvl = 1325, q = "ShipQuest1", ql = 4, name = "Ship Officer", giver = "Front Crew Quest Giver", island = "Cursed Ship"},
     {lvl = 1350, q = "FrostQuest", ql = 1, name = "Arctic Warrior", giver = "Frost Quest Giver", island = "Ice Castle"},
     {lvl = 1375, q = "FrostQuest", ql = 2, name = "Snow Lurker", giver = "Frost Quest Giver", island = "Ice Castle"},
     {lvl = 1400, q = "FrostQuest", ql = 3, name = "Awakened Ice Admiral", giver = "Frost Quest Giver", island = "Ice Castle", isBoss = true},

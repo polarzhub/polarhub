@@ -561,8 +561,18 @@ function Polar.Quest:GetTargetEnemyNameFromQuest()
     return nil
 end
 
-function Polar.World:GetQuestGiverCFrame(questName)
+function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
     local giverName = Polar.Data.QuestGiver[questName]
+    
+    -- Soporte para misiones del Barco Maldito que se dividen entre dos NPCs distintos
+    if questName == "ShipQuest1" or questName == "ShipQuest2" then
+        if index == 3 or index == 4 or (enemyName and (string.find(enemyName, "Steward") or string.find(enemyName, "Officer"))) then
+            giverName = "Front Crew Quest Giver"
+        elseif index == 1 or index == 2 or (enemyName and (string.find(enemyName, "Deckhand") or string.find(enemyName, "Engineer"))) then
+            giverName = "Rear Crew Quest Giver"
+        end
+    end
+    
     if not giverName then return nil end
     
     local cf = Polar.World:FindNPC(giverName)
@@ -873,13 +883,26 @@ task.spawn(function()
             local bestQuest = Polar.Quest:GetBestQuest()
             local qData = activeBossQuestData or bestQuest
             
+            -- Normalizar qData para dar soporte unificado a BossData y QuestData
+            if qData then
+                if not qData.qName and qData.q then
+                    qData.qName = qData.q
+                end
+                if not qData.index and qData.ql then
+                    qData.index = qData.ql
+                end
+                if not qData.enemyName and qData.name then
+                    qData.enemyName = qData.name
+                end
+            end
+            
             if not qData or not qData.qName then
                 Polar.Data.CurrentState = "FARMING"
                 getgenv().PolarCurrentBotState = "FARMING"
                 continue
             end
             
-            local giverCF = Polar.World:GetQuestGiverCFrame(qData.qName)
+            local giverCF = Polar.World:GetQuestGiverCFrame(qData.qName, qData.index, qData.enemyName)
             
             if giverCF then
                 if (hrp.Position - giverCF.Position).Magnitude > 15 then
