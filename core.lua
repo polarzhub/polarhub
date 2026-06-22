@@ -850,6 +850,24 @@ local function GetMainPlaceIdForCurrentSea()
     return 2753915549
 end
 
+local serverHopCache = {}
+local serverHopIndex = 1
+
+TeleportService.TeleportInitFailed:Connect(function(player, teleportResult, errorMessage, placeId)
+    if player == LocalPlayer then
+        warn("[Polar Hub] Teletransporte falló: " .. tostring(teleportResult) .. " (" .. tostring(errorMessage) .. ")")
+        if #serverHopCache > 0 and serverHopIndex < #serverHopCache then
+            serverHopIndex = serverHopIndex + 1
+            local nextServerId = serverHopCache[serverHopIndex]
+            local targetPlaceId = placeId or GetMainPlaceIdForCurrentSea()
+            warn("[Polar Hub] Reintentando automático con servidor alternativo (" .. tostring(serverHopIndex) .. "/" .. tostring(#serverHopCache) .. ")...")
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(targetPlaceId, nextServerId, LocalPlayer)
+            end)
+        end
+    end
+end)
+
 local function ServerHop()
     local placeId = GetMainPlaceIdForCurrentSea()
     local servers = {}
@@ -857,61 +875,117 @@ local function ServerHop()
     local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
     if success and result and result.data then
         for _, v in ipairs(result.data) do
-            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
+            if type(v) == "table" and v.playing and v.maxPlayers and v.playing >= 2 and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
                 table.insert(servers, v.id)
             end
         end
     end
     if #servers > 0 then
+        local shuffled = {}
+        while #servers > 0 do
+            table.insert(shuffled, table.remove(servers, math.random(1, #servers)))
+        end
+        serverHopCache = shuffled
+        serverHopIndex = 1
         pcall(function()
-            TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+            TeleportService:TeleportToPlaceInstance(placeId, serverHopCache[1], LocalPlayer)
         end)
     end
 end
 
 local function ServerHopLowPlayers()
     local placeId = GetMainPlaceIdForCurrentSea()
-    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
-    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-    if success and result and result.data then
-        local serverList = {}
-        for _, v in ipairs(result.data) do
-            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
-                table.insert(serverList, v)
+    local serverList = {}
+    local cursor = ""
+    local attempts = 0
+    while attempts < 5 do
+        local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        if cursor ~= "" then
+            url = url .. "&cursor=" .. cursor
+        end
+        local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+        if success and result and result.data then
+            for _, v in ipairs(result.data) do
+                if type(v) == "table" and v.playing and v.maxPlayers and v.id ~= game.JobId then
+                    if v.playing >= 2 and v.playing <= v.maxPlayers - 2 then
+                        table.insert(serverList, v)
+                    end
+                end
             end
+            if #serverList >= 20 or not result.nextPageCursor then
+                break
+            end
+            cursor = result.nextPageCursor
+        else
+            break
         end
-        if #serverList > 0 then
-            table.sort(serverList, function(a, b)
-                return a.playing < b.playing
-            end)
-            local targetServer = serverList[math.random(1, math.min(3, #serverList))]
-            pcall(function()
-                TeleportService:TeleportToPlaceInstance(placeId, targetServer.id, LocalPlayer)
-            end)
+        attempts = attempts + 1
+        task.wait(0.1)
+    end
+    
+    if #serverList > 0 then
+        table.sort(serverList, function(a, b)
+            return a.playing < b.playing
+        end)
+        local cache = {}
+        for _, s in ipairs(serverList) do
+            table.insert(cache, s.id)
         end
+        serverHopCache = cache
+        serverHopIndex = 1
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(placeId, serverHopCache[1], LocalPlayer)
+        end)
+    else
+        ServerHop()
     end
 end
 
 local function ServerHopBestPing()
     local placeId = GetMainPlaceIdForCurrentSea()
-    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
-    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-    if success and result and result.data then
-        local serverList = {}
-        for _, v in ipairs(result.data) do
-            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId and v.ping then
-                table.insert(serverList, v)
+    local serverList = {}
+    local cursor = ""
+    local attempts = 0
+    while attempts < 5 do
+        local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+        if cursor ~= "" then
+            url = url .. "&cursor=" .. cursor
+        end
+        local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+        if success and result and result.data then
+            for _, v in ipairs(result.data) do
+                if type(v) == "table" and v.playing and v.maxPlayers and v.id ~= game.JobId and v.ping then
+                    if v.playing >= 2 and v.playing <= v.maxPlayers - 2 then
+                        table.insert(serverList, v)
+                    end
+                end
             end
+            if #serverList >= 20 or not result.nextPageCursor then
+                break
+            end
+            cursor = result.nextPageCursor
+        else
+            break
         end
-        if #serverList > 0 then
-            table.sort(serverList, function(a, b)
-                return a.ping < b.ping
-            end)
-            local targetServer = serverList[math.random(1, math.min(3, #serverList))]
-            pcall(function()
-                TeleportService:TeleportToPlaceInstance(placeId, targetServer.id, LocalPlayer)
-            end)
+        attempts = attempts + 1
+        task.wait(0.1)
+    end
+    
+    if #serverList > 0 then
+        table.sort(serverList, function(a, b)
+            return a.ping < b.ping
+        end)
+        local cache = {}
+        for _, s in ipairs(serverList) do
+            table.insert(cache, s.id)
         end
+        serverHopCache = cache
+        serverHopIndex = 1
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(placeId, serverHopCache[1], LocalPlayer)
+        end)
+    else
+        ServerHop()
     end
 end
 
@@ -1589,6 +1663,7 @@ local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
 local TabQuest = Window:MakeTab({ Title = "Quest Farm", Icon = "map" })
 local TabTeleport = Window:MakeTab({ Title = "Teleport", Icon = "globe" })
 local TabCombat = Window:MakeTab({ Title = "Combat PvP", Icon = "crosshair" })
+local TabServers = Window:MakeTab({ Title = "Server Hop", Icon = "server" })
 local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
 
 getgenv().PolarWindow = Window
@@ -1599,6 +1674,7 @@ getgenv().PolarTabShop = TabShop
 getgenv().PolarTabQuest = TabQuest
 getgenv().PolarTabTeleport = TabTeleport
 getgenv().PolarTabCombat = TabCombat
+getgenv().PolarTabServers = TabServers
 getgenv().PolarTabMisc = TabMisc
 
 -- Exportar funciones utilitarias de core.lua para sea.lua
@@ -2375,10 +2451,10 @@ TabMisc:AddToggle({
     end
 })
 
-TabMisc:AddSection("Gestión de Servidores (Job)")
+TabServers:AddSection("Gestión de Servidores (Job)")
 
 local TargetJobId = ""
-TabMisc:AddTextBox({
+TabServers:AddTextBox({
     Name = "Pegar Job ID",
     PlaceholderText = "Escribe o pega el Job ID aquí...",
     Callback = function(Value)
@@ -2386,7 +2462,7 @@ TabMisc:AddTextBox({
     end
 })
 
-TabMisc:AddButton({
+TabServers:AddButton({
     Name = "Unirse por Job ID",
     Callback = function()
         if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
@@ -2399,21 +2475,21 @@ TabMisc:AddButton({
     end
 })
 
-TabMisc:AddButton({
+TabServers:AddButton({
     Name = "Copiar Job ID de este Servidor",
     Callback = function()
         CopyToClipboard(tostring(game.JobId))
     end
 })
 
-TabMisc:AddButton({
+TabServers:AddButton({
     Name = "Saltar a Servidor con Menos Gente",
     Callback = function()
         ServerHopLowPlayers()
     end
 })
 
-TabMisc:AddButton({
+TabServers:AddButton({
     Name = "Saltar a Servidor con Mejor Ping",
     Callback = function()
         ServerHopBestPing()
