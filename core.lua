@@ -2597,11 +2597,15 @@ TabServers:AddButton({
 })
 
 local AutoCazarEnabled = false
+local lastTeleportedJobId = nil
 TabServers:AddToggle({
     Name = "Auto-Unirse a Caza (Bot de Discord)",
     Desc = "Te une automáticamente al servidor del objetivo cuando el bot de Discord lo localice.",
     Callback = function(Value)
         AutoCazarEnabled = Value
+        if not Value then
+            lastTeleportedJobId = nil
+        end
     end
 })
 
@@ -2615,8 +2619,11 @@ task.spawn(function()
                 if raw then
                     local success, result = pcall(function() return HttpService:JSONDecode(raw) end)
                     if success and result and result.success and result.jobId then
-                        warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
-                        TeleportService:TeleportToPlaceInstance(result.placeId or game.PlaceId, result.jobId, LocalPlayer)
+                        if result.jobId ~= lastTeleportedJobId then
+                            lastTeleportedJobId = result.jobId
+                            warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
+                            TeleportService:TeleportToPlaceInstance(result.placeId or game.PlaceId, result.jobId, LocalPlayer)
+                        end
                     end
                 end
             end)
