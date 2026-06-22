@@ -2073,6 +2073,25 @@ TabMisc:AddDropdown({
         pcall(function() redzlib:SetTheme(selected) end)
     end
 })
+
+TabMisc:AddDropdown({
+    Name = "Escala de la Interfaz (UI Scale)",
+    Description = "Ajusta el tamaño global de la interfaz.",
+    Options = {"Pequeño", "Mediano", "Grande", "Muy Grande"},
+    Default = "Mediano",
+    Callback = function(selected)
+        local scaleMap = {
+            ["Pequeño"] = 950,
+            ["Mediano"] = 800,
+            ["Grande"] = 650,
+            ["Muy Grande"] = 500
+        }
+        local val = scaleMap[selected] or 800
+        pcall(function()
+            redzlib:SetScale(val)
+        end)
+    end
+})
 TabMisc:AddSection("Utilidades Extra")
 
 local FruitFinderEnabled = false
