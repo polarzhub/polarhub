@@ -818,6 +818,31 @@ local function CopyToClipboard(text)
     end
 end
 
+local function GetServerFromBridge(queryType, placeId)
+    local url = "http://127.0.0.1:3000/get_server?type=" .. tostring(queryType) .. "&place_id=" .. tostring(placeId)
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.success then
+        return result.jobId, result.placeId
+    end
+    return nil
+end
+
+local function SendDiscordNotification(title, description, fields)
+    pcall(function()
+        local payload = {
+            embed = {
+                title = title,
+                description = description,
+                color = 378120,
+                fields = fields or {},
+                footer = "Polar Hub Notificaciones"
+            }
+        }
+        local jsonPayload = HttpService:JSONEncode(payload)
+        HttpService:PostAsync("http://127.0.0.1:3000/log_discord", jsonPayload, Enum.HttpContentType.ApplicationJson)
+    end)
+end
+
 local function GetMainPlaceIdForCurrentSea()
     local placeId = game.PlaceId
     if placeId == 2753915549 then return 2753915549 end
@@ -895,6 +920,19 @@ end
 
 local function ServerHopLowPlayers()
     local placeId = GetMainPlaceIdForCurrentSea()
+    
+    local bridgeJobId, bridgePlaceId = GetServerFromBridge("low_players", placeId)
+    if bridgeJobId then
+        warn("[Polar Hub] Servidor con pocos jugadores obtenido vía Python Bridge!")
+        serverHopCache = { bridgeJobId }
+        serverHopIndex = 1
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(bridgePlaceId or placeId, bridgeJobId, LocalPlayer)
+        end)
+        return
+    end
+    
+    warn("[Polar Hub] Python Bridge no disponible. Usando escaneo Lua interno...")
     local serverList = {}
     local cursor = ""
     local attempts = 0
@@ -943,6 +981,19 @@ end
 
 local function ServerHopBestPing()
     local placeId = GetMainPlaceIdForCurrentSea()
+    
+    local bridgeJobId, bridgePlaceId = GetServerFromBridge("best_ping", placeId)
+    if bridgeJobId then
+        warn("[Polar Hub] Servidor con mejor ping obtenido vía Python Bridge!")
+        serverHopCache = { bridgeJobId }
+        serverHopIndex = 1
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(bridgePlaceId or placeId, bridgeJobId, LocalPlayer)
+        end)
+        return
+    end
+    
+    warn("[Polar Hub] Python Bridge no disponible. Usando escaneo Lua interno...")
     local serverList = {}
     local cursor = ""
     local attempts = 0
@@ -2496,6 +2547,31 @@ TabServers:AddButton({
     end
 })
 
+local AutoCazarEnabled = false
+TabServers:AddToggle({
+    Name = "Auto-Unirse a Caza (Bot de Discord)",
+    Desc = "Te une automáticamente al servidor del objetivo cuando el bot de Discord lo localice.",
+    Callback = function(Value)
+        AutoCazarEnabled = Value
+    end
+})
+
+task.spawn(function()
+    while true do
+        task.wait(3)
+        if AutoCazarEnabled then
+            pcall(function()
+                local url = "http://127.0.0.1:3000/get_server?type=cazar"
+                local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+                if success and result and result.success and result.jobId then
+                    warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
+                    TeleportService:TeleportToPlaceInstance(result.placeId, result.jobId, LocalPlayer)
+                end
+            end)
+        end
+    end
+end)
+
 -- ==================== LOGICA DE UTILIDADES Y COMBATE EXTREMO ====================
 
 task.spawn(function()
@@ -2525,6 +2601,11 @@ task.spawn(function()
                         Title = "🍎 ¡FRUTA ENCONTRADA!",
                         Text = "Se ha encontrado: " .. v.Name,
                         Duration = 10
+                    })
+                    SendDiscordNotification("🍎 ¡FRUTA ENCONTRADA!", "Se ha detectado una fruta libre en el mapa.", {
+                        {name = "Nombre de la Fruta", value = v.Name, inline = true},
+                        {name = "Servidor (JobId)", value = "`" .. tostring(game.JobId) .. "`", inline = true},
+                        {name = "Sea / Place ID", value = tostring(game.PlaceId), inline = true}
                     })
                 end
             end
@@ -2609,6 +2690,13 @@ if promptOverlay then
 end
 
 print("✅ Polar Hub cargado exitosamente.")
+
+SendDiscordNotification("🤖 Script Cargado", "El script de Polar Hub ha sido ejecutado con éxito.", {
+    {name = "Usuario (Roblox)", value = "`" .. tostring(LocalPlayer.Name) .. "`", inline = true},
+    {name = "Nivel", value = LocalPlayer:FindFirstChild("Data") and LocalPlayer.Data:FindFirstChild("Level") and tostring(LocalPlayer.Data.Level.Value) or "N/A", inline = true},
+    {name = "Servidor (JobId)", value = "`" .. tostring(game.JobId) .. "`", inline = true},
+    {name = "Sea / Place ID", value = tostring(game.PlaceId), inline = true}
+})
 
 -- ==================== TELEMETRÍA Y LOGS EN TIEMPO REAL ====================
 task.spawn(function()
