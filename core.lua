@@ -223,6 +223,8 @@ local function MoveDirectly(targetCFrame)
         bp:Destroy()
         nclConn:Disconnect()
     end
+end
+
 local function FindCursedShipEntrance()
     local entryPos = Vector3.new(943, 121, 1269)
     local bestDoor = nil
