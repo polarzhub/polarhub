@@ -338,30 +338,30 @@ task.spawn(function()
 end)
 
 -- ==================== INTERFAZ Y CONTROLES SEA 2 ====================
-TabFarm:Section({ Title = "Cazador de Jefes (Sea 2)" })
+TabFarm:AddSection("Cazador de Jefes (Sea 2)")
 
 local BossNamesList = {}
 for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
-TabFarm:Dropdown({
-    Title = "Seleccionar Jefe",
-    Values = BossNamesList,
-    Value = BossNamesList[1],
+TabFarm:AddDropdown({
+    Name = "Seleccionar Jefe",
+    Options = BossNamesList,
+    Default = BossNamesList[1],
     Callback = function(Value)
         getgenv().PolarSelectedBossToFarm = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Farm Jefe Seleccionado",
+TabFarm:AddToggle({
+    Name = "Auto Farm Jefe Seleccionado",
     Default = false,
     Callback = function(Value)
         getgenv().PolarAutoFarmBossEnabled = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Farm TODOS los Jefes (Server Hop)",
+TabFarm:AddToggle({
+    Name = "Auto Farm TODOS los Jefes (Server Hop)",
     Default = false,
     Callback = function(Value)
         getgenv().PolarAutoFarmAllBossesEnabled = Value
@@ -369,36 +369,36 @@ TabFarm:Toggle({
     end
 })
 
-TabQuest:Section({ Title = "Eventos Especiales (Sea 2)" })
+TabQuest:AddSection("Eventos Especiales (Sea 2)")
 
-TabQuest:Toggle({
-    Title = "Auto Factory Raid",
+TabQuest:AddToggle({
+    Name = "Auto Factory Raid",
     Default = false,
     Callback = function(Value)
         getgenv().PolarAutoFactoryEnabled = Value
     end
 })
 
-TabQuest:Toggle({
-    Title = "Auto Bartilo Quest (Coliseo)",
+TabQuest:AddToggle({
+    Name = "Auto Bartilo Quest (Coliseo)",
     Default = false,
     Callback = function(Value)
         getgenv().PolarAutoBartiloEnabled = Value
     end
 })
 
-TabQuest:Toggle({
-    Title = "Auto Raza V2 (Alchemist)",
+TabQuest:AddToggle({
+    Name = "Auto Raza V2 (Alchemist)",
     Default = false,
     Callback = function(Value)
         getgenv().PolarAutoAlchemistEnabled = Value
     end
 })
 
-TabStatus:Section({ Title = "Radar de Jefes Globales" })
+TabStatus:AddSection("Radar de Jefes Globales")
 
-local LabelDarkbeard = TabStatus:Paragraph({ Title = "Darkbeard Status", Desc = "Buscando..." })
-local LabelFactory = TabStatus:Paragraph({ Title = "Factory Status", Desc = "Calculando..." })
+local LabelDarkbeard = TabStatus:AddParagraph({ Title = "Darkbeard Status", Text = "Buscando..." })
+local LabelFactory = TabStatus:AddParagraph({ Title = "Factory Status", Text = "Calculando..." })
 
 task.spawn(function()
     while true do

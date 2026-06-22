@@ -5,34 +5,21 @@
 -- Esperar a que el juego cargue completamente antes de inyectar
 repeat task.wait() until game:IsLoaded()
 
--- ==================== WIND UI LIBRARY ====================
-local success, WindUI = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+-- ==================== REDZ UI LIBRARY ====================
+local success, redzlib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/lixbot85-dot/zxhublibrary/main/redzhubV2.lua"))()
 end)
 
-if not success or not WindUI then
-    warn("Error: No se pudo cargar WindUI.")
+if not success or not redzlib then
+    warn("Error: No se pudo cargar RedzLib V5.")
     return
 end
 
-local Window = WindUI:CreateWindow({
-    Title = "❄️ POLAR HUB | Modo Dios",
-    Icon = "snowflake",
-    Folder = "PolarHub",
-    Size = UDim2.fromOffset(580, 460),
-    Transparent = true,
-    Theme = "Sky",
-    OpenButton = {
-		Title = "❄️ POLAR HUB",
-		CornerRadius = UDim.new(0, 8),
-		StrokeThickness = 2,
-		Enabled = true,
-		Draggable = true,
-		Scale = 1,
-        OnlyMobile = false
-	}
+local Window = redzlib:MakeWindow({
+    Name = "❄️ POLAR HUB | Modo Dios",
+    SubTitle = "by polarhub",
+    SaveFolder = "PolarHubConfig.json"
 })
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -1402,14 +1389,14 @@ end)
 
 -- ==================== WIND UI CONSTRUCCION ====================
 
-local TabFarm = Window:Tab({ Title = "Farm", Icon = "swords" })
-local TabStats = Window:Tab({ Title = "Stats", Icon = "user" })
-local TabStatus = Window:Tab({ Title = "Status", Icon = "activity" })
-local TabShop = Window:Tab({ Title = "Shop", Icon = "shopping-cart" })
-local TabQuest = Window:Tab({ Title = "Quest Farm", Icon = "map" })
-local TabTeleport = Window:Tab({ Title = "Teleport", Icon = "globe" })
-local TabCombat = Window:Tab({ Title = "Combat PvP", Icon = "crosshair" })
-local TabMisc = Window:Tab({ Title = "Misc", Icon = "settings" })
+local TabFarm = Window:MakeTab({ Title = "Farm", Icon = "swords" })
+local TabStats = Window:MakeTab({ Title = "Stats", Icon = "user" })
+local TabStatus = Window:MakeTab({ Title = "Status", Icon = "activity" })
+local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
+local TabQuest = Window:MakeTab({ Title = "Quest Farm", Icon = "map" })
+local TabTeleport = Window:MakeTab({ Title = "Teleport", Icon = "globe" })
+local TabCombat = Window:MakeTab({ Title = "Combat PvP", Icon = "crosshair" })
+local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
 
 getgenv().PolarWindow = Window
 getgenv().PolarTabFarm = TabFarm
@@ -1429,46 +1416,46 @@ getgenv().PolarIsEnemyAlive = IsEnemyAlive
 
 
 -- ===== TAB FARM =====
-TabFarm:Section({ Title = "Configuración de Combate" })
+TabFarm:AddSection("Configuración de Combate")
 
-TabFarm:Dropdown({
-    Title = "Farm Tool (Arma)",
-    Values = {"Melee", "Sword", "Blox Fruit", "Gun"},
-    Value = "Melee",
+TabFarm:AddDropdown({
+    Name = "Farm Tool (Arma)",
+    Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
+    Default = "Melee",
     Callback = function(Value)
         SelectedWeaponType = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Mastery Inteligente",
+TabFarm:AddToggle({
+    Name = "Auto Mastery Inteligente",
     Desc = "Baja la vida con tu Farm Tool, y remata (cuando le quede < 20%) con el arma que elijas abajo.",
     Callback = function(Value)
         AutoMasteryEnabled = Value
     end
 })
 
-TabFarm:Dropdown({
-    Title = "Arma a Masterizar (Auto Mastery)",
-    Values = {"Melee", "Sword", "Blox Fruit", "Gun"},
-    Value = "Sword",
+TabFarm:AddDropdown({
+    Name = "Arma a Masterizar (Auto Mastery)",
+    Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
+    Default = "Sword",
     Callback = function(Value)
         AutoMasteryItem = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Skills",
+TabFarm:AddToggle({
+    Name = "Auto Skills",
     Desc = "Usa las habilidades Z, X, C, V, F automáticamente mientras farmeas.",
     Callback = function(Value)
         AutoSkillsEnabled = Value
     end
 })
 
-TabFarm:Section({ Title = "Auto Farm Automático" })
+TabFarm:AddSection("Auto Farm Automático")
 
-TabFarm:Toggle({
-    Title = "Auto Farm Nivel (100% Automático)",
+TabFarm:AddToggle({
+    Name = "Auto Farm Nivel (100% Automático)",
     Desc = "Detecta nivel, vuela a la isla, toma misión y ataca.",
     Callback = function(Value)
         AutoFarmEnabled = Value
@@ -1476,15 +1463,15 @@ TabFarm:Toggle({
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Chest (Farm Beli)",
+TabFarm:AddToggle({
+    Name = "Auto Chest (Farm Beli)",
     Callback = function(Value)
         AutoChestEnabled = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Farm Nearest (Masacre Total)",
+TabFarm:AddToggle({
+    Name = "Auto Farm Nearest (Masacre Total)",
     Desc = "Ignora misiones y niveles. Aniquila al NPC más cercano en la isla actual. Exterminio masivo.",
     Callback = function(Value)
         AutoFarmNearestEnabled = Value
@@ -1494,25 +1481,25 @@ TabFarm:Toggle({
 
 -- ==================== TAB FARM (BOSS SECTION) ====================
 -- ===== TAB STATS =====
-TabStats:Section({ Title = "Mejoras de Jugador" })
+TabStats:AddSection("Mejoras de Jugador")
 
-TabStats:Toggle({
-    Title = "Player & NPC ESP",
+TabStats:AddToggle({
+    Name = "Player & NPC ESP",
     Callback = function(Value)
         ESPEnabled = Value
         UpdateESPState()
     end
 })
 
-TabStats:Toggle({
-    Title = "Auto Haki (Buso)",
+TabStats:AddToggle({
+    Name = "Auto Haki (Buso)",
     Default = true,
     Callback = function(Value)
         AutoHakiEnabled = Value
     end
 })
 
-TabStats:Section({ Title = "Auto Stats Equitativo" })
+TabStats:AddSection("Auto Stats Equitativo")
 
 local function ToggleStat(statName, value)
     if value then
@@ -1523,14 +1510,14 @@ local function ToggleStat(statName, value)
     end
 end
 
-TabStats:Toggle({ Title = "Melee", Callback = function(v) ToggleStat("Melee", v) end })
-TabStats:Toggle({ Title = "Defense", Callback = function(v) ToggleStat("Defense", v) end })
-TabStats:Toggle({ Title = "Sword", Callback = function(v) ToggleStat("Sword", v) end })
-TabStats:Toggle({ Title = "Gun", Callback = function(v) ToggleStat("Gun", v) end })
-TabStats:Toggle({ Title = "Demon Fruit", Callback = function(v) ToggleStat("Demon Fruit", v) end })
+TabStats:AddToggle({ Name = "Melee", Callback = function(v) ToggleStat("Melee", v) end })
+TabStats:AddToggle({ Name = "Defense", Callback = function(v) ToggleStat("Defense", v) end })
+TabStats:AddToggle({ Name = "Sword", Callback = function(v) ToggleStat("Sword", v) end })
+TabStats:AddToggle({ Name = "Gun", Callback = function(v) ToggleStat("Gun", v) end })
+TabStats:AddToggle({ Name = "Demon Fruit", Callback = function(v) ToggleStat("Demon Fruit", v) end })
 
-TabStats:Toggle({
-    Title = "Activar Auto Stats",
+TabStats:AddToggle({
+    Name = "Activar Auto Stats",
     Desc = "Divide tus puntos equitativamente.",
     Callback = function(Value)
         AutoStatsEnabled = Value
@@ -1539,61 +1526,61 @@ TabStats:Toggle({
 
 
 -- ===== TAB STATUS =====
-TabStatus:Section({ Title = "Telemetría del Servidor" })
+TabStatus:AddSection("Telemetría del Servidor")
 
-local LabelServerUptime = TabStatus:Paragraph({
+local LabelServerUptime = TabStatus:AddParagraph({
     Title = "Tiempo de Vida del Servidor",
-    Desc = "Calculando..."
+    Text = "Calculando..."
 })
 
-local LabelPlayerTime = TabStatus:Paragraph({
+local LabelPlayerTime = TabStatus:AddParagraph({
     Title = "Tiempo en Sesión (Jugador)",
-    Desc = "Calculando..."
+    Text = "Calculando..."
 })
 
 -- ===== TAB SHOP =====
-TabShop:Section({ Title = "Habilidades (Bypass Distancia)" })
-TabShop:Button({ Title = "Comprar Geppo (Skyjump) - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })
-TabShop:Button({ Title = "Comprar Buso (Aura) - $25k", Callback = function() BuyItem("BuyHaki", "Buso", nil, "Ability Teacher") end })
-TabShop:Button({ Title = "Comprar Soru (Flash Step) - $100k", Callback = function() BuyItem("BuyHaki", "Soru", nil, "Ability Teacher") end })
-TabShop:Button({ Title = "Comprar Ken Haki (Observation) - $750k", Callback = function() BuyItem("KenTalk", "Buy", nil, "Instinct Teacher") end })
+TabShop:AddSection("Habilidades (Bypass Distancia)")
+TabShop:AddButton({ Name = "Comprar Geppo (Skyjump) - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Comprar Buso (Aura) - $25k", Callback = function() BuyItem("BuyHaki", "Buso", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Comprar Soru (Flash Step) - $100k", Callback = function() BuyItem("BuyHaki", "Soru", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Comprar Ken Haki (Observation) - $750k", Callback = function() BuyItem("KenTalk", "Buy", nil, "Instinct Teacher") end })
 
-TabShop:Section({ Title = "Estilos de Pelea (Ghost TP Bypass)" })
-TabShop:Button({ Title = "Dark Step (Teacher) - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
-TabShop:Button({ Title = "Electro (Mad Scientist) - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
-TabShop:Button({ Title = "Water Kung Fu (Teacher) - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
+TabShop:AddSection("Estilos de Pelea (Ghost TP Bypass)")
+TabShop:AddButton({ Name = "Dark Step (Teacher) - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
+TabShop:AddButton({ Name = "Electro (Mad Scientist) - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
+TabShop:AddButton({ Name = "Water Kung Fu (Teacher) - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
 
-TabShop:Section({ Title = "Espadas Avanzadas (Sword Dealer)" })
-TabShop:Button({ Title = "Katana Clásica - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
-TabShop:Button({ Title = "Dual Katana - $12k", Callback = function() BuyItem("BuyItem", "Dual Katana", nil, "Sword Dealer") end })
-TabShop:Button({ Title = "Iron Mace - $25k", Callback = function() BuyItem("BuyItem", "Iron Mace", nil, "Sword Dealer") end })
-TabShop:Button({ Title = "Triple Katana - $60k", Callback = function() BuyItem("BuyItem", "Triple Katana", nil, "Sword Dealer") end })
-TabShop:Button({ Title = "Pipe (Tubería) - $100k", Callback = function() BuyItem("BuyItem", "Pipe", nil, "Sword Dealer") end })
-TabShop:Button({ Title = "Soul Cane (Bastón) - $750k", Callback = function() BuyItem("BuyItem", "Soul Cane", nil, "Living Skeleton") end })
-TabShop:Button({ Title = "Bisento (Barbablanca) - $1M", Callback = function() BuyItem("BuyItem", "Bisento", nil, "Master Sword Dealer") end })
+TabShop:AddSection("Espadas Avanzadas (Sword Dealer)")
+TabShop:AddButton({ Name = "Katana Clásica - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Dual Katana - $12k", Callback = function() BuyItem("BuyItem", "Dual Katana", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Iron Mace - $25k", Callback = function() BuyItem("BuyItem", "Iron Mace", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Triple Katana - $60k", Callback = function() BuyItem("BuyItem", "Triple Katana", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Pipe (Tubería) - $100k", Callback = function() BuyItem("BuyItem", "Pipe", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Soul Cane (Bastón) - $750k", Callback = function() BuyItem("BuyItem", "Soul Cane", nil, "Living Skeleton") end })
+TabShop:AddButton({ Name = "Bisento (Barbablanca) - $1M", Callback = function() BuyItem("BuyItem", "Bisento", nil, "Master Sword Dealer") end })
 
-TabShop:Section({ Title = "Armas de Fuego (Weapon Dealer)" })
-TabShop:Button({ Title = "Slingshot (Resortera) - $5k", Callback = function() BuyItem("BuyItem", "Slingshot", nil, "Weapon Dealer") end })
-TabShop:Button({ Title = "Musket (Mosquete) - $8k", Callback = function() BuyItem("BuyItem", "Musket", nil, "Weapon Dealer") end })
-TabShop:Button({ Title = "Flintlock (Pistola) - $10k", Callback = function() BuyItem("BuyItem", "Flintlock", nil, "Weapon Dealer") end })
+TabShop:AddSection("Armas de Fuego (Weapon Dealer)")
+TabShop:AddButton({ Name = "Slingshot (Resortera) - $5k", Callback = function() BuyItem("BuyItem", "Slingshot", nil, "Weapon Dealer") end })
+TabShop:AddButton({ Name = "Musket (Mosquete) - $8k", Callback = function() BuyItem("BuyItem", "Musket", nil, "Weapon Dealer") end })
+TabShop:AddButton({ Name = "Flintlock (Pistola) - $10k", Callback = function() BuyItem("BuyItem", "Flintlock", nil, "Weapon Dealer") end })
 
 
 -- ===== TAB QUEST FARM =====
 
 -- ===== TAB TELEPORT =====
-TabTeleport:Section({ Title = "Viajes Dinámicos" })
+TabTeleport:AddSection("Viajes Dinámicos")
 
 local SelectedIsland = ""
-TabTeleport:Dropdown({
-    Title = "Isla a Volar",
-    Values = ScanIslands(),
+TabTeleport:AddDropdown({
+    Name = "Isla a Volar",
+    Options = ScanIslands(),
     Callback = function(Value)
         SelectedIsland = Value
     end
 })
 
-TabTeleport:Button({
-    Title = "Volar Hacia Isla (Tween)",
+TabTeleport:AddButton({
+    Name = "Volar Hacia Isla (Tween)",
     Callback = function()
         local origin = workspace:FindFirstChild("_WorldOrigin")
         local locs = origin and origin:FindFirstChild("Locations")
@@ -1610,20 +1597,20 @@ TabTeleport:Button({
 -- =========================================================
 
 
-TabCombat:Section({ Title = "Mejoras de Combate" })
-TabCombat:Toggle({ Title = "Auto Buso Haki (Aura)", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
-TabCombat:Toggle({ Title = "Auto Ken Haki (Observation)", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
-TabCombat:Toggle({ Title = "Auto Skills (Z, X)", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
+TabCombat:AddSection("Mejoras de Combate")
+TabCombat:AddToggle({ Name = "Auto Buso Haki (Aura)", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
+TabCombat:AddToggle({ Name = "Auto Ken Haki (Observation)", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
+TabCombat:AddToggle({ Name = "Auto Skills (Z, X)", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
 
-TabCombat:Section({ Title = "Bounty Hunter Tracker" })
+TabCombat:AddSection("Bounty Hunter Tracker")
 
 local SelectedTarget = nil
 local TargetSetInfo = "Esperando objetivo..."
 
 -- Desplegable para seleccionar jugador
-local PlayerDropdown = TabCombat:Dropdown({
-    Title = "Seleccionar Víctima",
-    Values = {"Nadie"},
+local PlayerDropdown = TabCombat:AddDropdown({
+    Name = "Seleccionar Víctima",
+    Options = {"Nadie"},
     Callback = function(Value)
         if Value ~= "Nadie" then
             SelectedTarget = Players:FindFirstChild(Value)
@@ -1655,16 +1642,16 @@ end
 -- Poblar la lista al cargar
 task.delay(2, RefreshPlayerList)
 
-TabCombat:Button({
-    Title = "🔄 Actualizar Lista del Servidor",
+TabCombat:AddButton({
+    Name = "🔄 Actualizar Lista del Servidor",
     Callback = function()
         RefreshPlayerList()
     end
 })
 
-local LabelTargetInfo = TabCombat:Paragraph({
+local LabelTargetInfo = TabCombat:AddParagraph({
     Title = "Inspección Táctica (Set & Stats)",
-    Desc = TargetSetInfo
+    Text = TargetSetInfo
 })
 
 -- Auto-refrescar lista cuando entran/salen jugadores
@@ -1733,8 +1720,8 @@ task.spawn(function()
     end
 end)
 
-TabCombat:Button({
-    Title = "🚀 Teletransportarse al Objetivo",
+TabCombat:AddButton({
+    Name = "🚀 Teletransportarse al Objetivo",
     Callback = function()
         if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
             BypassTeleport(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
@@ -1745,13 +1732,13 @@ TabCombat:Button({
 -- ==================== MODO COMBATE (TOGGLE MAESTRO) ====================
 -- ANTI-LAG: Los hooks y bucles de Hitbox/Silent Aim NO se ejecutan
 -- hasta que actives este toggle. Esto garantiza 0 lag si no estás en PvP.
-TabCombat:Section({ Title = "⚡ Modo Combate (Anti-Lag)" })
+TabCombat:AddSection("⚡ Modo Combate (Anti-Lag)")
 
 local CombatModeEnabled = false
 local CombatHooksInjected = false -- Flag para inyectar hooks solo 1 vez
 
-TabCombat:Toggle({
-    Title = "⚡ Activar Modo Combate",
+TabCombat:AddToggle({
+    Name = "⚡ Activar Modo Combate",
     Desc = "ACTIVA ESTO PRIMERO. Sin esto, Hitbox y Silent Aim no funcionarán. Desactívalo cuando no hagas PvP para eliminar lag.",
     Callback = function(Value)
         CombatModeEnabled = Value
@@ -1764,7 +1751,7 @@ TabCombat:Toggle({
 })
 
 -- ==================== HITBOX EXPANDER ====================
-TabCombat:Section({ Title = "Aimbot & Hitbox" })
+TabCombat:AddSection("Aimbot & Hitbox")
 
 local HitboxEnabled = false
 local HitboxSizeValue = 15
@@ -1785,8 +1772,8 @@ local function RestoreAllHitboxes()
     end
 end
 
-TabCombat:Toggle({
-    Title = "Activar Hitbox Expander",
+TabCombat:AddToggle({
+    Name = "Activar Hitbox Expander",
     Desc = "Aumenta la caja de colisión de los enemigos. Requiere Modo Combate activado. (15-25 es óptimo)",
     Callback = function(Value)
         HitboxEnabled = Value
@@ -1794,9 +1781,9 @@ TabCombat:Toggle({
     end
 })
 
-TabCombat:Slider({
-    Title = "Tamaño de Hitbox",
-    Value = { Min = 5, Max = 40, Default = 15 },
+TabCombat:AddSlider({
+    Name = "Tamaño de Hitbox",
+    Default = { Min = 5, Max = 40, Default = 15 },
     Callback = function(Value)
         HitboxSizeValue = Value
     end
@@ -1854,27 +1841,27 @@ end)
 local SilentAimEnabled = false
 local BringTargetEnabled = false
 
-TabCombat:Toggle({
-    Title = "Silent Aim (Full Aimbot)",
+TabCombat:AddToggle({
+    Name = "Silent Aim (Full Aimbot)",
     Desc = "Redirige Mouse.Hit, remotos y skills al objetivo. Armas como Tirachinas apuntan solas. Requiere Modo Combate.",
     Callback = function(Value)
         SilentAimEnabled = Value
     end
 })
 
-TabCombat:Toggle({
-    Title = "Bring Target (Atraer Víctima)",
+TabCombat:AddToggle({
+    Name = "Bring Target (Atraer Víctima)",
     Desc = "Teletransporta la víctima frente a ti. Combo letal con Silent Aim. Requiere Modo Combate.",
     Callback = function(Value)
         BringTargetEnabled = Value
     end
 })
 
-TabCombat:Section({ Title = "Combate Extremo" })
+TabCombat:AddSection("Combate Extremo")
 
 local KillAuraEnabled = false
-TabCombat:Toggle({
-    Title = "Kill Aura (Destrucción Total)",
+TabCombat:AddToggle({
+    Name = "Kill Aura (Destrucción Total)",
     Desc = "Daña a todos los enemigos o jugadores a tu alrededor automáticamente sin apuntar.",
     Callback = function(Value)
         KillAuraEnabled = Value
@@ -2061,35 +2048,34 @@ pcall(function()
 end)
 
 -- ===== TAB MISC =====
-TabMisc:Section({ Title = "Personalización de la Interfaz" })
+TabMisc:AddSection("Personalización de la Interfaz")
 
 local themesList = {}
 pcall(function()
-    for themeName, _ in pairs(WindUI:GetThemes()) do
+    for themeName, _ in pairs(redzlib.Themes) do
         table.insert(themesList, themeName)
     end
 end)
 if #themesList == 0 then
-    themesList = {"Dark", "Light", "Rose", "Plant", "Red", "Indigo", "Sky", "Violet", "Amber", "Emerald", "Midnight", "Crimson", "Monokai Pro", "Cotton Candy", "Rainbow"}
+    themesList = {"Darker", "Dark", "Purple"}
 end
 table.sort(themesList)
 
-TabMisc:Dropdown({
-    Title = "Tema Visual",
-    Desc = "Cambia el color de acento de la interfaz en tiempo real.",
-    Values = themesList,
-    Value = "Sky",
+TabMisc:AddDropdown({
+    Name = "Tema Visual",
+    Description = "Cambia el color de acento de la interfaz en tiempo real.",
+    Options = themesList,
+    Default = "Darker",
     Callback = function(selected)
-        pcall(function() WindUI:SetTheme(selected) end)
+        pcall(function() redzlib:SetTheme(selected) end)
     end
 })
-
-TabMisc:Section({ Title = "Utilidades Extra" })
+TabMisc:AddSection("Utilidades Extra")
 
 local FruitFinderEnabled = false
 local foundFruits = {}
-TabMisc:Toggle({
-    Title = "Buscador de Frutas (Fruit Finder)",
+TabMisc:AddToggle({
+    Name = "Buscador de Frutas (Fruit Finder)",
     Desc = "Notifica si aparece una fruta en el mapa.",
     Callback = function(Value)
         FruitFinderEnabled = Value
@@ -2099,8 +2085,8 @@ TabMisc:Toggle({
 local FlyEnabled = false
 local flySpeed = 50
 local flyBodyMover = nil
-TabMisc:Toggle({
-    Title = "Modo Fly Libre",
+TabMisc:AddToggle({
+    Name = "Modo Fly Libre",
     Desc = "Vuela usando W A S D y tu cámara.",
     Callback = function(Value)
         FlyEnabled = Value
@@ -2131,56 +2117,56 @@ TabMisc:Toggle({
 })
 
 local AutoRejoinEnabled = false
-TabMisc:Toggle({
-    Title = "Auto Rejoin",
+TabMisc:AddToggle({
+    Name = "Auto Rejoin",
     Desc = "Te reconecta al instante si eres expulsado.",
     Callback = function(Value)
         AutoRejoinEnabled = Value
     end
 })
 
-TabMisc:Section({ Title = "Movimiento" })
+TabMisc:AddSection("Movimiento")
 
-TabMisc:Slider({
-    Title = "Nivel de Velocidad",
-    Value = { Min = 16, Max = 500, Default = 16 },
+TabMisc:AddSlider({
+    Name = "Nivel de Velocidad",
+    Default = { Min = 16, Max = 500, Default = 16 },
     Callback = function(Value)
         sVal = Value
     end
 })
 
-TabMisc:Toggle({
-    Title = "Control de Velocidad",
+TabMisc:AddToggle({
+    Name = "Control de Velocidad",
     Callback = function(Value)
         sAct = Value
     end
 })
 
-TabMisc:Toggle({
-    Title = "Salto Infinito",
+TabMisc:AddToggle({
+    Name = "Salto Infinito",
     Callback = function(Value)
         iJ = Value
     end
 })
 
-TabMisc:Toggle({
-    Title = "Atravesar Paredes (NoClip)",
+TabMisc:AddToggle({
+    Name = "Atravesar Paredes (NoClip)",
     Callback = function(Value)
         ncl = Value
     end
 })
 
-TabMisc:Toggle({
-    Title = "Caminar sobre el Agua",
+TabMisc:AddToggle({
+    Name = "Caminar sobre el Agua",
     Callback = function(Value)
         walkWaterEnabled = Value
     end
 })
 
-TabMisc:Section({ Title = "Sistema" })
+TabMisc:AddSection("Sistema")
 
-TabMisc:Button({
-    Title = "Server Hop (Saltar Servidor)",
+TabMisc:AddButton({
+    Name = "Server Hop (Saltar Servidor)",
     Callback = function()
         ServerHop()
     end

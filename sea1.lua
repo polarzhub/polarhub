@@ -494,11 +494,11 @@ task.spawn(function()
 end)
 
 -- ==================== UI BINDINGS AND RADARS ====================
-TabStatus:Section({ Title = "Radar de Jefes Especiales (Sea 1)" })
-local LabelTheSaw = TabStatus:Paragraph({ Title = "The Saw (Nvl 100) - Middle Town", Desc = "Calculando..." })
-local LabelGreybeard = TabStatus:Paragraph({ Title = "Greybeard (Nvl 750) - Marine Fortress", Desc = "Calculando..." })
-local LabelServerUptime = TabStatus:Paragraph({ Title = "Tiempo de Vida del Servidor", Desc = "Calculando..." })
-local LabelPlayerTime = TabStatus:Paragraph({ Title = "Tiempo en Sesión (Jugador)", Desc = "Calculando..." })
+TabStatus:AddSection("Radar de Jefes Especiales (Sea 1)")
+local LabelTheSaw = TabStatus:AddParagraph({ Title = "The Saw (Nvl 100) - Middle Town", Text = "Calculando..." })
+local LabelGreybeard = TabStatus:AddParagraph({ Title = "Greybeard (Nvl 750) - Marine Fortress", Text = "Calculando..." })
+local LabelServerUptime = TabStatus:AddParagraph({ Title = "Tiempo de Vida del Servidor", Text = "Calculando..." })
+local LabelPlayerTime = TabStatus:AddParagraph({ Title = "Tiempo en Sesión (Jugador)", Text = "Calculando..." })
 
 local scriptStartTime = os.time()
 
@@ -539,29 +539,29 @@ task.spawn(function()
 end)
 
 -- UI Farm Bosses
-TabFarm:Section({ Title = "Cazador de Jefes (Bosses)" })
+TabFarm:AddSection("Cazador de Jefes (Bosses)")
 local BossNamesList = {}
 for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
-TabFarm:Dropdown({
-    Title = "Seleccionar Jefe",
-    Values = BossNamesList,
-    Value = "Gorilla King",
+TabFarm:AddDropdown({
+    Name = "Seleccionar Jefe",
+    Options = BossNamesList,
+    Default = "Gorilla King",
     Callback = function(Value)
         getgenv().PolarSelectedBossToFarm = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Farm Boss Seleccionado",
+TabFarm:AddToggle({
+    Name = "Auto Farm Boss Seleccionado",
     Desc = "Caza exclusivamente al jefe seleccionado arriba.",
     Callback = function(Value)
         getgenv().PolarAutoFarmBossEnabled = Value
     end
 })
 
-TabFarm:Toggle({
-    Title = "Auto Farm ALL Bosses",
+TabFarm:AddToggle({
+    Name = "Auto Farm ALL Bosses",
     Desc = "Modo Exterminio: Escanea el servidor y caza a TODOS los jefes vivos.",
     Callback = function(Value)
         getgenv().PolarAutoFarmAllBossesEnabled = Value
@@ -569,17 +569,17 @@ TabFarm:Toggle({
     end
 })
 
-TabFarm:Toggle({
-    Title = "Tomar Misión del Jefe",
+TabFarm:AddToggle({
+    Name = "Tomar Misión del Jefe",
     Callback = function(Value)
         getgenv().PolarBossWithQuest = Value
     end
 })
 
 -- UI Special Quests
-TabQuest:Section({ Title = "Habilidades Especiales" })
-TabQuest:Button({ 
-    Title = "Auto Desbloquear Ken Haki (Visión) - $750k", 
+TabQuest:AddSection("Habilidades Especiales")
+TabQuest:AddButton({ 
+    Name = "Auto Desbloquear Ken Haki (Visión) - $750k", 
     Callback = function() 
         local lvl = Polar.Player:GetLevel()
         if lvl >= 300 then
@@ -590,31 +590,31 @@ TabQuest:Button({
     end 
 })
 
-TabQuest:Section({ Title = "Saber Puzzle (100% Automático)" })
-TabQuest:Button({
-    Title = "▶ Iniciar Auto Saber Puzzle",
+TabQuest:AddSection("Saber Puzzle (100% Automático)")
+TabQuest:AddButton({
+    Name = "▶ Iniciar Auto Saber Puzzle",
     Callback = function()
         FullAutoSaber()
     end
 })
 
-TabQuest:Button({
-    Title = "⏹ Detener Auto Saber",
+TabQuest:AddButton({
+    Name = "⏹ Detener Auto Saber",
     Callback = function()
         AutoSaberRunning = false
     end
 })
 
-TabQuest:Section({ Title = "Puzzle Second Sea (Lv. 700+)" })
-TabQuest:Button({
-    Title = "▶ Iniciar Viaje al Second Sea",
+TabQuest:AddSection("Puzzle Second Sea (Lv. 700+)")
+TabQuest:AddButton({
+    Name = "▶ Iniciar Viaje al Second Sea",
     Callback = function()
         AutoSecondSea()
     end
 })
 
-TabQuest:Button({
-    Title = "⏹ Detener Viaje",
+TabQuest:AddButton({
+    Name = "⏹ Detener Viaje",
     Callback = function()
         AutoSecondSeaRunning = false
     end
