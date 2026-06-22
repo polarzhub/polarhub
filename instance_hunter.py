@@ -55,7 +55,8 @@ class RobloxHunterBot(commands.Bot):
         
         # Cola de eventos para comunicar el hilo síncrono (hunt_worker) con el bucle asíncrono de Discord
         self.event_queue = asyncio.Queue()
-        self.last_found_server = None
+        self.last_found_servers = {}
+        self.current_hunter = "any"
         
         # Aplicar cookie si existe en el entorno (nunca vía comando)
         if ROBLOX_COOKIE:
@@ -137,6 +138,8 @@ class RobloxHunterBot(commands.Bot):
 
     async def send_server_embed(self, channel, server_info):
         """Construye y envía el Embed con los resultados al canal"""
+        hunter_key = getattr(self, "current_hunter", "any").lower()
+        self.last_found_servers[hunter_key] = server_info
         confidence = server_info.get("confidence_level", "HIGH")
         
         if confidence == "ASSASSIN":
@@ -628,7 +631,8 @@ bot = RobloxHunterBot()
     apodos="Lista de apodos o clones separados por coma (ej: nick1, nick2)",
     juego="Selecciona el Place (Sea 1, Sea 2, Sea 3 o Custom)",
     custom_place="Place ID si elegiste Custom",
-    modo="Modo de búsqueda"
+    modo="Modo de búsqueda",
+    hunter="Tu nombre de usuario de Roblox que se unirá (opcional)"
 )
 @discord.app_commands.choices(juego=[
     discord.app_commands.Choice(name="Blox Fruits - Sea 1", value="sea1"),
@@ -640,7 +644,7 @@ bot = RobloxHunterBot()
     discord.app_commands.Choice(name="Solo Nombres Reales (Full Usernames)", value="full_usernames"),
     discord.app_commands.Choice(name="Solo Apodos (Full Display Names)", value="full_display_names")
 ])
-async def cazar(interaction: discord.Interaction, username: str, apodos: str = "", juego: str = "sea2", custom_place: str = "", modo: str = "mixed"):
+async def cazar(interaction: discord.Interaction, username: str, apodos: str = "", juego: str = "sea2", custom_place: str = "", modo: str = "mixed", hunter: str = "any"):
     if bot.search_running:
         await interaction.response.send_message("❌ Ya hay una búsqueda en progreso. Usa `/stop` primero.", ephemeral=True)
         return
@@ -653,7 +657,8 @@ async def cazar(interaction: discord.Interaction, username: str, apodos: str = "
     nicknames_list = [n.strip() for n in apodos.split(",") if n.strip()]
 
     bot.search_running = True
-    await interaction.response.send_message(f"🚀 Iniciando cacería para **{username}** en el place **{place_id}**...", ephemeral=False)
+    bot.current_hunter = hunter.lower()
+    await interaction.response.send_message(f"🚀 Iniciando cacería para **{username}** (cazador: **{hunter}**) en el place **{place_id}**...", ephemeral=False)
     
     # Lanzar la tarea pesada de red y escaneo en un hilo sin bloquear Discord
     bot.current_hunt_task = asyncio.create_task(
@@ -687,13 +692,19 @@ class LocalBridgeHandler(BaseHTTPRequestHandler):
             place_id = params.get("place_id", ["2753915549"])[0]
             
             if q_type == "cazar":
-                if hasattr(bot, "last_found_server") and bot.last_found_server:
+                username = params.get("username", ["any"])[0].lower()
+                found_srv = None
+                if username in bot.last_found_servers:
+                    found_srv = bot.last_found_servers.pop(username)
+                elif "any" in bot.last_found_servers:
+                    found_srv = bot.last_found_servers.pop("any")
+                    
+                if found_srv:
                     response_data = {
                         "success": True,
-                        "jobId": bot.last_found_server.get("job_id"),
-                        "placeId": bot.last_found_server.get("place_id")
+                        "jobId": found_srv.get("job_id"),
+                        "placeId": found_srv.get("place_id")
                     }
-                    bot.last_found_server = None
                 else:
                     response_data = {"success": False, "message": "No target server found"}
             else:
@@ -782,10 +793,11 @@ class LocalBridgeHandler(BaseHTTPRequestHandler):
 
 def start_http_server():
     try:
-        server_address = ("127.0.0.1", 3000)
+        port = int(os.getenv("PORT", 3000))
+        server_address = ("0.0.0.0", port)
         httpd = HTTPServer(server_address, LocalBridgeHandler)
         print("======================================================================")
-        print("  🔥 Servidor local Polar Bridge corriendo en http://127.0.0.1:3000")
+        print(f"  🔥 Servidor Polar Bridge corriendo en http://0.0.0.0:{port}")
         print("======================================================================")
         httpd.serve_forever()
     except Exception as e:

@@ -811,7 +811,18 @@ local STATE_FARMING = "FARMING"
 local STATE_WAITING = "WAITING"
 local STATE_GETTING_QUEST = "GETTING_QUEST"
 
-local bridgeUrl = getgenv().PolarBridgeURL or "http://127.0.0.1:3000"
+local bridgeUrl = getgenv().PolarBridgeURL
+if not bridgeUrl then
+    bridgeUrl = "http://127.0.0.1:3000"
+    pcall(function()
+        local configUrl = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/bridge_config.json"
+        local rawConfig = game:HttpGet(configUrl)
+        local decoded = game:GetService("HttpService"):JSONDecode(rawConfig)
+        if decoded and decoded.bridgeUrl then
+            bridgeUrl = decoded.bridgeUrl
+        end
+    end)
+end
 
 local function CopyToClipboard(text)
     local setClipboard = setclipboard or toclipboard or (Clipboard and Clipboard.set)
@@ -2563,7 +2574,7 @@ task.spawn(function()
         task.wait(3)
         if AutoCazarEnabled then
             pcall(function()
-                local url = bridgeUrl .. "/get_server?type=cazar"
+                local url = bridgeUrl .. "/get_server?type=cazar&username=" .. tostring(LocalPlayer.Name)
                 local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
                 if success and result and result.success and result.jobId then
                     warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
