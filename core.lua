@@ -223,6 +223,82 @@ local function MoveDirectly(targetCFrame)
         bp:Destroy()
         nclConn:Disconnect()
     end
+local function FindCursedShipEntrance()
+    local entryPos = Vector3.new(943, 121, 1269)
+    local bestDoor = nil
+    local bestDist = 999999
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("TouchTransmitter") then
+            local parent = obj.Parent
+            if parent and parent:IsA("BasePart") then
+                local dist = (parent.Position - entryPos).Magnitude
+                if dist < 400 then
+                    local pName = string.lower(parent.Name)
+                    local isEntity = string.find(pName, "npc") or string.find(pName, "quest") or string.find(pName, "giver") or 
+                                     string.find(pName, "enemy") or string.find(pName, "player") or string.find(pName, "character") or
+                                     string.find(pName, "chest") or string.find(pName, "haki")
+                    if not isEntity and parent.Parent then
+                        local ppName = string.lower(parent.Parent.Name)
+                        isEntity = string.find(ppName, "npc") or string.find(ppName, "quest") or string.find(ppName, "giver") or 
+                                   string.find(ppName, "enemy") or string.find(ppName, "player") or string.find(ppName, "character") or
+                                   string.find(ppName, "chest") or string.find(ppName, "haki")
+                    end
+                    if not isEntity then
+                        local hasKeyword = string.find(pName, "ship") or string.find(pName, "cursed") or 
+                                           string.find(pName, "entrance") or string.find(pName, "portal") or 
+                                           string.find(pName, "door")
+                        if hasKeyword then
+                            return parent
+                        elseif dist < bestDist then
+                            bestDoor = parent
+                            bestDist = dist
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return bestDoor
+end
+
+local function FindCursedShipExit()
+    local spawnPos = Vector3.new(920, 125, 32800)
+    local bestDoor = nil
+    local bestDist = 999999
+    
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        if obj:IsA("TouchTransmitter") then
+            local parent = obj.Parent
+            if parent and parent:IsA("BasePart") then
+                local dist = (parent.Position - spawnPos).Magnitude
+                if dist < 500 then
+                    local pName = string.lower(parent.Name)
+                    local isEntity = string.find(pName, "npc") or string.find(pName, "quest") or string.find(pName, "giver") or 
+                                     string.find(pName, "enemy") or string.find(pName, "player") or string.find(pName, "character") or
+                                     string.find(pName, "chest") or string.find(pName, "haki")
+                    if not isEntity and parent.Parent then
+                        local ppName = string.lower(parent.Parent.Name)
+                        isEntity = string.find(ppName, "npc") or string.find(ppName, "quest") or string.find(ppName, "giver") or 
+                                   string.find(ppName, "enemy") or string.find(ppName, "player") or string.find(ppName, "character") or
+                                   string.find(ppName, "chest") or string.find(ppName, "haki")
+                    end
+                    if not isEntity then
+                        local hasKeyword = string.find(pName, "exit") or string.find(pName, "leave") or 
+                                           string.find(pName, "door") or string.find(pName, "ship") or 
+                                           string.find(pName, "portal")
+                        if hasKeyword then
+                            return parent
+                        elseif dist < bestDist then
+                            bestDoor = parent
+                            bestDist = dist
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return bestDoor
 end
 
 function Polar.Teleport:To(targetCFrame)
@@ -247,44 +323,7 @@ function Polar.Teleport:To(targetCFrame)
     
     -- Cursed Ship (Acceso al sub-lugar desde el Mar 2 Principal)
     if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
-        local door = nil
-        local map = workspace:FindFirstChild("Map")
-        if map then
-            for _, obj in ipairs(map:GetDescendants()) do
-                if obj:IsA("TouchTransmitter") then
-                    local parent = obj.Parent
-                    if parent and parent:IsA("BasePart") then
-                        local parentName = string.lower(parent.Name)
-                        local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
-                        if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
-                            door = parent
-                            break
-                        end
-                    end
-                end
-            end
-        end
-        if not door then
-            for _, child in ipairs(workspace:GetChildren()) do
-                if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
-                    for _, obj in ipairs(child:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") then
-                            local parent = obj.Parent
-                            if parent and parent:IsA("BasePart") then
-                                local parentName = string.lower(parent.Name)
-                                local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
-                                if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
-                                    door = parent
-                                    break
-                                end
-                            end
-                        end
-                    end
-                    if door then break end
-                end
-            end
-        end
-        
+        local door = FindCursedShipEntrance()
         if door then
             MoveDirectly(door.CFrame)
             task.wait(0.2)
@@ -312,71 +351,14 @@ function Polar.Teleport:To(targetCFrame)
         local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
         if not cHrp or cHrp.Position.Z < 25000 then
             warn("[Polar Hub] No se pudo entrar al Barco Maldito. Evitando tween directo.")
+            task.wait(1.5)
             return
         end
     end
     
     -- Barco Maldito (Salida hacia el Mar 2 Principal si el objetivo está fuera)
     if targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
-        local door = nil
-        local map = workspace:FindFirstChild("Map")
-        if map then
-            for _, obj in ipairs(map:GetDescendants()) do
-                if obj:IsA("TouchTransmitter") then
-                    local parent = obj.Parent
-                    if parent and parent:IsA("BasePart") then
-                        local parentName = string.lower(parent.Name)
-                        if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
-                            door = parent
-                            break
-                        end
-                    end
-                end
-            end
-        end
-        if not door then
-            for _, child in ipairs(workspace:GetChildren()) do
-                if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
-                    for _, obj in ipairs(child:GetDescendants()) do
-                        if obj:IsA("TouchTransmitter") then
-                            local parent = obj.Parent
-                            if parent and parent:IsA("BasePart") then
-                                local parentName = string.lower(parent.Name)
-                                if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
-                                    door = parent
-                                    break
-                                end
-                            end
-                        end
-                    end
-                    if door then break end
-                end
-            end
-        end
-        
-        if not door then
-            local function checkNearSpawn(root)
-                for _, obj in ipairs(root:GetDescendants()) do
-                    if obj:IsA("TouchTransmitter") then
-                        local parent = obj.Parent
-                        if parent and parent:IsA("BasePart") and (parent.Position - Vector3.new(920, 125, 32800)).Magnitude < 150 then
-                            return parent
-                        end
-                    end
-                end
-                return nil
-            end
-            door = map and checkNearSpawn(map)
-            if not door then
-                for _, child in ipairs(workspace:GetChildren()) do
-                    if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
-                        door = checkNearSpawn(child)
-                        if door then break end
-                    end
-                end
-            end
-        end
-        
+        local door = FindCursedShipExit()
         local exited = false
         if door then
             MoveDirectly(door.CFrame)
@@ -419,6 +401,7 @@ function Polar.Teleport:To(targetCFrame)
             return
         else
             warn("[Polar Hub] No se pudo salir del Barco Maldito. Evitando tween directo al agua.")
+            task.wait(1.5)
             return
         end
     end
@@ -1724,7 +1707,7 @@ local PlayerDropdown = TabCombat:AddDropdown({
     Name = "Seleccionar Víctima",
     Options = {"Nadie"},
     Callback = function(Value)
-        if Value ~= "Nadie" then
+        if Value and Value ~= "Nadie" then
             SelectedTarget = Players:FindFirstChild(Value)
         else
             SelectedTarget = nil
