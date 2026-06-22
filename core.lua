@@ -811,18 +811,19 @@ local STATE_FARMING = "FARMING"
 local STATE_WAITING = "WAITING"
 local STATE_GETTING_QUEST = "GETTING_QUEST"
 
-local bridgeUrl = getgenv().PolarBridgeURL
-if not bridgeUrl then
-    bridgeUrl = "http://127.0.0.1:3000"
-    pcall(function()
-        local configUrl = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/bridge_config.json"
-        local rawConfig = game:HttpGet(configUrl)
-        local decoded = game:GetService("HttpService"):JSONDecode(rawConfig)
-        if decoded and decoded.bridgeUrl then
-            bridgeUrl = decoded.bridgeUrl
-        end
-    end)
-end
+local bridgeUrl = getgenv().PolarBridgeURL or "http://127.0.0.1:3000"
+task.spawn(function()
+    if not getgenv().PolarBridgeURL then
+        pcall(function()
+            local configUrl = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/bridge_config.json"
+            local rawConfig = game:HttpGet(configUrl)
+            local decoded = game:GetService("HttpService"):JSONDecode(rawConfig)
+            if decoded and decoded.bridgeUrl then
+                bridgeUrl = decoded.bridgeUrl
+            end
+        end)
+    end
+end)
 
 local function CopyToClipboard(text)
     local setClipboard = setclipboard or toclipboard or (Clipboard and Clipboard.set)
@@ -841,18 +842,20 @@ local function GetServerFromBridge(queryType, placeId)
 end
 
 local function SendDiscordNotification(title, description, fields)
-    pcall(function()
-        local payload = {
-            embed = {
-                title = title,
-                description = description,
-                color = 378120,
-                fields = fields or {},
-                footer = "Polar Hub Notificaciones"
+    task.spawn(function()
+        pcall(function()
+            local payload = {
+                embed = {
+                    title = title,
+                    description = description,
+                    color = 378120,
+                    fields = fields or {},
+                    footer = "Polar Hub Notificaciones"
+                }
             }
-        }
-        local jsonPayload = HttpService:JSONEncode(payload)
-        HttpService:PostAsync(bridgeUrl .. "/log_discord", jsonPayload, Enum.HttpContentType.ApplicationJson)
+            local jsonPayload = HttpService:JSONEncode(payload)
+            HttpService:PostAsync(bridgeUrl .. "/log_discord", jsonPayload, Enum.HttpContentType.ApplicationJson)
+        end)
     end)
 end
 
