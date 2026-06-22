@@ -167,12 +167,16 @@ local function MoveDirectly(targetCFrame)
     end
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not hrp then return end
     
     local dist = (hrp.Position - targetCFrame.Position).Magnitude
     if dist < 95 then
         char:PivotTo(targetCFrame)
     else
+        local oldPlatformStand = hum and hum.PlatformStand
+        if hum then hum.PlatformStand = true end
+        
         local bp = Instance.new("BodyVelocity", hrp)
         bp.Velocity = Vector3.new(0, 0, 0)
         bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
@@ -222,6 +226,7 @@ local function MoveDirectly(targetCFrame)
         
         bp:Destroy()
         nclConn:Disconnect()
+        if hum then hum.PlatformStand = oldPlatformStand end
     end
 end
 
@@ -454,7 +459,7 @@ function Polar.Teleport:ToIsland(islandName)
             ["snow mountain"] = Vector3.new(639, 44, -5137),
             ["hot and cold"] = Vector3.new(-312, 190, -4933),
             ["cursed ship"] = Vector3.new(943, 121, 1269),
-            ["ice castle"] = Vector3.new(785, 142, 608),
+            ["ice castle"] = Vector3.new(5669, 28, -6482),
             ["forgotten island"] = Vector3.new(-2544, 256, -429)
         }
         pos = fallbacks[string.lower(islandName)]
@@ -514,6 +519,10 @@ local FallbackPositions = {
     ["Ship Steward"] = Vector3.new(920, 125, 33000),
     ["Ship Officer"] = Vector3.new(920, 125, 33100),
     ["Cursed Captain"] = Vector3.new(920, 125, 33200),
+    ["Frost Quest Giver"] = Vector3.new(5669, 28, -6482),
+    ["Arctic Warrior"] = Vector3.new(5995, 57, -6183),
+    ["Snow Lurker"] = Vector3.new(5518, 61, -6828),
+    ["Awakened Ice Admiral"] = Vector3.new(5655, 38, -6482),
 }
 
 function Polar.World:GetEnemySpawnPosition(enemyName)
