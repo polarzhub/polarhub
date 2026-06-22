@@ -818,8 +818,40 @@ local function CopyToClipboard(text)
     end
 end
 
-local function ServerHop()
+local function GetMainPlaceIdForCurrentSea()
     local placeId = game.PlaceId
+    if placeId == 2753915549 then return 2753915549 end
+    if placeId == 4442272000 or placeId == 79091703265657 or placeId == 4442272183 then return 4442272183 end
+    if placeId == 7449423635 then return 7449423635 end
+    
+    local map = workspace:FindFirstChild("Map")
+    if map then
+        if map:FindFirstChild("Kingdom of Rose") or map:FindFirstChild("Green Zone") or map:FindFirstChild("Graveyard") or workspace:FindFirstChild("Factory") then
+            return 4442272183
+        elseif map:FindFirstChild("Port Town") or map:FindFirstChild("Turtle") or map:FindFirstChild("Sea Castle") or map:FindFirstChild("Floating Turtle") then
+            return 7449423635
+        end
+    end
+    
+    if workspace:FindFirstChild("NPCs") then
+        if workspace.NPCs:FindFirstChild("Area 1 Quest Giver") or workspace.NPCs:FindFirstChild("Zombie Quest Giver") or workspace.NPCs:FindFirstChild("Alchemist") or workspace.NPCs:FindFirstChild("Ship Quest Giver") then
+            return 4442272183
+        end
+    end
+    
+    local data = LocalPlayer and LocalPlayer:FindFirstChild("Data")
+    local lvl = data and data:FindFirstChild("Level") and data.Level.Value or 1
+    if lvl >= 1500 then
+        return 7449423635
+    elseif lvl >= 700 then
+        return 4442272183
+    end
+    
+    return 2753915549
+end
+
+local function ServerHop()
+    local placeId = GetMainPlaceIdForCurrentSea()
     local servers = {}
     local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
     local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
@@ -838,7 +870,7 @@ local function ServerHop()
 end
 
 local function ServerHopLowPlayers()
-    local placeId = game.PlaceId
+    local placeId = GetMainPlaceIdForCurrentSea()
     local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
     local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
     if success and result and result.data then
@@ -861,7 +893,7 @@ local function ServerHopLowPlayers()
 end
 
 local function ServerHopBestPing()
-    local placeId = game.PlaceId
+    local placeId = GetMainPlaceIdForCurrentSea()
     local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
     local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
     if success and result and result.data then
@@ -2359,7 +2391,7 @@ TabMisc:AddButton({
     Callback = function()
         if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
             pcall(function()
-                TeleportService:TeleportToPlaceInstance(game.PlaceId, TargetJobId, LocalPlayer)
+                TeleportService:TeleportToPlaceInstance(GetMainPlaceIdForCurrentSea(), TargetJobId, LocalPlayer)
             end)
         else
             warn("[Polar Hub] Job ID inválido o vacío.")
