@@ -811,6 +811,13 @@ local STATE_FARMING = "FARMING"
 local STATE_WAITING = "WAITING"
 local STATE_GETTING_QUEST = "GETTING_QUEST"
 
+local function CopyToClipboard(text)
+    local setClipboard = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+    if setClipboard then
+        pcall(setClipboard, text)
+    end
+end
+
 local function ServerHop()
     local placeId = game.PlaceId
     local servers = {}
@@ -824,7 +831,55 @@ local function ServerHop()
         end
     end
     if #servers > 0 then
-        TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(placeId, servers[math.random(1, #servers)], LocalPlayer)
+        end)
+    end
+end
+
+local function ServerHopLowPlayers()
+    local placeId = game.PlaceId
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        local serverList = {}
+        for _, v in ipairs(result.data) do
+            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId then
+                table.insert(serverList, v)
+            end
+        end
+        if #serverList > 0 then
+            table.sort(serverList, function(a, b)
+                return a.playing < b.playing
+            end)
+            local targetServer = serverList[math.random(1, math.min(3, #serverList))]
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(placeId, targetServer.id, LocalPlayer)
+            end)
+        end
+    end
+end
+
+local function ServerHopBestPing()
+    local placeId = game.PlaceId
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        local serverList = {}
+        for _, v in ipairs(result.data) do
+            if type(v) == "table" and v.playing and v.maxPlayers and v.playing < v.maxPlayers - 1 and v.id ~= game.JobId and v.ping then
+                table.insert(serverList, v)
+            end
+        end
+        if #serverList > 0 then
+            table.sort(serverList, function(a, b)
+                return a.ping < b.ping
+            end)
+            local targetServer = serverList[math.random(1, math.min(3, #serverList))]
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(placeId, targetServer.id, LocalPlayer)
+            end)
+        end
     end
 end
 
@@ -2288,12 +2343,48 @@ TabMisc:AddToggle({
     end
 })
 
-TabMisc:AddSection("Sistema")
+TabMisc:AddSection("Gestión de Servidores (Job)")
+
+local TargetJobId = ""
+TabMisc:AddTextBox({
+    Name = "Pegar Job ID",
+    PlaceholderText = "Escribe o pega el Job ID aquí...",
+    Callback = function(Value)
+        TargetJobId = Value
+    end
+})
 
 TabMisc:AddButton({
-    Name = "Server Hop (Saltar Servidor)",
+    Name = "Unirse por Job ID",
     Callback = function()
-        ServerHop()
+        if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
+            pcall(function()
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, TargetJobId, LocalPlayer)
+            end)
+        else
+            warn("[Polar Hub] Job ID inválido o vacío.")
+        end
+    end
+})
+
+TabMisc:AddButton({
+    Name = "Copiar Job ID de este Servidor",
+    Callback = function()
+        CopyToClipboard(tostring(game.JobId))
+    end
+})
+
+TabMisc:AddButton({
+    Name = "Saltar a Servidor con Menos Gente",
+    Callback = function()
+        ServerHopLowPlayers()
+    end
+})
+
+TabMisc:AddButton({
+    Name = "Saltar a Servidor con Mejor Ping",
+    Callback = function()
+        ServerHopBestPing()
     end
 })
 
