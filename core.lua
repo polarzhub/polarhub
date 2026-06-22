@@ -7,7 +7,7 @@ repeat task.wait() until game:IsLoaded()
 
 -- ==================== REDZ UI LIBRARY ====================
 local success, redzlib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/lixbot85-dot/zxhublibrary/main/redzhubV2.lua"))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua"))()
 end)
 
 if not success or not redzlib then
@@ -21,7 +21,7 @@ local Window = redzlib:MakeWindow({
     SaveFolder = "PolarHubConfig.json"
 })
 pcall(function()
-    redzlib:SetScale(750) -- Escala de UI dinámica optimizada (menor espacio en pantalla)
+    redzlib:SetScale(650) -- Escala por defecto "Grande" optimizada
 end)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -2078,7 +2078,7 @@ TabMisc:AddDropdown({
     Name = "Escala de la Interfaz (UI Scale)",
     Description = "Ajusta el tamaño global de la interfaz.",
     Options = {"Pequeño", "Mediano", "Grande", "Muy Grande"},
-    Default = "Mediano",
+    Default = "Grande",
     Callback = function(selected)
         local scaleMap = {
             ["Pequeño"] = 950,
