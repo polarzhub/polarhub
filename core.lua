@@ -20,6 +20,9 @@ local Window = redzlib:MakeWindow({
     SubTitle = "by polarhub",
     SaveFolder = "PolarHubConfig.json"
 })
+pcall(function()
+    redzlib:SetScale(750) -- Escala de UI dinámica optimizada (menor espacio en pantalla)
+end)
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
