@@ -16,8 +16,8 @@ if not success or not redzlib then
 end
 
 local Window = redzlib:MakeWindow({
-    Name = "❄️ POLAR HUB | Modo Dios",
-    SubTitle = "by polarhub",
+    Name = "❄️ POLAR HUB",
+    SubTitle = "by polar",
     SaveFolder = "PolarHubConfig.json"
 })
 pcall(function()
@@ -248,28 +248,70 @@ function Polar.Teleport:To(targetCFrame)
     -- Cursed Ship (Acceso al sub-lugar desde el Mar 2 Principal)
     if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
         local door = nil
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("TouchTransmitter") then
-                local parent = obj.Parent
-                if parent and parent:IsA("BasePart") then
-                    local parentName = string.lower(parent.Name)
-                    local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
-                    if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
-                        door = parent
-                        break
+        local map = workspace:FindFirstChild("Map")
+        if map then
+            for _, obj in ipairs(map:GetDescendants()) do
+                if obj:IsA("TouchTransmitter") then
+                    local parent = obj.Parent
+                    if parent and parent:IsA("BasePart") then
+                        local parentName = string.lower(parent.Name)
+                        local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
+                        if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
+                            door = parent
+                            break
+                        end
                     end
                 end
             end
         end
+        if not door then
+            for _, child in ipairs(workspace:GetChildren()) do
+                if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
+                    for _, obj in ipairs(child:GetDescendants()) do
+                        if obj:IsA("TouchTransmitter") then
+                            local parent = obj.Parent
+                            if parent and parent:IsA("BasePart") then
+                                local parentName = string.lower(parent.Name)
+                                local grandparentName = parent.Parent and string.lower(parent.Parent.Name) or ""
+                                if string.find(parentName, "ship") or string.find(parentName, "cursed") or string.find(grandparentName, "ship") or string.find(grandparentName, "cursed") then
+                                    door = parent
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    if door then break end
+                end
+            end
+        end
+        
         if door then
             MoveDirectly(door.CFrame)
             task.wait(0.2)
-            pcall(function()
-                firetouchinterest(hrp, door, 0)
-                task.wait(0.1)
-                firetouchinterest(hrp, door, 1)
-            end)
-            task.wait(999999)
+            local entered = false
+            for i = 1, 6 do
+                pcall(function()
+                    firetouchinterest(hrp, door, 0)
+                    task.wait(0.05)
+                    firetouchinterest(hrp, door, 1)
+                end)
+                task.wait(0.3)
+                local cChar = LocalPlayer.Character
+                local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+                if cHrp and cHrp.Position.Z > 25000 then
+                    entered = true
+                    break
+                end
+            end
+            if entered then
+                return
+            end
+        end
+        
+        local cChar = LocalPlayer.Character
+        local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+        if not cHrp or cHrp.Position.Z < 25000 then
+            warn("[Polar Hub] No se pudo entrar al Barco Maldito. Evitando tween directo.")
             return
         end
     end
@@ -277,39 +319,106 @@ function Polar.Teleport:To(targetCFrame)
     -- Barco Maldito (Salida hacia el Mar 2 Principal si el objetivo está fuera)
     if targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
         local door = nil
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("TouchTransmitter") then
-                local parent = obj.Parent
-                if parent and parent:IsA("BasePart") then
-                    local parentName = string.lower(parent.Name)
-                    if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
-                        door = parent
-                        break
+        local map = workspace:FindFirstChild("Map")
+        if map then
+            for _, obj in ipairs(map:GetDescendants()) do
+                if obj:IsA("TouchTransmitter") then
+                    local parent = obj.Parent
+                    if parent and parent:IsA("BasePart") then
+                        local parentName = string.lower(parent.Name)
+                        if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
+                            door = parent
+                            break
+                        end
                     end
                 end
             end
         end
         if not door then
-            -- Fallback: Encontrar cualquier TouchTransmitter cerca de las escaleras de spawn en el barco
-            for _, obj in ipairs(workspace:GetDescendants()) do
-                if obj:IsA("TouchTransmitter") then
-                    local parent = obj.Parent
-                    if parent and parent:IsA("BasePart") and (parent.Position - Vector3.new(920, 125, 32800)).Magnitude < 100 then
-                        door = parent
+            for _, child in ipairs(workspace:GetChildren()) do
+                if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
+                    for _, obj in ipairs(child:GetDescendants()) do
+                        if obj:IsA("TouchTransmitter") then
+                            local parent = obj.Parent
+                            if parent and parent:IsA("BasePart") then
+                                local parentName = string.lower(parent.Name)
+                                if string.find(parentName, "exit") or string.find(parentName, "leave") or string.find(parentName, "door") or string.find(parentName, "ship") then
+                                    door = parent
+                                    break
+                                end
+                            end
+                        end
+                    end
+                    if door then break end
+                end
+            end
+        end
+        
+        if not door then
+            local function checkNearSpawn(root)
+                for _, obj in ipairs(root:GetDescendants()) do
+                    if obj:IsA("TouchTransmitter") then
+                        local parent = obj.Parent
+                        if parent and parent:IsA("BasePart") and (parent.Position - Vector3.new(920, 125, 32800)).Magnitude < 150 then
+                            return parent
+                        end
+                    end
+                end
+                return nil
+            end
+            door = map and checkNearSpawn(map)
+            if not door then
+                for _, child in ipairs(workspace:GetChildren()) do
+                    if child.Name ~= "Characters" and child.Name ~= "NPCs" and child.Name ~= "Enemies" and child.Name ~= "Players" then
+                        door = checkNearSpawn(child)
+                        if door then break end
+                    end
+                end
+            end
+        end
+        
+        local exited = false
+        if door then
+            MoveDirectly(door.CFrame)
+            task.wait(0.2)
+            for i = 1, 6 do
+                pcall(function()
+                    firetouchinterest(hrp, door, 0)
+                    task.wait(0.05)
+                    firetouchinterest(hrp, door, 1)
+                end)
+                task.wait(0.3)
+                local cChar = LocalPlayer.Character
+                local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+                if cHrp and cHrp.Position.Z < 25000 then
+                    exited = true
+                    break
+                end
+            end
+        end
+        
+        if not exited then
+            warn("[Polar Hub] Puerta de salida no detectada o inoperante. Intentando GoHome...")
+            if CommF then
+                pcall(function()
+                    CommF:InvokeServer("GoHome")
+                end)
+                for i = 1, 10 do
+                    task.wait(0.3)
+                    local cChar = LocalPlayer.Character
+                    local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+                    if cHrp and cHrp.Position.Z < 25000 then
+                        exited = true
                         break
                     end
                 end
             end
         end
-        if door then
-            MoveDirectly(door.CFrame)
-            task.wait(0.2)
-            pcall(function()
-                firetouchinterest(hrp, door, 0)
-                task.wait(0.1)
-                firetouchinterest(hrp, door, 1)
-            end)
-            task.wait(999999)
+        
+        if exited then
+            return
+        else
+            warn("[Polar Hub] No se pudo salir del Barco Maldito. Evitando tween directo al agua.")
             return
         end
     end
