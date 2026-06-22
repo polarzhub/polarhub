@@ -811,15 +811,45 @@ local STATE_FARMING = "FARMING"
 local STATE_WAITING = "WAITING"
 local STATE_GETTING_QUEST = "GETTING_QUEST"
 
+local request_func = (http_request or request or (syn and syn.request) or (http and http.request) or (fluxus and fluxus.request))
+
+local function SafeHttpGet(url)
+    if request_func then
+        local success, response = pcall(function()
+            return request_func({
+                Url = url,
+                Method = "GET",
+                Headers = {
+                    ["User-Agent"] = "Roblox"
+                },
+                Timeout = 2
+            })
+        end)
+        if success and response and response.StatusCode == 200 then
+            return response.Body
+        end
+    else
+        local success, body = pcall(function()
+            return game:HttpGet(url)
+        end)
+        if success then
+            return body
+        end
+    end
+    return nil
+end
+
 local bridgeUrl = getgenv().PolarBridgeURL or "http://127.0.0.1:3000"
 task.spawn(function()
     if not getgenv().PolarBridgeURL then
         pcall(function()
             local configUrl = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/bridge_config.json"
-            local rawConfig = game:HttpGet(configUrl)
-            local decoded = game:GetService("HttpService"):JSONDecode(rawConfig)
-            if decoded and decoded.bridgeUrl then
-                bridgeUrl = decoded.bridgeUrl
+            local rawConfig = SafeHttpGet(configUrl)
+            if rawConfig then
+                local decoded = game:GetService("HttpService"):JSONDecode(rawConfig)
+                if decoded and decoded.bridgeUrl then
+                    bridgeUrl = decoded.bridgeUrl
+                end
             end
         end)
     end
@@ -834,9 +864,12 @@ end
 
 local function GetServerFromBridge(queryType, placeId)
     local url = bridgeUrl .. "/get_server?type=" .. tostring(queryType) .. "&place_id=" .. tostring(placeId)
-    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-    if success and result and result.success then
-        return result.jobId, result.placeId
+    local raw = SafeHttpGet(url)
+    if raw then
+        local success, result = pcall(function() return HttpService:JSONDecode(raw) end)
+        if success and result and result.success then
+            return result.jobId, result.placeId
+        end
     end
     return nil
 end
@@ -2578,10 +2611,13 @@ task.spawn(function()
         if AutoCazarEnabled then
             pcall(function()
                 local url = bridgeUrl .. "/get_server?type=cazar&username=" .. tostring(LocalPlayer.Name)
-                local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
-                if success and result and result.success and result.jobId then
-                    warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
-                    TeleportService:TeleportToPlaceInstance(result.placeId, result.jobId, LocalPlayer)
+                local raw = SafeHttpGet(url)
+                if raw then
+                    local success, result = pcall(function() return HttpService:JSONDecode(raw) end)
+                    if success and result and result.success and result.jobId then
+                        warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
+                        TeleportService:TeleportToPlaceInstance(result.placeId or game.PlaceId, result.jobId, LocalPlayer)
+                    end
                 end
             end)
         end
