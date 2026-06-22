@@ -811,6 +811,8 @@ local STATE_FARMING = "FARMING"
 local STATE_WAITING = "WAITING"
 local STATE_GETTING_QUEST = "GETTING_QUEST"
 
+local bridgeUrl = getgenv().PolarBridgeURL or "http://127.0.0.1:3000"
+
 local function CopyToClipboard(text)
     local setClipboard = setclipboard or toclipboard or (Clipboard and Clipboard.set)
     if setClipboard then
@@ -819,7 +821,7 @@ local function CopyToClipboard(text)
 end
 
 local function GetServerFromBridge(queryType, placeId)
-    local url = "http://127.0.0.1:3000/get_server?type=" .. tostring(queryType) .. "&place_id=" .. tostring(placeId)
+    local url = bridgeUrl .. "/get_server?type=" .. tostring(queryType) .. "&place_id=" .. tostring(placeId)
     local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
     if success and result and result.success then
         return result.jobId, result.placeId
@@ -839,7 +841,7 @@ local function SendDiscordNotification(title, description, fields)
             }
         }
         local jsonPayload = HttpService:JSONEncode(payload)
-        HttpService:PostAsync("http://127.0.0.1:3000/log_discord", jsonPayload, Enum.HttpContentType.ApplicationJson)
+        HttpService:PostAsync(bridgeUrl .. "/log_discord", jsonPayload, Enum.HttpContentType.ApplicationJson)
     end)
 end
 
@@ -2561,7 +2563,7 @@ task.spawn(function()
         task.wait(3)
         if AutoCazarEnabled then
             pcall(function()
-                local url = "http://127.0.0.1:3000/get_server?type=cazar"
+                local url = bridgeUrl .. "/get_server?type=cazar"
                 local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
                 if success and result and result.success and result.jobId then
                     warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
@@ -2708,7 +2710,7 @@ task.spawn(function()
         LogService.MessageOut:Connect(function(message, messageType)
             pcall(function()
                 request_func({
-                    Url = "http://127.0.0.1:3000/log",
+                    Url = bridgeUrl .. "/log",
                     Method = "POST",
                     Headers = {
                         ["Content-Type"] = "application/json"
@@ -2729,7 +2731,7 @@ task.spawn(function()
                 task.wait(1.5)
                 pcall(function()
                     local response = request_func({
-                        Url = "http://127.0.0.1:3000/eval",
+                        Url = bridgeUrl .. "/eval",
                         Method = "GET"
                     })
                     if response and response.StatusCode == 200 and response.Body and response.Body ~= "" and response.Body ~= "NO_COMMAND" then
@@ -2739,7 +2741,7 @@ task.spawn(function()
                         if not fn then
                             warn("❌ Error de compilación en comando remoto: " .. tostring(err))
                             request_func({
-                                Url = "http://127.0.0.1:3000/eval_result",
+                                Url = bridgeUrl .. "/eval_result",
                                 Method = "POST",
                                 Headers = { ["Content-Type"] = "application/json" },
                                 Body = HttpService:JSONEncode({
@@ -2752,7 +2754,7 @@ task.spawn(function()
                             if not success then
                                 warn("❌ Error de ejecución en comando remoto: " .. tostring(run_err))
                                 request_func({
-                                    Url = "http://127.0.0.1:3000/eval_result",
+                                    Url = bridgeUrl .. "/eval_result",
                                     Method = "POST",
                                     Headers = { ["Content-Type"] = "application/json" },
                                     Body = HttpService:JSONEncode({
@@ -2763,7 +2765,7 @@ task.spawn(function()
                             else
                                 print("✅ Comando remoto ejecutado con éxito.")
                                 request_func({
-                                    Url = "http://127.0.0.1:3000/eval_result",
+                                    Url = bridgeUrl .. "/eval_result",
                                     Method = "POST",
                                     Headers = { ["Content-Type"] = "application/json" },
                                     Body = HttpService:JSONEncode({
