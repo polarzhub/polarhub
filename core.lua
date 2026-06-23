@@ -1407,7 +1407,7 @@ task.spawn(function()
                                 end)
                                 
                                 if (tHrp.Position - nHrp.Position).Magnitude <= 350 then
-                                    if broughtCount < 6 then
+                                    if broughtCount < 15 then
                                         broughtCount = broughtCount + 1
                                         
                                         local secBv = tHrp:FindFirstChild("Polar_AntiGlitch")
@@ -1537,8 +1537,31 @@ task.spawn(function()
             task.wait(1)
             continue
         end
-        -- EXECUTOR HACK: Velocidad de Relámpago (0.05s)
-        task.wait(0.05)
+        -- Configuración de velocidad y golpes dinámicos
+        local delayVal = 0.05
+        local hitCount = 5
+        local targetCap = 8
+        local speed = getgenv().PolarFastAttackSpeed or "Rápido"
+        
+        if speed == "Normal" then
+            delayVal = 0.15
+            hitCount = 3
+            targetCap = 6
+        elseif speed == "Rápido" then
+            delayVal = 0.05
+            hitCount = 5
+            targetCap = 8
+        elseif speed == "Extremo" then
+            delayVal = 0.015
+            hitCount = 8
+            targetCap = 12
+        elseif speed == "Relámpago" then
+            delayVal = 0.005
+            hitCount = 12
+            targetCap = 16
+        end
+
+        task.wait(delayVal)
         if active and RegisterHit and RegisterAttack then
             local char = LocalPlayer.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -1581,7 +1604,7 @@ task.spawn(function()
                         if targetPart and targetPart.Parent then
                             table.insert(targets, {npc, targetPart})
                             if not mainTargetPart then mainTargetPart = targetPart end
-                            if #targets >= 8 then break end
+                            if #targets >= targetCap then break end
                         end
                     end
                 end
@@ -1595,7 +1618,7 @@ task.spawn(function()
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
-                    for _ = 1, 5 do
+                    for _ = 1, hitCount do
                         RegisterAttack:FireServer(0)
                         RegisterHit:FireServer(mainTargetPart, targets)
                     end
@@ -1793,6 +1816,15 @@ TabFarm:AddDropdown({
     Default = "Melee",
     Callback = function(Value)
         SelectedWeaponType = Value
+    end
+})
+
+TabFarm:AddDropdown({
+    Name = "Velocidad de Fast Attack",
+    Options = {"Normal", "Rápido", "Extremo", "Relámpago"},
+    Default = "Rápido",
+    Callback = function(Value)
+        getgenv().PolarFastAttackSpeed = Value
     end
 })
 
