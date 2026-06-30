@@ -1786,7 +1786,7 @@ local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
 local TabQuest = Window:MakeTab({ Title = "Quest Farm", Icon = "map" })
 local TabTeleport = Window:MakeTab({ Title = "Teleport", Icon = "globe" })
 local TabCombat = Window:MakeTab({ Title = "Combat PvP", Icon = "crosshair" })
-local TabServers = Window:MakeTab({ Title = "Server Hop", Icon = "server" })
+local TabServers = Window:MakeTab({ Title = "Fruit Sniper 🍎", Icon = "server" })
 local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
 
 getgenv().PolarWindow = Window
@@ -2583,7 +2583,288 @@ TabMisc:AddToggle({
     end
 })
 
-TabServers:AddSection("Gestión de Servidores (Job)")
+-- ==================== FRUIT SNIPER SYSTEM ====================
+
+-- Lista editable de frutas deseadas (el usuario puede cambiarla en la GUI)
+getgenv().PolarFruitWishlist = getgenv().PolarFruitWishlist or {
+    "Leopard", "Kitsune", "T-Rex", "Mammoth", "Dragon", "Dough",
+    "Spirit", "Control", "Venom", "Shadow", "Rumble", "Buddha",
+    "Phoenix", "Blizzard", "Gravity", "Sound", "Pain", "Portal"
+}
+getgenv().PolarFruitSniperEnabled = false
+getgenv().PolarFruitSniperStatus = "Idle"
+getgenv().PolarFruitSniperServersScanned = 0
+getgenv().PolarFruitSniperAutoExec = true
+
+-- Función que detecta frutas en workspace
+local function ScanForWishlistFruits()
+    local found = {}
+    -- En Blox Fruits, las frutas tiradas en el suelo están en workspace como objetos de tipo "Tool"
+    -- o como modelos con handle. También pueden estar dentro de carpetas.
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        -- Las frutas tiradas en Blox Fruits aparecen como Tool con ToolTip "Blox Fruit"
+        -- o como Modelo con parte "Handle" que contiene la fruta
+        if obj:IsA("Tool") and obj.ToolTip == "Blox Fruit" then
+            for _, fruitName in ipairs(getgenv().PolarFruitWishlist) do
+                if string.find(string.lower(obj.Name), string.lower(fruitName)) then
+                    table.insert(found, {Instance = obj, Name = obj.Name, FruitMatch = fruitName})
+                end
+            end
+        end
+    end
+    return found
+end
+
+-- Función ultra-rápida para recoger una fruta del suelo
+local function GrabFruitInstantly(fruitObj)
+    pcall(function()
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if not hrp or not fruitObj or not fruitObj.Parent then return end
+        
+        -- Localizar la posición de la fruta
+        local fruitPos = nil
+        local handle = fruitObj:FindFirstChild("Handle")
+        if handle then
+            fruitPos = handle.Position
+        elseif fruitObj:IsA("BasePart") then
+            fruitPos = fruitObj.Position
+        elseif fruitObj.Parent and fruitObj.Parent:FindFirstChild("HumanoidRootPart") then
+            fruitPos = fruitObj.Parent.HumanoidRootPart.Position
+        end
+        
+        if fruitPos then
+            -- Teletransportarse encima de la fruta instantáneamente
+            hrp.CFrame = CFrame.new(fruitPos + Vector3.new(0, 3, 0))
+            task.wait(0.1)
+        end
+        
+        -- Intentar recogerla de múltiples formas
+        -- Método 1: fireproximityprompt si tiene prompt
+        for _, prompt in ipairs(fruitObj:GetDescendants()) do
+            if prompt:IsA("ProximityPrompt") then
+                pcall(function()
+                    fireproximityprompt(prompt)
+                end)
+            end
+        end
+        
+        -- Método 2: Simular E (interacción)
+        pcall(function()
+            local VIM = game:GetService("VirtualInputManager")
+            VIM:SendKeyEvent(true, Enum.KeyCode.E, false, game)
+            task.wait(0.05)
+            VIM:SendKeyEvent(false, Enum.KeyCode.E, false, game)
+        end)
+        
+        -- Método 3: Intentar equipar directamente si es una Tool
+        pcall(function()
+            if fruitObj:IsA("Tool") and fruitObj.Parent == workspace then
+                fruitObj.Parent = LocalPlayer.Backpack
+            end
+        end)
+        
+        task.wait(0.3)
+        
+        -- Verificar si se recogió (está en Backpack o Character)
+        local backpack = LocalPlayer:FindFirstChild("Backpack")
+        local character = LocalPlayer.Character
+        if backpack then
+            for _, item in ipairs(backpack:GetChildren()) do
+                if item:IsA("Tool") and string.find(string.lower(item.Name), "fruit") then
+                    return true
+                end
+            end
+        end
+        if character then
+            for _, item in ipairs(character:GetChildren()) do
+                if item:IsA("Tool") and string.find(string.lower(item.Name), "fruit") then
+                    return true
+                end
+            end
+        end
+    end)
+    return false
+end
+
+-- Función de Server Hop con auto re-ejecución del script
+local function FruitSniperHop()
+    getgenv().PolarFruitSniperStatus = "Buscando servidor..."
+    getgenv().PolarFruitSniperServersScanned = getgenv().PolarFruitSniperServersScanned + 1
+    
+    -- Guardar estado del sniper para que se active al re-ejecutarse
+    if getgenv().PolarFruitSniperAutoExec then
+        getgenv().PolarFruitSniperEnabled = true
+    end
+    
+    local placeId = GetMainPlaceIdForCurrentSea()
+    local servers = {}
+    
+    -- Cargar lista de servidores desde la API pública de Roblox
+    local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
+    local success, result = pcall(function() return HttpService:JSONDecode(game:HttpGet(url)) end)
+    if success and result and result.data then
+        for _, v in ipairs(result.data) do
+            if type(v) == "table" and v.playing and v.maxPlayers and v.id ~= game.JobId then
+                if v.playing >= 2 and v.playing < v.maxPlayers - 1 then
+                    table.insert(servers, v.id)
+                end
+            end
+        end
+    end
+    
+    if #servers > 0 then
+        -- Elegir servidor aleatorio para maximizar cobertura
+        local targetId = servers[math.random(1, #servers)]
+        serverHopCache = servers
+        serverHopIndex = 1
+        
+        -- Configurar re-ejecución automática después del teleport
+        if getgenv().PolarFruitSniperAutoExec then
+            -- Guardar el loader para auto-ejecutar al llegar al nuevo servidor
+            pcall(function()
+                local queueOnTeleport = queue_on_teleport or syn and syn.queue_on_teleport or fluxus and fluxus.queue_on_teleport
+                if queueOnTeleport then
+                    queueOnTeleport([[
+                        -- Re-activar Fruit Sniper después del teleport
+                        getgenv().PolarFruitSniperEnabled = true
+                        getgenv().PolarFruitSniperAutoExec = true
+                        getgenv().PolarFruitSniperServersScanned = ]] .. tostring(getgenv().PolarFruitSniperServersScanned) .. [[
+                        
+                        task.wait(5) -- Esperar a que el juego cargue
+                        loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/loader.lua"))()
+                    ]])
+                    warn("[Polar Hub] 🔄 Auto re-ejecución configurada para el próximo servidor.")
+                end
+            end)
+        end
+        
+        warn("[Polar Hub] 🔀 Saltando al servidor #" .. tostring(getgenv().PolarFruitSniperServersScanned) .. "...")
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(placeId, targetId, LocalPlayer)
+        end)
+    else
+        getgenv().PolarFruitSniperStatus = "Sin servidores, reintentando..."
+        task.wait(3)
+    end
+end
+
+-- Motor principal del Fruit Sniper (corre en background)
+task.spawn(function()
+    -- Esperar carga inicial del juego
+    task.wait(3)
+    
+    while true do
+        if not getgenv().PolarFruitSniperEnabled then
+            task.wait(1)
+            getgenv().PolarFruitSniperStatus = "Idle"
+            continue
+        end
+        
+        getgenv().PolarFruitSniperStatus = "Escaneando mapa..."
+        
+        -- Escanear este servidor buscando frutas del Wishlist
+        local fruitsFound = ScanForWishlistFruits()
+        
+        if #fruitsFound > 0 then
+            -- ¡¡FRUTA ENCONTRADA!! Detener todo y recogerla
+            local fruit = fruitsFound[1]
+            getgenv().PolarFruitSniperStatus = "¡¡FRUTA ENCONTRADA!! -> " .. fruit.Name
+            
+            warn("[Polar Hub] 🍎🍎🍎 ¡¡" .. fruit.Name .. " ENCONTRADA!! Recogiéndola...")
+            
+            -- Notificación visual
+            pcall(function()
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "🍎 ¡¡FRUTA ENCONTRADA!!",
+                    Text = fruit.Name .. " detectada en este servidor!",
+                    Duration = 30
+                })
+            end)
+            
+            -- Intentar recogerla instantáneamente
+            GrabFruitInstantly(fruit.Instance)
+            
+            -- Notificación de Discord (si está configurado)
+            pcall(function()
+                SendDiscordNotification("🍎 ¡¡FRUTA ENCONTRADA!!", "El Fruit Sniper ha localizado una fruta del Wishlist.", {
+                    {name = "Fruta", value = fruit.Name, inline = true},
+                    {name = "Servidor", value = "`" .. tostring(game.JobId) .. "`", inline = true},
+                    {name = "Servidores Escaneados", value = tostring(getgenv().PolarFruitSniperServersScanned), inline = true}
+                })
+            end)
+            
+            -- Detener el sniper después de encontrar una fruta
+            getgenv().PolarFruitSniperEnabled = false
+            getgenv().PolarFruitSniperStatus = "¡FRUTA RECOGIDA! -> " .. fruit.Name
+        else
+            -- No hay frutas en este servidor, saltar al siguiente
+            getgenv().PolarFruitSniperStatus = "Sin frutas. Servidores: " .. tostring(getgenv().PolarFruitSniperServersScanned)
+            task.wait(2) -- Dar un momento para escanear bien el mapa
+            
+            -- Re-escanear por si acaso (a veces las frutas tardan en cargar)
+            fruitsFound = ScanForWishlistFruits()
+            if #fruitsFound > 0 then
+                continue -- Volver al inicio del loop para procesarla
+            end
+            
+            -- Hop al siguiente servidor
+            FruitSniperHop()
+            task.wait(10) -- Esperar teleport
+        end
+    end
+end)
+
+-- ==================== GUI DEL FRUIT SNIPER (Tab Servers) ====================
+TabServers:AddSection("🍎 Fruit Sniper (Buscador de Frutas)")
+
+TabServers:AddToggle({
+    Name = "Activar Fruit Sniper",
+    Desc = "Escanea servidor por servidor buscando las frutas de tu Wishlist. Si encuentra una, la recoge al instante.",
+    Callback = function(Value)
+        getgenv().PolarFruitSniperEnabled = Value
+        if not Value then
+            getgenv().PolarFruitSniperStatus = "Idle"
+        end
+    end
+})
+
+TabServers:AddToggle({
+    Name = "Auto Re-Ejecución",
+    Desc = "Vuelve a ejecutar Polar Hub automáticamente al saltar de servidor (necesario para que el sniper siga buscando).",
+    Default = true,
+    Callback = function(Value)
+        getgenv().PolarFruitSniperAutoExec = Value
+    end
+})
+
+TabServers:AddTextBox({
+    Name = "Editar Wishlist de Frutas",
+    PlaceholderText = "Leopard, Kitsune, Dragon, Dough...",
+    Default = table.concat(getgenv().PolarFruitWishlist, ", "),
+    Callback = function(Value)
+        local newList = {}
+        for fruit in string.gmatch(Value, "[^,]+") do
+            fruit = fruit:match("^%s*(.-)%s*$") -- Trim espacios
+            if fruit and #fruit > 0 then
+                table.insert(newList, fruit)
+            end
+        end
+        if #newList > 0 then
+            getgenv().PolarFruitWishlist = newList
+            warn("[Polar Hub] 🍎 Wishlist actualizada: " .. table.concat(newList, ", "))
+        end
+    end
+})
+
+TabServers:AddSection("Herramientas de Servidor")
+
+TabServers:AddButton({
+    Name = "Copiar Job ID de este Servidor",
+    Callback = function()
+        CopyToClipboard(tostring(game.JobId))
+    end
+})
 
 local TargetJobId = ""
 TabServers:AddTextBox({
@@ -2606,62 +2887,6 @@ TabServers:AddButton({
         end
     end
 })
-
-TabServers:AddButton({
-    Name = "Copiar Job ID de este Servidor",
-    Callback = function()
-        CopyToClipboard(tostring(game.JobId))
-    end
-})
-
-TabServers:AddButton({
-    Name = "Saltar a Servidor con Menos Gente",
-    Callback = function()
-        ServerHopLowPlayers()
-    end
-})
-
-TabServers:AddButton({
-    Name = "Saltar a Servidor con Mejor Ping",
-    Callback = function()
-        ServerHopBestPing()
-    end
-})
-
-local AutoCazarEnabled = false
-local lastTeleportedJobId = nil
-TabServers:AddToggle({
-    Name = "Auto-Unirse a Caza (Bot de Discord)",
-    Desc = "Te une automáticamente al servidor del objetivo cuando el bot de Discord lo localice.",
-    Callback = function(Value)
-        AutoCazarEnabled = Value
-        if not Value then
-            lastTeleportedJobId = nil
-        end
-    end
-})
-
-task.spawn(function()
-    while true do
-        task.wait(3)
-        if AutoCazarEnabled then
-            pcall(function()
-                local url = bridgeUrl .. "/get_server?type=cazar&username=" .. tostring(LocalPlayer.Name)
-                local raw = SafeHttpGet(url)
-                if raw then
-                    local success, result = pcall(function() return HttpService:JSONDecode(raw) end)
-                    if success and result and result.success and result.jobId then
-                        if result.jobId ~= lastTeleportedJobId then
-                            lastTeleportedJobId = result.jobId
-                            warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
-                            TeleportService:TeleportToPlaceInstance(result.placeId or game.PlaceId, result.jobId, LocalPlayer)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
 
 -- ==================== LOGICA DE UTILIDADES Y COMBATE EXTREMO ====================
 
