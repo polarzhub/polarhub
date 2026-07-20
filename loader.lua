@@ -69,8 +69,8 @@ elseif detectedSea == 2 then
     print("Polar Hub: Sea 2 detectado.")
     loadstring(game:HttpGet(baseURL .. "sea2.lua"))()
 elseif detectedSea == 3 then
-    print("Polar Hub: Sea 3 detectado (Cargando Sea 2 por defecto).")
-    loadstring(game:HttpGet(baseURL .. "sea2.lua"))()
+    print("Polar Hub: Sea 3 detectado.")
+    loadstring(game:HttpGet(baseURL .. "sea3.lua"))()
 else
     warn("Polar Hub: Sea no reconocido ("..tostring(PlaceId).."). Cargando Sea 1 por defecto.")
     loadstring(game:HttpGet(baseURL .. "sea1.lua"))()
