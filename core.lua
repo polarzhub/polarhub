@@ -472,45 +472,7 @@ function Polar.Teleport:ToIsland(islandName)
     end
 end
 
--- Módulo del Mundo
-Polar.World = {}
-
-function Polar.World:FindNPC(npcName)
-    if not npcName or npcName == "" then return nil end
-    local cached = Polar.Data.NPCCache[npcName]
-    if cached then
-        if typeof(cached) == "table" or type(cached) == "table" then
-            return cached[1]
-        end
-        return cached
-    end
-    
-    -- Buscar en NPCs folder
-    local npcs = workspace:FindFirstChild("NPCs")
-    if npcs then
-        local npc = npcs:FindFirstChild(npcName)
-        if npc then
-            local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
-            if part then
-                Polar.Data.NPCCache[npcName] = part.CFrame
-                return part.CFrame
-            end
-        end
-    end
-    
-    -- Buscar globalmente
-    for _, v in ipairs(workspace:GetDescendants()) do
-        if v:IsA("Model") and string.find(string.lower(v.Name), string.lower(npcName)) then
-            local part = v:FindFirstChild("HumanoidRootPart") or v:FindFirstChild("Head")
-            if part then
-                Polar.Data.NPCCache[npcName] = part.CFrame
-                return part.CFrame
-            end
-        end
-    end
-    return nil
-end
-
+-- ==================== SYSTEM DETECTION ENGINE (DETECCION ABSURDA DE NPCS Y OBJETOS) ====================
 local FallbackPositions = {
     ["Rear Crew Quest Giver"] = Vector3.new(923, 126, 32852),
     ["Front Crew Quest Giver"] = Vector3.new(920, 125, 33000),
@@ -525,173 +487,324 @@ local FallbackPositions = {
     ["Awakened Ice Admiral"] = Vector3.new(5655, 38, -6482),
 }
 
-function Polar.World:GetEnemySpawnPosition(enemyName)
-    if not enemyName then return nil end
-    if Polar.Data.SpawnCache[enemyName] then return Polar.Data.SpawnCache[enemyName] end
+Polar.Detection = {
+    Cache = {
+        NPCs = {},
+        Enemies = {},
+        Objects = {},
+        Spawns = {}
+    }
+}
+
+function Polar.Detection:FuzzyMatch(str1, str2)
+    if not str1 or not str2 then return false end
+    local s1 = string.lower(tostring(str1)):gsub("[%s%p]", "")
+    local s2 = string.lower(tostring(str2)):gsub("[%s%p]", "")
+    if s1 == s2 then return true end
+    if string.find(s1, s2, 1, true) or string.find(s2, s1, 1, true) then
+        return true
+    end
+    return false
+end
+
+function Polar.Detection:FindNPC(npcName)
+    if not npcName or npcName == "" then return nil end
     
-    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
-    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
-    
-    if enemySpawns then
-        local bestSpawn = nil
-        local bestLenDiff = math.huge
-        for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
-            if string.find(string.lower(spawnPart.Name), string.lower(enemyName)) then
-                local diff = math.abs(#spawnPart.Name - #enemyName)
-                if diff < bestLenDiff then
-                    bestLenDiff = diff
-                    bestSpawn = spawnPart.Position
+    -- 1. Caché previo
+    if getgenv().PolarNPCCache and getgenv().PolarNPCCache[npcName] then
+        return getgenv().PolarNPCCache[npcName]
+    end
+    if Polar.Data.NPCCache and Polar.Data.NPCCache[npcName] then
+        return Polar.Data.NPCCache[npcName]
+    end
+
+    -- 2. Búsqueda directa en workspace.NPCs
+    local npcsFolder = workspace:FindFirstChild("NPCs")
+    if npcsFolder then
+        for _, npc in ipairs(npcsFolder:GetChildren()) do
+            if self:FuzzyMatch(npc.Name, npcName) then
+                local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildOfClass("BasePart")
+                if part then
+                    local cf = part.CFrame
+                    Polar.Data.NPCCache[npcName] = cf
+                    if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+                    return cf
                 end
             end
         end
-        if bestSpawn then
-            Polar.Data.SpawnCache[enemyName] = bestSpawn
-            return bestSpawn
+    end
+
+    -- 3. Búsqueda profunda en contenedores secundarios
+    local containers = {
+        workspace:FindFirstChild("Enemies"),
+        workspace:FindFirstChild("Characters"),
+        workspace:FindFirstChild("Map"),
+        workspace:FindFirstChild("Locations"),
+        workspace
+    }
+
+    for _, folder in ipairs(containers) do
+        if folder then
+            for _, child in ipairs(folder:GetChildren()) do
+                if child:IsA("Model") and self:FuzzyMatch(child.Name, npcName) then
+                    local part = child:FindFirstChild("HumanoidRootPart") or child:FindFirstChild("Head") or child:FindFirstChildOfClass("BasePart")
+                    if part then
+                        local cf = part.CFrame
+                        Polar.Data.NPCCache[npcName] = cf
+                        return cf
+                    end
+                end
+            end
         end
     end
-    
-    -- Usar posición hardcodeada de respaldo si no se encuentra en el mapa (útil bajo StreamingEnabled)
-    local fallbackPos = FallbackPositions[enemyName]
-    if fallbackPos then
-        Polar.Data.SpawnCache[enemyName] = fallbackPos
-        return fallbackPos
+
+    -- 4. Fallback de StreamingEnabled
+    if FallbackPositions and FallbackPositions[npcName] then
+        local pos = FallbackPositions[npcName]
+        local cf = (typeof(pos) == "Vector3" and CFrame.new(pos)) or pos
+        Polar.Data.NPCCache[npcName] = cf
+        return cf
     end
-    
+
     return nil
+end
+
+function Polar.Detection:FindEnemy(enemyName)
+    if not enemyName or enemyName == "" then return nil, nil end
+    local enemies = workspace:FindFirstChild("Enemies")
+    local chars = workspace:FindFirstChild("Characters")
+    
+    local containers = {enemies, chars}
+    for _, folder in ipairs(containers) do
+        if folder then
+            for _, npc in ipairs(folder:GetChildren()) do
+                if self:FuzzyMatch(npc.Name, enemyName) then
+                    local hum = npc:FindFirstChildOfClass("Humanoid")
+                    local hrp = npc:FindFirstChild("HumanoidRootPart")
+                    if hum and hrp and hum.Health > 0 then
+                        return npc, hrp
+                    end
+                end
+            end
+        end
+    end
+    return nil, nil
+end
+
+function Polar.Detection:GetEnemySpawnCFrame(enemyName)
+    if not enemyName or enemyName == "" then return nil end
+    
+    local mob, hrp = self:FindEnemy(enemyName)
+    if hrp then return hrp.CFrame end
+    
+    if Polar.Data.SpawnCache[enemyName] then
+        local pos = Polar.Data.SpawnCache[enemyName]
+        return typeof(pos) == "Vector3" and CFrame.new(pos) or pos
+    end
+
+    local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
+    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
+    if enemySpawns then
+        for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
+            if self:FuzzyMatch(spawnPart.Name, enemyName) then
+                local cf = spawnPart.CFrame
+                Polar.Data.SpawnCache[enemyName] = cf
+                return cf
+            end
+        end
+    end
+
+    if FallbackPositions and FallbackPositions[enemyName] then
+        local pos = FallbackPositions[enemyName]
+        local cf = typeof(pos) == "Vector3" and CFrame.new(pos) or pos
+        Polar.Data.SpawnCache[enemyName] = cf
+        return cf
+    end
+
+    return nil
+end
+
+function Polar.Detection:FindObject(objName)
+    if not objName or objName == "" then return nil end
+    
+    local char = LocalPlayer.Character
+    local backpack = LocalPlayer:FindFirstChild("Backpack")
+    if char then
+        local tool = char:FindFirstChild(objName)
+        if tool then return tool end
+    end
+    if backpack then
+        local tool = backpack:FindFirstChild(objName)
+        if tool then return tool end
+    end
+
+    for _, v in ipairs(workspace:GetChildren()) do
+        if self:FuzzyMatch(v.Name, objName) then return v end
+    end
+
+    local map = workspace:FindFirstChild("Map")
+    if map then
+        for _, v in ipairs(map:GetDescendants()) do
+            if self:FuzzyMatch(v.Name, objName) then return v end
+        end
+    end
+
+    return nil
+end
+
+-- Módulo del Mundo Compatible
+Polar.World = Polar.World or {}
+
+function Polar.World:FindNPC(npcName)
+    return Polar.Detection:FindNPC(npcName)
+end
+
+function Polar.World:GetEnemySpawnPosition(enemyName)
+    local cf = Polar.Detection:GetEnemySpawnCFrame(enemyName)
+    return cf and cf.Position or nil
 end
 
 function Polar.World:IsEnemyAlive(enemyName)
-    if enemiesFolder then
-        for _, npc in ipairs(enemiesFolder:GetChildren()) do
-            if string.find(string.lower(npc.Name), string.lower(enemyName)) and npc:FindFirstChild("Humanoid") and npc.Humanoid.Health > 0 then
-                return true
+    local mob, hrp = Polar.Detection:FindEnemy(enemyName)
+    return mob ~= nil
+end
+
+-- ==================== UNIFIED QUEST ENGINE (MOTOR MAESTRO DE MISIONES) ====================
+Polar.QuestEngine = Polar.QuestEngine or {}
+
+function Polar.QuestEngine:GetActiveQuestTitle()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not pgui then return nil end
+    local main = pgui:FindFirstChild("Main")
+    if not main then return nil end
+    local questUI = main:FindFirstChild("Quest")
+    if questUI and questUI.Visible then
+        local container = questUI:FindFirstChild("Container")
+        if container then
+            local title = container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
+            if title and title.Text and title.Text ~= "" then
+                return title.Text
+            end
+            local oldTitle = container:FindFirstChild("QuestTitle")
+            if oldTitle and oldTitle:IsA("TextLabel") and oldTitle.Text and oldTitle.Text ~= "" then
+                return oldTitle.Text
             end
         end
     end
-    return false
+    return nil
 end
 
--- Módulo de Misiones
-Polar.Quest = {}
-
-local QuestsTable = nil
-function Polar.Quest:GetQuestsModule()
-    if QuestsTable then return QuestsTable end
-    local success, result = pcall(function()
-        return require(game:GetService("ReplicatedStorage"):WaitForChild("Quests"))
-    end)
-    if success and result then
-        QuestsTable = result
-        return QuestsTable
+function Polar.QuestEngine:HasActiveQuest()
+    local title = self:GetActiveQuestTitle()
+    if not title then return false end
+    local lowerTitle = string.lower(title)
+    if string.find(lowerTitle, "completed") or string.find(lowerTitle, "completada") then
+        return false
     end
-    return nil
+    return true
+end
+
+function Polar.QuestEngine:GetBestQuest(level)
+    level = level or (Polar.Player and Polar.Player:GetLevel() or 1)
+    
+    local bestQuest = nil
+    local maxLvl = -1
+    
+    local questsModule = nil
+    pcall(function()
+        questsModule = require(ReplicatedStorage:WaitForChild("Quests", 2))
+    end)
+    
+    local allowed = Polar.Data.AllowedQuests or {}
+    
+    if questsModule and #allowed > 0 then
+        for _, qName in ipairs(allowed) do
+            local qList = questsModule[qName]
+            if qList then
+                for index, qData in ipairs(qList) do
+                    if qData.LevelReq and level >= qData.LevelReq and qData.LevelReq > maxLvl then
+                        maxLvl = qData.LevelReq
+                        bestQuest = {
+                            qName = qName,
+                            index = index,
+                            enemyName = qData.Name,
+                            giverName = Polar.Data.QuestGiver[qName],
+                            island = Polar.Data.QuestToIsland[qName] or "",
+                            levelReq = qData.LevelReq
+                        }
+                    end
+                end
+            end
+        end
+    end
+    
+    if not bestQuest and Polar.Data.QuestInfo then
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if level >= qData.lvl and qData.lvl > maxLvl then
+                maxLvl = qData.lvl
+                bestQuest = {
+                    qName = qData.q,
+                    index = qData.ql,
+                    enemyName = qData.name,
+                    giverName = qData.giver or Polar.Data.QuestGiver[qData.q],
+                    island = qData.island or Polar.Data.QuestToIsland[qData.q] or "",
+                    levelReq = qData.lvl,
+                    pos = qData.pos
+                }
+            end
+        end
+    end
+    
+    return bestQuest
+end
+
+-- Compatibilidad con Polar.Quest
+Polar.Quest = Polar.Quest or {}
+
+function Polar.Quest:GetQuestsModule()
+    local success, result = pcall(function()
+        return require(ReplicatedStorage:WaitForChild("Quests", 2))
+    end)
+    return success and result or nil
 end
 
 function Polar.Quest:GetBestQuest()
-    local level = Polar.Player:GetLevel()
-    local quests = Polar.Quest:GetQuestsModule()
-    local allowed = Polar.Data.AllowedQuests
-    
-    if not allowed or #allowed == 0 then return nil end
-    
-    local bestQuestName = nil
-    local bestQuestIndex = 1
-    local bestQuestData = nil
-    local maxLevel = -1
-    
-    if quests then
-        for _, qName in ipairs(allowed) do
-            local qDataList = quests[qName]
-            if qDataList then
-                for index, qData in ipairs(qDataList) do
-                    if qData.LevelReq and level >= qData.LevelReq and qData.LevelReq > maxLevel then
-                        maxLevel = qData.LevelReq
-                        bestQuestName = qName
-                        bestQuestIndex = index
-                        bestQuestData = qData
-                    end
-                end
-            end
-        end
-    end
-    
-    -- Fallback si falla el modulo del juego
-    if not bestQuestName then
-        for _, qData in ipairs(Polar.Data.QuestInfo) do
-            if level >= qData.lvl and qData.lvl > maxLevel then
-                maxLevel = qData.lvl
-                bestQuestName = qData.q
-                bestQuestIndex = qData.ql
-                bestQuestData = { Name = qData.name, LevelReq = qData.lvl }
-            end
-        end
-    end
-    
-    if bestQuestName then
-        return {
-            qName = bestQuestName,
-            index = bestQuestIndex,
-            enemyName = bestQuestData and bestQuestData.Name or (Polar.Data.QuestInfo[1] and Polar.Data.QuestInfo[1].name),
-            island = Polar.Data.QuestToIsland[bestQuestName] or ""
-        }
-    end
-    return nil
+    return Polar.QuestEngine:GetBestQuest()
 end
 
 function Polar.Quest:HasQuest()
-    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
-        if pgui.Main.Quest.Visible then
-            local title = pgui.Main.Quest:FindFirstChild("Container") 
-                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
-                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
-            if title and title.Text then
-                if string.find(string.lower(title.Text), "completed") or string.find(string.lower(title.Text), "completada") then
-                    return false
-                end
-                return true
-            end
-        end
-    end
-    return false
+    return Polar.QuestEngine:HasActiveQuest()
 end
 
 function Polar.Quest:GetTargetEnemyNameFromQuest()
-    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
-    if pgui and pgui:FindFirstChild("Main") and pgui.Main:FindFirstChild("Quest") then
-        if pgui.Main.Quest.Visible then
-            local title = pgui.Main.Quest:FindFirstChild("Container") 
-                and pgui.Main.Quest.Container:FindFirstChild("QuestTitle") 
-                and pgui.Main.Quest.Container.QuestTitle:FindFirstChild("Title")
-            if title and title.Text then
-                local questText = title.Text
-                local bestMatch = nil
-                local bestLen = 0
-                
-                -- Buscar la coincidencia en nuestra base
-                for _, qData in ipairs(Polar.Data.QuestInfo) do
-                    if string.find(string.lower(questText), string.lower(qData.name)) then
-                        if #qData.name > bestLen then
-                            bestLen = #qData.name
-                            bestMatch = qData.name
-                        end
-                    end
+    local activeTitle = Polar.QuestEngine:GetActiveQuestTitle()
+    if not activeTitle then return nil end
+    
+    local bestMatch = nil
+    local bestLen = 0
+    
+    if Polar.Data.QuestInfo then
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if Polar.Detection:FuzzyMatch(activeTitle, qData.name) then
+                if #qData.name > bestLen then
+                    bestLen = #qData.name
+                    bestMatch = qData.name
                 end
-                
-                for _, bData in ipairs(Polar.Data.Bosses) do
-                    if string.find(string.lower(questText), string.lower(bData.name)) then
-                        if #bData.name > bestLen then
-                            bestLen = #bData.name
-                            bestMatch = bData.name
-                        end
-                    end
-                end
-                
-                return bestMatch
             end
         end
     end
-    return nil
+    if Polar.Data.Bosses then
+        for _, bData in ipairs(Polar.Data.Bosses) do
+            if Polar.Detection:FuzzyMatch(activeTitle, bData.name) then
+                if #bData.name > bestLen then
+                    bestLen = #bData.name
+                    bestMatch = bData.name
+                end
+            end
+        end
+    end
+    
+    return bestMatch
 end
 
 function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
@@ -1407,7 +1520,7 @@ task.spawn(function()
                                 end)
                                 
                                 if (tHrp.Position - nHrp.Position).Magnitude <= 350 then
-                                    if broughtCount < 15 then
+                                    if broughtCount < 6 then
                                         broughtCount = broughtCount + 1
                                         
                                         local secBv = tHrp:FindFirstChild("Polar_AntiGlitch")
@@ -1537,31 +1650,8 @@ task.spawn(function()
             task.wait(1)
             continue
         end
-        -- Configuración de velocidad y golpes dinámicos
-        local delayVal = 0.05
-        local hitCount = 5
-        local targetCap = 8
-        local speed = getgenv().PolarFastAttackSpeed or "Rápido"
-        
-        if speed == "Normal" then
-            delayVal = 0.15
-            hitCount = 3
-            targetCap = 6
-        elseif speed == "Rápido" then
-            delayVal = 0.05
-            hitCount = 5
-            targetCap = 8
-        elseif speed == "Extremo" then
-            delayVal = 0.015
-            hitCount = 8
-            targetCap = 12
-        elseif speed == "Relámpago" then
-            delayVal = 0.005
-            hitCount = 12
-            targetCap = 16
-        end
-
-        task.wait(delayVal)
+        -- EXECUTOR HACK: Velocidad de Relámpago (0.05s)
+        task.wait(0.05)
         if active and RegisterHit and RegisterAttack then
             local char = LocalPlayer.Character
             local hrp = char and char:FindFirstChild("HumanoidRootPart")
@@ -1604,7 +1694,7 @@ task.spawn(function()
                         if targetPart and targetPart.Parent then
                             table.insert(targets, {npc, targetPart})
                             if not mainTargetPart then mainTargetPart = targetPart end
-                            if #targets >= targetCap then break end
+                            if #targets >= 8 then break end
                         end
                     end
                 end
@@ -1618,7 +1708,7 @@ task.spawn(function()
                 pcall(function()
                     -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
                     -- Esto clona tu daño y derrite a los enemigos al instante
-                    for _ = 1, hitCount do
+                    for _ = 1, 5 do
                         RegisterAttack:FireServer(0)
                         RegisterHit:FireServer(mainTargetPart, targets)
                     end
@@ -1660,7 +1750,7 @@ task.spawn(function()
                             local chestCF = chest.CFrame
                             local dist = (hrp.Position - chestCF.Position).Magnitude
                             if dist > 15 then
-                                BypassTeleport(chestCF)
+                                Polar.Teleport:To(chestCF)
                             else
                                 hrp.CFrame = chestCF
                             end
@@ -1713,10 +1803,7 @@ task.spawn(function()
 end)
 
 -- FIX #1: getgenv().PolarAutoMobLeaderEnabled y getgenv().PolarAutoSaberExpertEnabled ya están declaradas arriba (línea ~498)
-local AutoSaberRunning = false
-
-local GlobalPhase1Solved = false
-local MaxSaberPhaseReached = 1
+-- NOTA: AutoSaberRunning, GlobalPhase1Solved y MaxSaberPhaseReached se declaran en sea1.lua
 
 
 -- ==================== UTILS ====================
@@ -1801,9 +1888,8 @@ getgenv().PolarTabServers = TabServers
 getgenv().PolarTabMisc = TabMisc
 
 -- Exportar funciones utilitarias de core.lua para sea.lua
+-- Nota: PolarBypassTeleport y PolarIsEnemyAlive ya están exportados correctamente en líneas 788-789
 getgenv().PolarBuyItem = BuyItem
-getgenv().PolarBypassTeleport = BypassTeleport
-getgenv().PolarIsEnemyAlive = IsEnemyAlive
 
 
 
@@ -1816,15 +1902,6 @@ TabFarm:AddDropdown({
     Default = "Melee",
     Callback = function(Value)
         SelectedWeaponType = Value
-    end
-})
-
-TabFarm:AddDropdown({
-    Name = "Velocidad de Fast Attack",
-    Options = {"Normal", "Rápido", "Extremo", "Relámpago"},
-    Default = "Rápido",
-    Callback = function(Value)
-        getgenv().PolarFastAttackSpeed = Value
     end
 })
 
@@ -1987,7 +2064,7 @@ TabTeleport:AddButton({
         local locs = origin and origin:FindFirstChild("Locations")
         if locs and SelectedIsland ~= "" and SelectedIsland ~= "None" then
             local islaObj = locs:FindFirstChild(SelectedIsland)
-            if islaObj then BypassTeleport(islaObj.CFrame * CFrame.new(0, 80, 0)) end
+            if islaObj then Polar.Teleport:To(islaObj.CFrame * CFrame.new(0, 80, 0)) end
         end
     end
 })
@@ -2125,7 +2202,7 @@ TabCombat:AddButton({
     Name = "🚀 Teletransportarse al Objetivo",
     Callback = function()
         if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
-            BypassTeleport(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+            Polar.Teleport:To(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
         end
     end
 })

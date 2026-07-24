@@ -1,5 +1,5 @@
 -- ==================== POLAR HUB | SEA 2 (MÓDULO AVANZADO) ====================
-print("Cargando datos del Sea 2...")
+print("❄️ Cargando datos del Sea 2 con detección unificada Polar Engine...")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -72,13 +72,16 @@ end
 local function EquipWeaponLocal()
     local char = game.Players.LocalPlayer.Character
     if not char then return end
+    local hum = char:FindFirstChildOfClass("Humanoid")
+    if not hum or hum.Health <= 0 then return end
+    
     local currentTool = char:FindFirstChildOfClass("Tool")
     if not currentTool then
         local backpack = game.Players.LocalPlayer:FindFirstChild("Backpack")
         if backpack then
             for _, tool in ipairs(backpack:GetChildren()) do
                 if tool:IsA("Tool") and (tool.ToolTip == "Melee" or tool.ToolTip == "Sword" or tool:FindFirstChild("Combat")) then
-                    char.Humanoid:EquipTool(tool)
+                    hum:EquipTool(tool)
                     break
                 end
             end
@@ -91,10 +94,9 @@ task.spawn(function()
     while true do
         task.wait(1)
         if getgenv().PolarAutoFactoryEnabled then
-            local enemies = workspace:FindFirstChild("Enemies")
-            local core = enemies and enemies:FindFirstChild("Core")
-            if core and core:FindFirstChild("HumanoidRootPart") then
-                Polar.Teleport:To(core.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0))
+            local coreModel, coreHRP = Polar.Detection:FindEnemy("Core")
+            if coreHRP then
+                Polar.Teleport:To(coreHRP.CFrame * CFrame.new(0, 15, 0))
                 getgenv().PolarFastAttackEnabled = true
                 EquipWeaponLocal()
                 local VirtualUser = game:GetService("VirtualUser")
@@ -121,31 +123,27 @@ task.spawn(function()
                 BartiloQuestRunning = true
                 task.spawn(function()
                     while getgenv().PolarAutoBartiloEnabled do
-                        local progress = CommF:InvokeServer("BartiloQuestProgress", "Bartilo")
+                        local progress = nil
+                        pcall(function() progress = CommF:InvokeServer("BartiloQuestProgress", "Bartilo") end)
                         
                         if progress == 0 or progress == nil then
                             warn("Polar Hub: Hablando con Bartilo (Quest 1)...")
-                            CommF:InvokeServer("StartQuest", "BartiloQuest", 1)
+                            pcall(function() CommF:InvokeServer("StartQuest", "BartiloQuest", 1) end)
                             task.wait(1)
                             
                             while getgenv().PolarAutoBartiloEnabled do
-                                local q = game.Players.LocalPlayer.PlayerGui.Main:FindFirstChild("Quest")
-                                if not (q and q.Visible and string.find(q.Container.QuestTitle.Title.Text, "Swan Pirate")) then
-                                    local status = CommF:InvokeServer("BartiloQuestProgress", "Bartilo")
+                                local title = Polar.QuestEngine and Polar.QuestEngine:GetActiveQuestTitle() or ""
+                                if not string.find(string.lower(title), "swan pirate") then
+                                    local status = nil
+                                    pcall(function() status = CommF:InvokeServer("BartiloQuestProgress", "Bartilo") end)
                                     if status ~= 0 then break end
-                                    CommF:InvokeServer("StartQuest", "BartiloQuest", 1)
+                                    pcall(function() CommF:InvokeServer("StartQuest", "BartiloQuest", 1) end)
                                     task.wait(1)
                                 end
                                 
-                                local enemy = nil
-                                for _, v in ipairs(workspace.Enemies:GetChildren()) do
-                                    if v.Name == "Swan Pirate" and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                                        enemy = v
-                                        break
-                                    end
-                                end
-                                if enemy then
-                                    Polar.Teleport:To(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                                local mob, hrp = Polar.Detection:FindEnemy("Swan Pirate")
+                                if hrp then
+                                    Polar.Teleport:To(hrp.CFrame * CFrame.new(0, 10, 0))
                                     EquipWeaponLocal()
                                     getgenv().PolarFastAttackEnabled = true
                                     game:GetService("VirtualUser"):CaptureController()
@@ -159,24 +157,25 @@ task.spawn(function()
                             
                         elseif progress == 1 then
                             warn("Polar Hub: Hablando con Bartilo (Quest 2)...")
-                            CommF:InvokeServer("StartQuest", "BartiloQuest", 2)
+                            pcall(function() CommF:InvokeServer("StartQuest", "BartiloQuest", 2) end)
                             task.wait(2)
                             
                         elseif progress == 2 then
                             warn("Polar Hub: Derrotando a Jeremy...")
                             while getgenv().PolarAutoBartiloEnabled do
-                                local status = CommF:InvokeServer("BartiloQuestProgress", "Bartilo")
+                                local status = nil
+                                pcall(function() status = CommF:InvokeServer("BartiloQuestProgress", "Bartilo") end)
                                 if status ~= 2 then break end
                                 
-                                local enemy = workspace.Enemies:FindFirstChild("Jeremy") or workspace.Characters:FindFirstChild("Jeremy")
-                                if enemy and enemy:FindFirstChild("HumanoidRootPart") and enemy.Humanoid.Health > 0 then
-                                    Polar.Teleport:To(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                                local mob, hrp = Polar.Detection:FindEnemy("Jeremy")
+                                if hrp then
+                                    Polar.Teleport:To(hrp.CFrame * CFrame.new(0, 10, 0))
                                     EquipWeaponLocal()
                                     getgenv().PolarFastAttackEnabled = true
                                     game:GetService("VirtualUser"):CaptureController()
                                     game:GetService("VirtualUser"):ClickButton1(Vector2.new(0,0))
                                 else
-                                    local spawnCF = Polar.World:GetEnemySpawnPosition("Jeremy") or CFrame.new(2316, 449, 787)
+                                    local spawnCF = Polar.Detection:GetEnemySpawnCFrame("Jeremy") or CFrame.new(2316, 449, 787)
                                     Polar.Teleport:To(spawnCF)
                                 end
                                 task.wait(0.2)
@@ -188,7 +187,7 @@ task.spawn(function()
                             local colosseum = workspace:FindFirstChild("Colosseum", true) or workspace.Map:FindFirstChild("Colosseum", true)
                             if colosseum then
                                 local plates = {"Y", "Infinity", "C", "S", "M", "F", "N", "B"}
-                                local hrp = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                                local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
                                 if hrp then
                                     for _, plateName in ipairs(plates) do
                                         local plate = colosseum:FindFirstChild(plateName, true)
@@ -204,7 +203,7 @@ task.spawn(function()
                                 end
                             end
                             task.wait(2)
-                            CommF:InvokeServer("StartQuest", "BartiloQuest", 3)
+                            pcall(function() CommF:InvokeServer("StartQuest", "BartiloQuest", 3) end)
                             task.wait(1)
                             warn("Polar Hub: ¡Misión de Bartilo completada con éxito!")
                             getgenv().PolarAutoBartiloEnabled = false
@@ -237,18 +236,19 @@ task.spawn(function()
                 AlchemistQuestRunning = true
                 task.spawn(function()
                     while getgenv().PolarAutoAlchemistEnabled do
-                        CommF:InvokeServer("Alchemist", "1")
+                        pcall(function() CommF:InvokeServer("Alchemist", "1") end)
                         task.wait(1)
                         
-                        local hasRed = game.Players.LocalPlayer.Backpack:FindFirstChild("Red Flower") or game.Players.LocalPlayer.Character:FindFirstChild("Red Flower")
-                        local hasBlue = game.Players.LocalPlayer.Backpack:FindFirstChild("Blue Flower") or game.Players.LocalPlayer.Character:FindFirstChild("Blue Flower")
-                        local hasYellow = game.Players.LocalPlayer.Backpack:FindFirstChild("Yellow Flower") or game.Players.LocalPlayer.Character:FindFirstChild("Yellow Flower")
+                        local hasRed = Polar.Detection:FindObject("Red Flower")
+                        local hasBlue = Polar.Detection:FindObject("Blue Flower")
+                        local hasYellow = Polar.Detection:FindObject("Yellow Flower")
                         
                         if hasRed and hasBlue and hasYellow then
                             warn("Polar Hub: Flores colectadas. Entregando misión al Alquimista...")
-                            Polar.Teleport:To(CFrame.new(612, 38, -5074))
+                            local alchemistCF = Polar.Detection:FindNPC("Alchemist") or CFrame.new(612, 38, -5074)
+                            Polar.Teleport:To(alchemistCF)
                             task.wait(1)
-                            CommF:InvokeServer("Alchemist", "2")
+                            pcall(function() CommF:InvokeServer("Alchemist", "2") end)
                             task.wait(2)
                             warn("Polar Hub: ¡Raza V2 Desbloqueada!")
                             getgenv().PolarAutoAlchemistEnabled = false
@@ -257,15 +257,9 @@ task.spawn(function()
                         
                         if not hasYellow then
                             warn("Polar Hub: Farmeando NPCs para obtener Flor Amarilla...")
-                            local enemy = nil
-                            for _, v in ipairs(workspace.Enemies:GetChildren()) do
-                                if v.Name == "Swan Pirate" and v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
-                                    enemy = v
-                                    break
-                                end
-                            end
-                            if enemy then
-                                Polar.Teleport:To(enemy.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+                            local mob, hrp = Polar.Detection:FindEnemy("Swan Pirate")
+                            if hrp then
+                                Polar.Teleport:To(hrp.CFrame * CFrame.new(0, 10, 0))
                                 EquipWeaponLocal()
                                 getgenv().PolarFastAttackEnabled = true
                                 game:GetService("VirtualUser"):CaptureController()
@@ -292,7 +286,7 @@ task.spawn(function()
                                         CFrame.new(785, 142, 608)
                                     }
                                     for _, sp in ipairs(spawns) do
-                                        if not getgenv().PolarAutoAlchemistEnabled or game.Players.LocalPlayer.Backpack:FindFirstChild("Red Flower") then break end
+                                        if not getgenv().PolarAutoAlchemistEnabled or Polar.Detection:FindObject("Red Flower") then break end
                                         Polar.Teleport:To(sp)
                                         task.wait(1.5)
                                     end
@@ -318,7 +312,7 @@ task.spawn(function()
                                         CFrame.new(943, 121, 1269)
                                     }
                                     for _, sp in ipairs(spawns) do
-                                        if not getgenv().PolarAutoAlchemistEnabled or game.Players.LocalPlayer.Backpack:FindFirstChild("Blue Flower") then break end
+                                        if not getgenv().PolarAutoAlchemistEnabled or Polar.Detection:FindObject("Blue Flower") then break end
                                         Polar.Teleport:To(sp)
                                         task.wait(1.5)
                                     end
@@ -338,80 +332,95 @@ task.spawn(function()
 end)
 
 -- ==================== INTERFAZ Y CONTROLES SEA 2 ====================
-TabFarm:AddSection("Cazador de Jefes (Sea 2)")
+if TabFarm then
+    TabFarm:AddSection("Cazador de Jefes (Sea 2)")
 
-local BossNamesList = {}
-for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
+    local BossNamesList = {}
+    for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
-TabFarm:AddDropdown({
-    Name = "Seleccionar Jefe",
-    Options = BossNamesList,
-    Default = BossNamesList[1],
-    Callback = function(Value)
-        getgenv().PolarSelectedBossToFarm = Value
-    end
-})
-
-TabFarm:AddToggle({
-    Name = "Auto Farm Jefe Seleccionado",
-    Default = false,
-    Callback = function(Value)
-        getgenv().PolarAutoFarmBossEnabled = Value
-    end
-})
-
-TabFarm:AddToggle({
-    Name = "Auto Farm TODOS los Jefes (Server Hop)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().PolarAutoFarmAllBossesEnabled = Value
-        if Value then getgenv().PolarLastBossCheckedIndex = 1 end
-    end
-})
-
-TabQuest:AddSection("Eventos Especiales (Sea 2)")
-
-TabQuest:AddToggle({
-    Name = "Auto Factory Raid",
-    Default = false,
-    Callback = function(Value)
-        getgenv().PolarAutoFactoryEnabled = Value
-    end
-})
-
-TabQuest:AddToggle({
-    Name = "Auto Bartilo Quest (Coliseo)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().PolarAutoBartiloEnabled = Value
-    end
-})
-
-TabQuest:AddToggle({
-    Name = "Auto Raza V2 (Alchemist)",
-    Default = false,
-    Callback = function(Value)
-        getgenv().PolarAutoAlchemistEnabled = Value
-    end
-})
-
-TabStatus:AddSection("Radar de Jefes Globales")
-
-local LabelDarkbeard = TabStatus:AddParagraph({ Title = "Darkbeard Status", Text = "Buscando..." })
-local LabelFactory = TabStatus:AddParagraph({ Title = "Factory Status", Text = "Calculando..." })
-
-task.spawn(function()
-    while true do
-        task.wait(5)
-        local hasDarkbeard = false
-        local hasFactory = false
-        
-        for _, obj in ipairs(workspace.Enemies:GetChildren()) do
-            if obj.Name == "Darkbeard" then hasDarkbeard = true end
-            if obj.Name == "Core" and obj.Parent.Name == "Factory" then hasFactory = true end
+    TabFarm:AddDropdown({
+        Name = "Seleccionar Jefe",
+        Options = BossNamesList,
+        Default = BossNamesList[1],
+        Callback = function(Value)
+            getgenv().PolarSelectedBossToFarm = Value
         end
-        
-        LabelDarkbeard:SetDesc(hasDarkbeard and "¡VIVO! (En la Arena Oscura)" or "Muerto / No Spawneado")
-        LabelFactory:SetDesc(hasFactory and "¡ABIERTA! (Ve a la Fábrica)" or "Cerrada / Destruida")
-    end
-end)
+    })
+
+    TabFarm:AddToggle({
+        Name = "Auto Farm Jefe Seleccionado",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoFarmBossEnabled = Value
+        end
+    })
+
+    TabFarm:AddToggle({
+        Name = "Auto Farm TODOS los Jefes (Server Hop)",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoFarmAllBossesEnabled = Value
+            if Value then getgenv().PolarLastBossCheckedIndex = 1 end
+        end
+    })
+end
+
+if TabQuest then
+    TabQuest:AddSection("Eventos Especiales (Sea 2)")
+
+    TabQuest:AddToggle({
+        Name = "Auto Factory Raid",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoFactoryEnabled = Value
+        end
+    })
+
+    TabQuest:AddToggle({
+        Name = "Auto Bartilo Quest (Coliseo)",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoBartiloEnabled = Value
+        end
+    })
+
+    TabQuest:AddToggle({
+        Name = "Auto Raza V2 (Alchemist)",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoAlchemistEnabled = Value
+        end
+    })
+end
+
+if TabStatus then
+    TabStatus:AddSection("Radar de Jefes Globales")
+
+    local LabelDarkbeard = TabStatus:AddParagraph({ Title = "Darkbeard Status", Text = "Buscando..." })
+    local LabelFactory = TabStatus:AddParagraph({ Title = "Factory Status", Text = "Calculando..." })
+
+    task.spawn(function()
+        while true do
+            task.wait(5)
+            local hasDarkbeard = false
+            local hasFactory = false
+            
+            local darkbeardModel, darkbeardHRP = Polar.Detection:FindEnemy("Darkbeard")
+            local coreModel, coreHRP = Polar.Detection:FindEnemy("Core")
+            
+            hasDarkbeard = darkbeardHRP ~= nil
+            hasFactory = coreHRP ~= nil
+            
+            pcall(function()
+                if LabelDarkbeard and LabelDarkbeard.SetDesc then
+                    LabelDarkbeard:SetDesc(hasDarkbeard and "¡VIVO! (En la Arena Oscura)" or "Muerto / No Spawneado")
+                end
+                if LabelFactory and LabelFactory.SetDesc then
+                    LabelFactory:SetDesc(hasFactory and "¡ABIERTA! (Ve a la Fábrica)" or "Cerrada / Destruida")
+                end
+            end)
+        end
+    end)
+end
+
+print("✅ Sea 2 optimizado con Polar Engine Detección Unificada.")
