@@ -460,7 +460,17 @@ function Polar.Teleport:ToIsland(islandName)
             ["hot and cold"] = Vector3.new(-312, 190, -4933),
             ["cursed ship"] = Vector3.new(943, 121, 1269),
             ["ice castle"] = Vector3.new(5669, 28, -6482),
-            ["forgotten island"] = Vector3.new(-2544, 256, -429)
+            ["forgotten island"] = Vector3.new(-2544, 256, -429),
+            ["port town"] = Vector3.new(-290, 44, 5582),
+            ["hydra island"] = Vector3.new(5230, 60, 763),
+            ["great tree"] = Vector3.new(2402, 73, -6682),
+            ["floating turtle"] = Vector3.new(-2014, 185, -10238),
+            ["turtle"] = Vector3.new(-2014, 185, -10238),
+            ["haunted castle"] = Vector3.new(-9516, 169, 6079),
+            ["sea of treats"] = Vector3.new(-198, 48, -12118),
+            ["tiki outpost"] = Vector3.new(-16238, 10, 439),
+            ["submerged island"] = Vector3.new(-18021, 15, 2810),
+            ["castle on sea"] = Vector3.new(-5085, 316, 3152)
         }
         pos = fallbacks[string.lower(islandName)]
     end
@@ -474,6 +484,29 @@ end
 
 -- ==================== SYSTEM DETECTION ENGINE (DETECCION ABSURDA DE NPCS Y OBJETOS) ====================
 local FallbackPositions = {
+    -- Sea 1 Quest Givers
+    ["Bandit Quest Giver"] = Vector3.new(1060, 16, 1548),
+    ["Jungle Quest Giver"] = Vector3.new(-1600, 37, 153),
+    ["Pirate Quest Giver"] = Vector3.new(-1140, 4, 3828),
+    ["Desert Quest Giver"] = Vector3.new(897, 6, 4388),
+    ["Snow Quest Giver"] = Vector3.new(1386, 87, -1298),
+    ["Marine Quest Giver"] = Vector3.new(-2900, 7, 5350),
+    ["Sky Quest Giver"] = Vector3.new(-4840, 718, -2620),
+    ["Prison Quest Giver"] = Vector3.new(4850, 5, 730),
+    ["Colosseum Quest Giver"] = Vector3.new(-1580, 7, 2720),
+    ["Magma Quest Giver"] = Vector3.new(-5310, 8, 8530),
+    ["Fishman Quest Giver"] = Vector3.new(61120, 18, 1568),
+    ["Upper Sky Quest Giver"] = Vector3.new(-7900, 5635, -1410),
+    ["Fountain Quest Giver"] = Vector3.new(5259, 38, 4050),
+
+    -- Sea 2 Quest Givers
+    ["Area 1 Quest Giver"] = Vector3.new(-429, 73, 299),
+    ["Area 2 Quest Giver"] = Vector3.new(954, 142, 1412),
+    ["Marine Quest Giver"] = Vector3.new(-2840, 73, -2990),
+    ["Zombie Quest Giver"] = Vector3.new(-5154, 8, -714),
+    ["Snowy Quest Giver"] = Vector3.new(639, 44, -5137),
+    ["Ice Quest Giver"] = Vector3.new(-312, 190, -4933),
+    ["Fire Quest Giver"] = Vector3.new(-312, 190, -4933),
     ["Rear Crew Quest Giver"] = Vector3.new(923, 126, 32852),
     ["Front Crew Quest Giver"] = Vector3.new(920, 125, 33000),
     ["Ship Deckhand"] = Vector3.new(920, 125, 32900),
@@ -485,6 +518,31 @@ local FallbackPositions = {
     ["Arctic Warrior"] = Vector3.new(5995, 57, -6183),
     ["Snow Lurker"] = Vector3.new(5518, 61, -6828),
     ["Awakened Ice Admiral"] = Vector3.new(5655, 38, -6482),
+    ["Forgotten Quest Giver"] = Vector3.new(-2544, 256, -429),
+
+    -- Sea 3 Quest Givers
+    ["Pirate Port Quest Giver"] = Vector3.new(-290, 44, 5582),
+    ["Dragon Crew Quest Giver"] = Vector3.new(5230, 60, 763),
+    ["Hydra Town Quest Giver"] = Vector3.new(5748, 610, -278),
+    ["Marine Tree Quest Giver"] = Vector3.new(2402, 73, -6682),
+    ["Turtle Adventure Quest Giver"] = Vector3.new(-2014, 185, -10238),
+    ["Deep Forest Quest Giver"] = Vector3.new(-12871, 333, -7751),
+    ["Deep Forest Area 2 Quest Giver"] = Vector3.new(-10620, 331, -8671),
+    ["Haunted Castle Quest Giver 1"] = Vector3.new(-9516, 169, 6079),
+    ["Haunted Castle Quest Giver 2"] = Vector3.new(-9516, 175, 6079),
+    ["Peanut Quest Giver"] = Vector3.new(-198, 48, -12118),
+    ["Ice Cream Quest Giver"] = Vector3.new(-822, 63, -10963),
+    ["Cake Quest Giver 1"] = Vector3.new(198, 25, -12109),
+    ["Cake Quest Giver 2"] = Vector3.new(680, 25, -12543),
+    ["Chocolate Quest Giver 1"] = Vector3.new(228, 25, -11124),
+    ["Chocolate Quest Giver 2"] = Vector3.new(1541, 25, -12105),
+    ["Candy Cane Quest Giver"] = Vector3.new(-1190, 14, -14352),
+    ["Tiki Quest Giver 1"] = Vector3.new(-16238, 10, 439),
+    ["Tiki Quest Giver 2"] = Vector3.new(-16521, 52, 1042),
+    ["Tiki Quest Giver 3"] = Vector3.new(-16901, 85, 1512),
+    ["Submerged Quest Giver 1"] = Vector3.new(-18021, 15, 2810),
+    ["Submerged Quest Giver 2"] = Vector3.new(-18512, 42, 3211),
+    ["Submerged Quest Giver 3"] = Vector3.new(-19102, 90, 3821)
 }
 
 Polar.Detection = {
