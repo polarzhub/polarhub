@@ -91,8 +91,11 @@ local function CreateESP(char, isPlayer, name)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hrp or not hum then return end
 
+    -- Ocultar nombres de instancias asignando identificadores aleatorios (Anti-Scan string check)
+    local randomId = tostring(math.random(100000, 999999))
+
     local billboard = Instance.new("BillboardGui")
-    billboard.Name = "PolarESP_Billboard"
+    billboard.Name = "GUI_" .. randomId
     billboard.Adornee = head or hrp
     billboard.Size = UDim2.new(0, 200, 0, 60)
     billboard.StudsOffset = Vector3.new(0, 3, 0)
@@ -100,7 +103,7 @@ local function CreateESP(char, isPlayer, name)
 
     -- Label Nombre + Distancia
     local nameLabel = Instance.new("TextLabel")
-    nameLabel.Name = "NameLabel"
+    nameLabel.Name = "Txt_" .. randomId
     nameLabel.Parent = billboard
     nameLabel.BackgroundTransparency = 1
     nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
@@ -113,7 +116,7 @@ local function CreateESP(char, isPlayer, name)
 
     -- Marco Barra de Vida
     local healthBg = Instance.new("Frame")
-    healthBg.Name = "HealthBg"
+    healthBg.Name = "Bg_" .. randomId
     healthBg.Parent = billboard
     healthBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
     healthBg.BorderSizePixel = 1
@@ -123,7 +126,7 @@ local function CreateESP(char, isPlayer, name)
 
     -- Barra de Vida Relleno
     local healthFill = Instance.new("Frame")
-    healthFill.Name = "HealthFill"
+    healthFill.Name = "Fill_" .. randomId
     healthFill.Parent = healthBg
     healthFill.BackgroundColor3 = Color3.fromRGB(0, 255, 120)
     healthFill.BorderSizePixel = 0
@@ -131,7 +134,7 @@ local function CreateESP(char, isPlayer, name)
 
     -- Texto de Vida (ej: 100/100)
     local healthLabel = Instance.new("TextLabel")
-    healthLabel.Name = "HealthLabel"
+    healthLabel.Name = "Hp_" .. randomId
     healthLabel.Parent = billboard
     healthLabel.BackgroundTransparency = 1
     healthLabel.Size = UDim2.new(1, 0, 0.35, 0)
@@ -144,7 +147,7 @@ local function CreateESP(char, isPlayer, name)
 
     -- Highlight (Caja 3D Brillante)
     local highlight = Instance.new("Highlight")
-    highlight.Name = "PolarESP_Highlight"
+    highlight.Name = "Hl_" .. randomId
     highlight.Adornee = char
     highlight.FillColor = isPlayer and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(255, 180, 0)
     highlight.FillTransparency = 0.7
@@ -152,10 +155,23 @@ local function CreateESP(char, isPlayer, name)
     highlight.OutlineTransparency = 0.2
     highlight.Enabled = getgenv().PolarESP.ShowBoxes
 
-    -- Intentar guardar en Parent seguro (CoreGui o PlayerGui)
-    local targetParent = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
-    billboard.Parent = targetParent
-    highlight.Parent = targetParent
+    -- Contenedor Ultra-Seguro Anti-Detección (gethui > CoreGui protegido > PlayerGui)
+    local targetContainer = nil
+    if typeof(gethui) == "function" then
+        targetContainer = gethui()
+    elseif typeof(cloneref) == "function" and game:GetService("CoreGui") then
+        targetContainer = cloneref(game:GetService("CoreGui"))
+    else
+        targetContainer = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
+    end
+
+    if typeof(protectgui) == "function" then
+        pcall(function() protectgui(billboard) end)
+        pcall(function() protectgui(highlight) end)
+    end
+
+    billboard.Parent = targetContainer
+    highlight.Parent = targetContainer
 
     ESPCache[char] = {
         Billboard = billboard,
