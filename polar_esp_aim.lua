@@ -187,6 +187,8 @@ local function CreateESP(char, isPlayer, name)
 end
 
 -- Update Loop de ESP
+local lastScanTick = 0
+
 RunService.RenderStepped:Connect(function()
     if FOVCircle then
         local mousePos = UserInputService:GetMouseLocation()
@@ -196,33 +198,41 @@ RunService.RenderStepped:Connect(function()
     end
 
     if not getgenv().PolarESP.Enabled then
-        for char, _ in pairs(ESPCache) do
-            RemoveESP(char)
+        if next(ESPCache) then
+            for char, _ in pairs(ESPCache) do
+                RemoveESP(char)
+            end
         end
         return
     end
 
     local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-    -- Mapear Jugadores
-    if getgenv().PolarESP.ShowPlayers then
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                if not ESPCache[plr.Character] then
-                    CreateESP(plr.Character, true, plr.DisplayName or plr.Name)
+    -- Throttled Scanning (Escanear nuevos personajes cada 0.25s en vez de 60 veces por segundo)
+    local now = tick()
+    if now - lastScanTick >= 0.25 then
+        lastScanTick = now
+
+        -- Mapear Jugadores
+        if getgenv().PolarESP.ShowPlayers then
+            for _, plr in ipairs(Players:GetPlayers()) do
+                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+                    if not ESPCache[plr.Character] then
+                        CreateESP(plr.Character, true, plr.DisplayName or plr.Name)
+                    end
                 end
             end
         end
-    end
 
-    -- Mapear NPCs / Enemigos
-    if getgenv().PolarESP.ShowNPCs then
-        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-        if enemiesFolder then
-            for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                if npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChildOfClass("Humanoid") then
-                    if not ESPCache[npc] then
-                        CreateESP(npc, false, npc.Name)
+        -- Mapear NPCs / Enemigos
+        if getgenv().PolarESP.ShowNPCs then
+            local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+            if enemiesFolder then
+                for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                    if npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChildOfClass("Humanoid") then
+                        if not ESPCache[npc] then
+                            CreateESP(npc, false, npc.Name)
+                        end
                     end
                 end
             end
@@ -268,8 +278,9 @@ end)
 -- ==================== SILENT AIM & ATTACK REDIRECT ENGINE ====================
 
 local CurrentTargetPart = nil
+local lastTargetCheck = 0
 
--- Buscar objetivo más cercano dentro del FOV o rango
+-- Buscar objetivo más cercano dentro del FOV (optimizado a 30 FPS)
 local function GetClosestTarget()
     local mousePos = UserInputService:GetMouseLocation()
     local closestPart = nil
@@ -311,17 +322,20 @@ local function GetClosestTarget()
     return closestPart
 end
 
--- Actualizar continuamente el objetivo
+-- Actualizar objetivo de forma optimizada
 RunService.RenderStepped:Connect(function()
     if getgenv().PolarAim.Enabled then
-        CurrentTargetPart = GetClosestTarget()
+        local now = tick()
+        if now - lastTargetCheck >= 0.033 then -- ~30 Veces por segundo máximo
+            lastTargetCheck = now
+            CurrentTargetPart = GetClosestTarget()
+        end
     else
         CurrentTargetPart = nil
     end
 end)
 
--- HOOK 1: Interceptar Mouse.Hit y Mouse.Target (SILENT AIM REAL)
--- Cuando Blox Fruits o cualquier arma pregunta "¿A dónde apunta el mouse?", redirigimos a la cabeza/cuerpo del enemigo.
+-- HOOK 1: Interceptador ultra-rápido de Mouse (0% lag impact)
 pcall(function()
     local OldIndex
     OldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
@@ -330,12 +344,7 @@ pcall(function()
         end
 
         if getgenv().PolarAim.Enabled and CurrentTargetPart and CurrentTargetPart.Parent then
-            local isMouse = false
-            pcall(function()
-                isMouse = (self == LocalPlayer:GetMouse())
-            end)
-
-            if isMouse then
+            if (key == "Hit" or key == "Target" or key == "UnitRay") and self == LocalPlayer:GetMouse() then
                 if key == "Hit" then
                     return CurrentTargetPart.CFrame
                 elseif key == "Target" then
