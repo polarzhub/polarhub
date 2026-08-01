@@ -265,10 +265,123 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- ==================== AIM ASSIST ENGINE ====================
+-- ==================== SILENT AIM & ATTACK REDIRECT ENGINE ====================
 
+local CurrentTargetPart = nil
+
+-- Buscar objetivo más cercano dentro del FOV o rango
+local function GetClosestTarget()
+    local mousePos = UserInputService:GetMouseLocation()
+    local closestPart = nil
+    local shortestDist = getgenv().PolarAim.FOV
+
+    local function CheckChar(char)
+        if not char or not char.Parent then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local part = char:FindFirstChild(getgenv().PolarAim.TargetPart) or char:FindFirstChild("HumanoidRootPart")
+        if not hum or hum.Health <= 0 or not part then return end
+
+        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+        if onScreen then
+            local mouseDist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+            if mouseDist < shortestDist then
+                shortestDist = mouseDist
+                closestPart = part
+            end
+        end
+    end
+
+    if getgenv().PolarAim.TargetPlayers then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then
+                CheckChar(plr.Character)
+            end
+        end
+    end
+
+    if getgenv().PolarAim.TargetNPCs then
+        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+        if enemiesFolder then
+            for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                CheckChar(npc)
+            end
+        end
+    end
+
+    return closestPart
+end
+
+-- Actualizar continuamente el objetivo
+RunService.RenderStepped:Connect(function()
+    if getgenv().PolarAim.Enabled then
+        CurrentTargetPart = GetClosestTarget()
+    else
+        CurrentTargetPart = nil
+    end
+end)
+
+-- HOOK 1: Interceptar Mouse.Hit y Mouse.Target (SILENT AIM REAL)
+-- Cuando Blox Fruits o cualquier arma pregunta "¿A dónde apunta el mouse?", redirigimos a la cabeza/cuerpo del enemigo.
+pcall(function()
+    local OldIndex
+    OldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
+        if not checkcaller or checkcaller() then
+            return OldIndex(self, key)
+        end
+
+        if getgenv().PolarAim.Enabled and CurrentTargetPart and CurrentTargetPart.Parent then
+            local isMouse = false
+            pcall(function()
+                isMouse = (self == LocalPlayer:GetMouse())
+            end)
+
+            if isMouse then
+                if key == "Hit" then
+                    return CurrentTargetPart.CFrame
+                elseif key == "Target" then
+                    return CurrentTargetPart
+                elseif key == "UnitRay" then
+                    local origin = Camera.CFrame.Position
+                    local dir = (CurrentTargetPart.Position - origin).Unit
+                    return Ray.new(origin, dir)
+                end
+            end
+        end
+
+        return OldIndex(self, key)
+    end))
+end)
+
+-- HOOK 2: Interceptar Remotos de Disparo/Habilidades (FireServer / InvokeServer)
+pcall(function()
+    local OldNamecall
+    OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if not checkcaller or checkcaller() then
+            return OldNamecall(self, ...)
+        end
+
+        if getgenv().PolarAim.Enabled and CurrentTargetPart and CurrentTargetPart.Parent then
+            if method == "FireServer" or method == "InvokeServer" then
+                local args = {...}
+                for i, arg in ipairs(args) do
+                    if typeof(arg) == "Vector3" then
+                        -- Redirigir proyectiles y habilidades en 3D
+                        args[i] = CurrentTargetPart.Position
+                    elseif typeof(arg) == "CFrame" then
+                        args[i] = CurrentTargetPart.CFrame
+                    end
+                end
+                return OldNamecall(self, unpack(args))
+            end
+        end
+
+        return OldNamecall(self, ...)
+    end))
+end)
+
+-- Opcional: Rotar la cámara suavemente si el usuario presiona la tecla de apuntado
 local isAiming = false
-
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.UserInputType == getgenv().PolarAim.AimKey or input.KeyCode == getgenv().PolarAim.AimKey then
@@ -282,64 +395,12 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
--- Buscar objetivo más cercano al cursor del mouse dentro del FOV
-local function GetClosestTarget()
-    local mousePos = UserInputService:GetMouseLocation()
-    local closestTarget = nil
-    local shortestDist = getgenv().PolarAim.FOV
-
-    local function CheckChar(char, isPlayer)
-        if not char or not char.Parent then return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        local part = char:FindFirstChild(getgenv().PolarAim.TargetPart) or char:FindFirstChild("HumanoidRootPart")
-        if not hum or hum.Health <= 0 or not part then return end
-
-        -- Convertir posición 3D a 2D en pantalla
-        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-        if onScreen then
-            local mouseDist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-            if mouseDist < shortestDist then
-                shortestDist = mouseDist
-                closestTarget = part
-            end
-        end
-    end
-
-    -- Revisar Jugadores
-    if getgenv().PolarAim.TargetPlayers then
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                CheckChar(plr.Character, true)
-            end
-        end
-    end
-
-    -- Revisar NPCs
-    if getgenv().PolarAim.TargetNPCs then
-        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-        if enemiesFolder then
-            for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                CheckChar(npc, false)
-            end
-        end
-    end
-
-    return closestTarget
-end
-
--- Loop de Apuntado (RenderStepped para suavidad máxima)
 RunService.RenderStepped:Connect(function()
-    if getgenv().PolarAim.Enabled and isAiming then
-        local target = GetClosestTarget()
-        if target then
-            local targetPos = target.Position
-            local camCFrame = Camera.CFrame
-            local desiredCFrame = CFrame.new(camCFrame.Position, targetPos)
-
-            -- Interpolación suave (Lerp)
-            local smoothFactor = math.clamp(1 - getgenv().PolarAim.Smoothness, 0.05, 1)
-            Camera.CFrame = camCFrame:Lerp(desiredCFrame, smoothFactor)
-        end
+    if getgenv().PolarAim.Enabled and isAiming and CurrentTargetPart then
+        local camCFrame = Camera.CFrame
+        local desiredCFrame = CFrame.new(camCFrame.Position, CurrentTargetPart.Position)
+        local smoothFactor = math.clamp(1 - getgenv().PolarAim.Smoothness, 0.05, 1)
+        Camera.CFrame = camCFrame:Lerp(desiredCFrame, smoothFactor)
     end
 end)
 
