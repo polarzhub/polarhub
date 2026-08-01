@@ -1,10 +1,8 @@
 --[[
     ===============================================================
-    🎯 POLAR VISION & AIM SUITE — Script Independiente
+    🎯 POLAR VISION & AIM — Edición Ultra-Fluida (0% Lag)
     ===============================================================
-    Script Luau optimizado para Roblox / Blox Fruits que incluye:
-    - ESP Engine 2D/3D (Nombre, Vida en tiempo real, Distancia, Cajas/Highlights)
-    - Aim Assist / Silent Aim (Selección de objetivo por FOV, suavizado y tecla de activación)
+    Script Luau optimizado para Roblox / Blox Fruits.
     
     INSTRUCCIONES DE USO:
     loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_esp_aim.lua"))()
@@ -27,7 +25,7 @@ local success, redzlib = pcall(function()
 end)
 
 if not success or not redzlib then
-    warn("[Polar Vision] Error: No se pudo cargar RedzLib V5. Inicializando fallback...")
+    warn("[Polar Vision] Error: No se pudo cargar RedzLib V5.")
 end
 
 -- ==================== CONFIGURACIÓN GLOBAL ====================
@@ -38,21 +36,20 @@ getgenv().PolarESP = getgenv().PolarESP or {
     ShowHealth = true,
     ShowDistance = true,
     ShowBoxes = true,
-    ShowTracers = false,
     TextSize = 14,
-    MaxDistance = 2500
+    MaxDistance = 2000
 }
 
 getgenv().PolarAim = getgenv().PolarAim or {
     Enabled = true,
+    AutoLock = false, -- Si es true, apunta siempre; si es false, solo cuando se presiona la tecla
     TargetPart = "Head", -- "Head" o "HumanoidRootPart"
     FOV = 150,
     ShowFOV = true,
-    Smoothness = 0.2, -- 0 = Instantáneo, 1 = Ultra Suave
-    AimKey = Enum.UserInputType.MouseButton2, -- Clic Derecho por defecto
+    Smoothness = 0.15, -- 0.05 = Rápido, 0.5 = Suave
+    AimKey = Enum.UserInputType.MouseButton2,
     TargetNPCs = true,
-    TargetPlayers = true,
-    WallCheck = false
+    TargetPlayers = true
 }
 
 -- ==================== FOV CIRCLE (DRAWING API) ====================
@@ -61,28 +58,27 @@ pcall(function()
     if Drawing then
         FOVCircle = Drawing.new("Circle")
         FOVCircle.Thickness = 1.5
-        FOVCircle.Color = Color3.fromRGB(0, 225, 255)
+        FOVCircle.Color = Color3.fromRGB(0, 230, 255)
         FOVCircle.Filled = false
-        FOVCircle.Transparency = 0.8
-        FOVCircle.NumSides = 36
+        FOVCircle.Transparency = 0.7
+        FOVCircle.NumSides = 32
         FOVCircle.Radius = getgenv().PolarAim.FOV
         FOVCircle.Visible = getgenv().PolarAim.ShowFOV
     end
 end)
 
--- ==================== ESP STORAGE ====================
+-- ==================== ESP SYSTEM (EVENT DRIVEN) ====================
 local ESPCache = {}
 
 local function RemoveESP(instance)
     if ESPCache[instance] then
-        for _, v in pairs(ESPCache[instance]) do
-            pcall(function() v:Destroy() end)
+        for _, obj in pairs(ESPCache[instance].Objs or {}) do
+            pcall(function() obj:Destroy() end)
         end
         ESPCache[instance] = nil
     end
 end
 
--- Crear BillboardGui para ESP sobre la cabeza
 local function CreateESP(char, isPlayer, name)
     if not char or ESPCache[char] then return end
 
@@ -91,34 +87,33 @@ local function CreateESP(char, isPlayer, name)
     local hum = char:FindFirstChildOfClass("Humanoid")
     if not hrp or not hum then return end
 
-    -- Ocultar nombres de instancias asignando identificadores aleatorios (Anti-Scan string check)
     local randomId = tostring(math.random(100000, 999999))
 
+    -- BillboardGui sobre la cabeza
     local billboard = Instance.new("BillboardGui")
     billboard.Name = "GUI_" .. randomId
     billboard.Adornee = head or hrp
-    billboard.Size = UDim2.new(0, 200, 0, 60)
-    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.Size = UDim2.new(0, 180, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 2.8, 0)
     billboard.AlwaysOnTop = true
 
-    -- Label Nombre + Distancia
+    -- Texto Nombre + Distancia
     local nameLabel = Instance.new("TextLabel")
     nameLabel.Name = "Txt_" .. randomId
     nameLabel.Parent = billboard
     nameLabel.BackgroundTransparency = 1
     nameLabel.Size = UDim2.new(1, 0, 0.4, 0)
-    nameLabel.Position = UDim2.new(0, 0, 0, 0)
     nameLabel.Font = Enum.Font.SourceSansBold
     nameLabel.TextSize = getgenv().PolarESP.TextSize
-    nameLabel.TextColor3 = isPlayer and Color3.fromRGB(255, 85, 85) or Color3.fromRGB(255, 215, 0)
-    nameLabel.TextStrokeTransparency = 0
+    nameLabel.TextColor3 = isPlayer and Color3.fromRGB(255, 80, 80) or Color3.fromRGB(255, 210, 0)
+    nameLabel.TextStrokeTransparency = 0.2
     nameLabel.Text = name
 
-    -- Marco Barra de Vida
+    -- Barra de Vida Fondo
     local healthBg = Instance.new("Frame")
     healthBg.Name = "Bg_" .. randomId
     healthBg.Parent = billboard
-    healthBg.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    healthBg.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
     healthBg.BorderSizePixel = 1
     healthBg.BorderColor3 = Color3.fromRGB(0, 0, 0)
     healthBg.Size = UDim2.new(0.8, 0, 0.15, 0)
@@ -132,7 +127,7 @@ local function CreateESP(char, isPlayer, name)
     healthFill.BorderSizePixel = 0
     healthFill.Size = UDim2.new(1, 0, 1, 0)
 
-    -- Texto de Vida (ej: 100/100)
+    -- Texto Vida HP
     local healthLabel = Instance.new("TextLabel")
     healthLabel.Name = "Hp_" .. randomId
     healthLabel.Parent = billboard
@@ -142,27 +137,24 @@ local function CreateESP(char, isPlayer, name)
     healthLabel.Font = Enum.Font.SourceSansSemibold
     healthLabel.TextSize = getgenv().PolarESP.TextSize - 2
     healthLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    healthLabel.TextStrokeTransparency = 0.2
-    healthLabel.Text = "HP: " .. math.floor(hum.Health) .. "/" .. math.floor(hum.MaxHealth)
+    healthLabel.TextStrokeTransparency = 0.3
+    healthLabel.Text = math.floor(hum.Health) .. " HP"
 
-    -- Highlight (Caja 3D Brillante)
+    -- Highlight 3D (Caja resplandeciente)
     local highlight = Instance.new("Highlight")
     highlight.Name = "Hl_" .. randomId
     highlight.Adornee = char
-    highlight.FillColor = isPlayer and Color3.fromRGB(255, 50, 50) or Color3.fromRGB(255, 180, 0)
-    highlight.FillTransparency = 0.7
-    highlight.OutlineColor = isPlayer and Color3.fromRGB(255, 255, 255) or Color3.fromRGB(255, 255, 0)
-    highlight.OutlineTransparency = 0.2
-    highlight.Enabled = getgenv().PolarESP.ShowBoxes
+    highlight.FillColor = isPlayer and Color3.fromRGB(255, 40, 40) or Color3.fromRGB(255, 170, 0)
+    highlight.FillTransparency = 0.75
+    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+    highlight.OutlineTransparency = 0.3
 
-    -- Contenedor Ultra-Seguro Anti-Detección (gethui > CoreGui protegido > PlayerGui)
-    local targetContainer = nil
+    -- Contenedor seguro
+    local container = nil
     if typeof(gethui) == "function" then
-        targetContainer = gethui()
-    elseif typeof(cloneref) == "function" and game:GetService("CoreGui") then
-        targetContainer = cloneref(game:GetService("CoreGui"))
+        container = gethui()
     else
-        targetContainer = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
+        container = pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui") or LocalPlayer:WaitForChild("PlayerGui")
     end
 
     if typeof(protectgui) == "function" then
@@ -170,76 +162,58 @@ local function CreateESP(char, isPlayer, name)
         pcall(function() protectgui(highlight) end)
     end
 
-    billboard.Parent = targetContainer
-    highlight.Parent = targetContainer
+    billboard.Parent = container
+    highlight.Parent = container
 
     ESPCache[char] = {
+        Objs = {billboard, highlight},
         Billboard = billboard,
         NameLabel = nameLabel,
         HealthFill = healthFill,
         HealthLabel = healthLabel,
         Highlight = highlight,
-        Character = char,
         Humanoid = hum,
         HRP = hrp,
         IsPlayer = isPlayer
     }
 end
 
--- Update Loop de ESP
-local lastScanTick = 0
+-- ==================== BÚSQUEDA EFICIENTE DE ENEMIGOS ====================
 
-RunService.RenderStepped:Connect(function()
-    if FOVCircle then
-        local mousePos = UserInputService:GetMouseLocation()
-        FOVCircle.Position = mousePos
-        FOVCircle.Radius = getgenv().PolarAim.FOV
-        FOVCircle.Visible = getgenv().PolarAim.Enabled and getgenv().PolarAim.ShowFOV
-    end
-
+local function UpdateESP()
     if not getgenv().PolarESP.Enabled then
         if next(ESPCache) then
-            for char, _ in pairs(ESPCache) do
-                RemoveESP(char)
-            end
+            for char, _ in pairs(ESPCache) do RemoveESP(char) end
         end
         return
     end
 
     local myHrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
 
-    -- Throttled Scanning (Escanear nuevos personajes cada 0.25s en vez de 60 veces por segundo)
-    local now = tick()
-    if now - lastScanTick >= 0.25 then
-        lastScanTick = now
-
-        -- Mapear Jugadores
-        if getgenv().PolarESP.ShowPlayers then
-            for _, plr in ipairs(Players:GetPlayers()) do
-                if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
-                    if not ESPCache[plr.Character] then
-                        CreateESP(plr.Character, true, plr.DisplayName or plr.Name)
-                    end
-                end
-            end
-        end
-
-        -- Mapear NPCs / Enemigos
-        if getgenv().PolarESP.ShowNPCs then
-            local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-            if enemiesFolder then
-                for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                    if npc:FindFirstChild("HumanoidRootPart") and npc:FindFirstChildOfClass("Humanoid") then
-                        if not ESPCache[npc] then
-                            CreateESP(npc, false, npc.Name)
-                        end
-                    end
+    -- 1. Agregar Jugadores
+    if getgenv().PolarESP.ShowPlayers then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer and plr.Character then
+                if not ESPCache[plr.Character] then
+                    CreateESP(plr.Character, true, plr.DisplayName or plr.Name)
                 end
             end
         end
     end
 
-    -- Actualizar cada objeto en cache
+    -- 2. Agregar NPCs / Enemigos de Blox Fruits
+    if getgenv().PolarESP.ShowNPCs then
+        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+        if enemiesFolder then
+            for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                if not ESPCache[npc] then
+                    CreateESP(npc, false, npc.Name)
+                end
+            end
+        end
+    end
+
+    -- 3. Actualizar Renderizado de ESP existente
     for char, data in pairs(ESPCache) do
         if not char or not char.Parent or not data.Humanoid or data.Humanoid.Health <= 0 then
             RemoveESP(char)
@@ -252,145 +226,26 @@ RunService.RenderStepped:Connect(function()
                 data.Billboard.Enabled = true
                 data.Highlight.Enabled = getgenv().PolarESP.ShowBoxes
 
-                -- Vida
-                local hp = math.max(0, data.Humanoid.Health)
+                local hp = math.clamp(data.Humanoid.Health, 0, data.Humanoid.MaxHealth)
                 local maxHp = math.max(1, data.Humanoid.MaxHealth)
-                local pct = math.clamp(hp / maxHp, 0, 1)
+                local pct = hp / maxHp
 
                 data.HealthFill.Size = UDim2.new(pct, 0, 1, 0)
-                data.HealthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - pct), 255 * pct, 50)
+                data.HealthFill.BackgroundColor3 = Color3.fromRGB(255 * (1 - pct), 255 * pct, 40)
 
-                -- Texto
-                local distText = getgenv().PolarESP.ShowDistance and (" [" .. math.floor(dist) .. "m]") or ""
-                data.NameLabel.Text = (char.Name) .. distText
-                
-                if getgenv().PolarESP.ShowHealth then
-                    data.HealthLabel.Text = math.floor(hp) .. " / " .. math.floor(maxHp) .. " HP"
-                    data.HealthLabel.Visible = true
-                else
-                    data.HealthLabel.Visible = false
-                end
+                local distStr = getgenv().PolarESP.ShowDistance and (" [" .. math.floor(dist) .. "m]") or ""
+                data.NameLabel.Text = char.Name .. distStr
+                data.HealthLabel.Text = math.floor(hp) .. " / " .. math.floor(maxHp) .. " HP"
+                data.HealthLabel.Visible = getgenv().PolarESP.ShowHealth
             end
         end
     end
-end)
-
--- ==================== SILENT AIM & ATTACK REDIRECT ENGINE ====================
-
-local CurrentTargetPart = nil
-local lastTargetCheck = 0
-
--- Buscar objetivo más cercano dentro del FOV (optimizado a 30 FPS)
-local function GetClosestTarget()
-    local mousePos = UserInputService:GetMouseLocation()
-    local closestPart = nil
-    local shortestDist = getgenv().PolarAim.FOV
-
-    local function CheckChar(char)
-        if not char or not char.Parent then return end
-        local hum = char:FindFirstChildOfClass("Humanoid")
-        local part = char:FindFirstChild(getgenv().PolarAim.TargetPart) or char:FindFirstChild("HumanoidRootPart")
-        if not hum or hum.Health <= 0 or not part then return end
-
-        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
-        if onScreen then
-            local mouseDist = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
-            if mouseDist < shortestDist then
-                shortestDist = mouseDist
-                closestPart = part
-            end
-        end
-    end
-
-    if getgenv().PolarAim.TargetPlayers then
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer then
-                CheckChar(plr.Character)
-            end
-        end
-    end
-
-    if getgenv().PolarAim.TargetNPCs then
-        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
-        if enemiesFolder then
-            for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                CheckChar(npc)
-            end
-        end
-    end
-
-    return closestPart
 end
 
--- Actualizar objetivo de forma optimizada
-RunService.RenderStepped:Connect(function()
-    if getgenv().PolarAim.Enabled then
-        local now = tick()
-        if now - lastTargetCheck >= 0.033 then -- ~30 Veces por segundo máximo
-            lastTargetCheck = now
-            CurrentTargetPart = GetClosestTarget()
-        end
-    else
-        CurrentTargetPart = nil
-    end
-end)
+-- ==================== MOTOR AIMBOT FLUIDO (0% LAG) ====================
 
--- HOOK 1: Interceptador ultra-rápido de Mouse (0% lag impact)
-pcall(function()
-    local OldIndex
-    OldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
-        if not checkcaller or checkcaller() then
-            return OldIndex(self, key)
-        end
-
-        if getgenv().PolarAim.Enabled and CurrentTargetPart and CurrentTargetPart.Parent then
-            if (key == "Hit" or key == "Target" or key == "UnitRay") and self == LocalPlayer:GetMouse() then
-                if key == "Hit" then
-                    return CurrentTargetPart.CFrame
-                elseif key == "Target" then
-                    return CurrentTargetPart
-                elseif key == "UnitRay" then
-                    local origin = Camera.CFrame.Position
-                    local dir = (CurrentTargetPart.Position - origin).Unit
-                    return Ray.new(origin, dir)
-                end
-            end
-        end
-
-        return OldIndex(self, key)
-    end))
-end)
-
--- HOOK 2: Interceptar Remotos de Disparo/Habilidades (FireServer / InvokeServer)
-pcall(function()
-    local OldNamecall
-    OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
-        if not checkcaller or checkcaller() then
-            return OldNamecall(self, ...)
-        end
-
-        if getgenv().PolarAim.Enabled and CurrentTargetPart and CurrentTargetPart.Parent then
-            if method == "FireServer" or method == "InvokeServer" then
-                local args = {...}
-                for i, arg in ipairs(args) do
-                    if typeof(arg) == "Vector3" then
-                        -- Redirigir proyectiles y habilidades en 3D
-                        args[i] = CurrentTargetPart.Position
-                    elseif typeof(arg) == "CFrame" then
-                        args[i] = CurrentTargetPart.CFrame
-                    end
-                end
-                return OldNamecall(self, unpack(args))
-            end
-        end
-
-        return OldNamecall(self, ...)
-    end))
-end)
-
--- Opcional: Rotar la cámara suavemente si el usuario presiona la tecla de apuntado
 local isAiming = false
+
 UserInputService.InputBegan:Connect(function(input, gpe)
     if gpe then return end
     if input.UserInputType == getgenv().PolarAim.AimKey or input.KeyCode == getgenv().PolarAim.AimKey then
@@ -404,27 +259,86 @@ UserInputService.InputEnded:Connect(function(input)
     end
 end)
 
+-- Buscar el mejor objetivo en pantalla dentro del FOV
+local function GetBestTarget()
+    local mousePos = UserInputService:GetMouseLocation()
+    local bestPart = nil
+    local shortestDist = getgenv().PolarAim.FOV
+
+    local function CheckChar(char)
+        if not char or not char.Parent then return end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        local part = char:FindFirstChild(getgenv().PolarAim.TargetPart) or char:FindFirstChild("HumanoidRootPart")
+        if not hum or hum.Health <= 0 or not part then return end
+
+        local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
+        if onScreen then
+            local dist2D = (Vector2.new(screenPos.X, screenPos.Y) - mousePos).Magnitude
+            if dist2D < shortestDist then
+                shortestDist = dist2D
+                bestPart = part
+            end
+        end
+    end
+
+    if getgenv().PolarAim.TargetPlayers then
+        for _, plr in ipairs(Players:GetPlayers()) do
+            if plr ~= LocalPlayer then CheckChar(plr.Character) end
+        end
+    end
+
+    if getgenv().PolarAim.TargetNPCs then
+        local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("NPCs")
+        if enemiesFolder then
+            for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                CheckChar(npc)
+            end
+        end
+    end
+
+    return bestPart
+end
+
+-- Render Loop Ultra-Fluido
 RunService.RenderStepped:Connect(function()
-    if getgenv().PolarAim.Enabled and isAiming and CurrentTargetPart then
-        local camCFrame = Camera.CFrame
-        local desiredCFrame = CFrame.new(camCFrame.Position, CurrentTargetPart.Position)
-        local smoothFactor = math.clamp(1 - getgenv().PolarAim.Smoothness, 0.05, 1)
-        Camera.CFrame = camCFrame:Lerp(desiredCFrame, smoothFactor)
+    -- Actualizar Círculo FOV
+    if FOVCircle then
+        local mousePos = UserInputService:GetMouseLocation()
+        FOVCircle.Position = mousePos
+        FOVCircle.Radius = getgenv().PolarAim.FOV
+        FOVCircle.Visible = getgenv().PolarAim.Enabled and getgenv().PolarAim.ShowFOV
+    end
+
+    -- Actualizar ESP
+    UpdateESP()
+
+    -- Ejecutar Aim Assist si está activado
+    if getgenv().PolarAim.Enabled and (isAiming or getgenv().PolarAim.AutoLock) then
+        local target = GetBestTarget()
+        if target then
+            local targetPos = target.Position
+            local camCFrame = Camera.CFrame
+            local desiredCFrame = CFrame.new(camCFrame.Position, targetPos)
+
+            -- Movimiento de cámara 100% fluido (Lerp)
+            local lerpSpeed = math.clamp(getgenv().PolarAim.Smoothness, 0.01, 1)
+            Camera.CFrame = camCFrame:Lerp(desiredCFrame, lerpSpeed)
+        end
     end
 end)
 
--- ==================== CONSTRUCCIÓN DE LA GUI ====================
+-- ==================== GUI REDZLIB ====================
 
 if redzlib then
     local Window = redzlib:MakeWindow({
         Name = "🎯 POLAR VISION & AIM",
-        SubTitle = "ESP Engine & Aim Assist | Blox Fruits",
+        SubTitle = "Edición Ultra-Fluida | Blox Fruits",
         SaveFolder = "PolarVisionConfig.json"
     })
 
-    -- TAB 1: ESP
+    -- TAB ESP
     local TabESP = Window:MakeTab({ Title = "ESP Visuales", Icon = "eye" })
-    
+
     TabESP:AddToggle({
         Name = "Activar ESP System",
         Default = getgenv().PolarESP.Enabled,
@@ -461,14 +375,20 @@ if redzlib then
         Callback = function(v) getgenv().PolarESP.ShowBoxes = v end
     })
 
-    -- TAB 2: AIM ASSIST
+    -- TAB AIMBOT
     local TabAim = Window:MakeTab({ Title = "Aim Assist", Icon = "crosshair" })
 
     TabAim:AddToggle({
         Name = "Activar Aim Assist",
-        Desc = "Mantén presionado Clic Derecho para apuntar suavemente al objetivo.",
         Default = getgenv().PolarAim.Enabled,
         Callback = function(v) getgenv().PolarAim.Enabled = v end
+    })
+
+    TabAim:AddToggle({
+        Name = "Auto-Lock Continuo",
+        Desc = "Apunta siempre al objetivo dentro del FOV sin tener que presionar botones.",
+        Default = getgenv().PolarAim.AutoLock,
+        Callback = function(v) getgenv().PolarAim.AutoLock = v end
     })
 
     TabAim:AddToggle({
@@ -478,7 +398,7 @@ if redzlib then
     })
 
     TabAim:AddDropdown({
-        Name = "Parte a Apuntar",
+        Name = "Parte Objetivo",
         Options = {"Head", "HumanoidRootPart"},
         Default = "Head",
         Callback = function(v) getgenv().PolarAim.TargetPart = v end
@@ -494,16 +414,16 @@ if redzlib then
     })
 
     TabAim:AddSlider({
-        Name = "Suavizado de Apuntado (Smoothness)",
-        Min = 0,
-        Max = 9,
+        Name = "Velocidad de Apuntado (Suavizado)",
+        Min = 1,
+        Max = 10,
         Increase = 1,
-        Default = 2,
-        Callback = function(v) getgenv().PolarAim.Smoothness = v / 10 end
+        Default = 3,
+        Callback = function(v) getgenv().PolarAim.Smoothness = v / 20 end
     })
 
     TabAim:AddToggle({
-        Name = "Apuntar a Enemigos / NPCs",
+        Name = "Apuntar a NPCs / Enemigos",
         Default = getgenv().PolarAim.TargetNPCs,
         Callback = function(v) getgenv().PolarAim.TargetNPCs = v end
     })
@@ -515,4 +435,4 @@ if redzlib then
     })
 end
 
-print("🎯 [Polar Vision & Aim] Carga completada con éxito.")
+print("🎯 [Polar Vision & Aim] Versión Ultra-Fluida cargada.")
