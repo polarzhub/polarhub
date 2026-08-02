@@ -160,10 +160,23 @@ pcall(function()
             end)
         end
     end
+    
+    -- Método 3: Sniffer de Banner de Notificaciones de Blox Fruits (PlayerGui)
+    local playerGui = LocalPlayer:WaitForChild("PlayerGui", 5)
+    if playerGui then
+        playerGui.DescendantAdded:Connect(function(desc)
+            if desc:IsA("TextLabel") then
+                local text = string.lower(desc.Text)
+                if (string.find(text, "fist of darkness") or string.find(text, "god's chalice") or string.find(text, "chalice")) and string.find(text, "chest") then
+                    RegisterChestReset("Blox Fruits UI Notification: " .. desc.Text)
+                end
+            end
+        end)
+    end
 end)
 
--- Escuchar cuando el propio jugador obtiene el ítem en su inventario / backpack
-local function WatchBackpack()
+-- Escuchar cuando el propio jugador obtiene el ítem en su inventario / backpack / character
+local function WatchInventory()
     local backpack = LocalPlayer:WaitForChild("Backpack", 5)
     if backpack then
         backpack.ChildAdded:Connect(function(child)
@@ -173,19 +186,28 @@ local function WatchBackpack()
             end
         end)
     end
+    
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        char.ChildAdded:Connect(function(child)
+            local name = string.lower(child.Name)
+            if string.find(name, "fist of darkness") or string.find(name, "god's chalice") or string.find(name, "chalice") then
+                RegisterChestReset("Equipado en personaje: " .. child.Name)
+            end
+        end)
+    end)
 end
-task.spawn(WatchBackpack)
+task.spawn(WatchInventory)
 
--- ==================== CÁLCULO DE TIEMPO DEL SERVIDOR ====================
+-- ==================== CÁLCULO DE TIEMPO DEL SERVIDOR (ALTA PRECISIÓN) ====================
 
 local function GetServerStats()
-    -- DistributedGameTime: Tiempo exacto en segundos desde que la máquina del servidor de Roblox encendió esta instancia
+    -- DistributedGameTime: Tiempo exacto en segundos que la máquina del servidor de Roblox lleva corriendo la simulación
     local serverUptime = Workspace.DistributedGameTime
     
-    -- Calcular timestamp UTC de creación del servidor
-    local currentUnix = os.time()
-    local creationUnix = currentUnix - math.floor(serverUptime)
-    local creationDateUTC = os.date("!%Y-%m-%d %H:%M:%S UTC", creationUnix)
+    -- Usar GetServerTimeNow() sincronizado con el servidor de Roblox
+    local serverTimeNow = pcall(function() return Workspace:GetServerTimeNow() end) and Workspace:GetServerTimeNow() or os.time()
+    local bootUnix = math.floor(serverTimeNow - serverUptime)
+    local creationDateUTC = os.date("!%Y-%m-%d %H:%M:%S UTC", bootUnix)
     
     -- Cálculos para el Next Chest Key (4 horas = 14,400 segundos)
     local CHEST_COOLDOWN = 14400
@@ -194,6 +216,9 @@ local function GetServerStats()
     if getgenv().PolarServerTracker.LastChestResetTime then
         timeSinceLastReset = serverUptime - getgenv().PolarServerTracker.LastChestResetTime
     end
+    
+    -- Calcular el número de ciclo de 4h en el que está el servidor actualmente
+    local currentCycle = math.floor(serverUptime / CHEST_COOLDOWN) + 1
     
     local remainingTime = 0
     local isChestReady = false
@@ -206,13 +231,14 @@ local function GetServerStats()
     else
         isChestReady = false
         remainingTime = CHEST_COOLDOWN - timeSinceLastReset
-        statusText = "⏳ Enfriamiento (" .. FormatTime(remainingTime) .. " restantes)"
+        statusText = "⏳ Enfriamiento (Ciclo #" .. tostring(currentCycle) .. " — " .. FormatTime(remainingTime) .. " restantes)"
     end
     
     return {
         UptimeSeconds = serverUptime,
         UptimeFormatted = FormatTime(serverUptime),
         CreationDate = creationDateUTC,
+        CurrentCycle = currentCycle,
         ChestReady = isChestReady,
         ChestRemainingSeconds = remainingTime,
         ChestRemainingFormatted = FormatTime(remainingTime),
