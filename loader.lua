@@ -15,14 +15,16 @@ getgenv().PolarNPCCache = {}
 
 -- Función de detección de mar robusta
 local function DetectSea()
-    if PlaceId == 2753915549 then return 1 end
+    if PlaceId == 2753915549 or PlaceId == 85211729168715 then return 1 end
     if PlaceId == 4442272000 or PlaceId == 79091703265657 or PlaceId == 4442272183 then return 2 end
-    if PlaceId == 7449423635 then return 3 end
+    if PlaceId == 7449423635 or PlaceId == 107567784013444 then return 3 end
     
     -- Fallback por carpetas en Workspace (para servidores privados/custom/subplaces)
     local map = workspace:FindFirstChild("Map")
     if map then
-        if map:FindFirstChild("Kingdom of Rose") or map:FindFirstChild("Green Zone") or map:FindFirstChild("Graveyard") or workspace:FindFirstChild("Factory") then
+        if map:FindFirstChild("Jungle") or map:FindFirstChild("MarineStart") or map:FindFirstChild("Fishmen") or map:FindFirstChild("Desert") then
+            return 1
+        elseif map:FindFirstChild("Kingdom of Rose") or map:FindFirstChild("Green Zone") or map:FindFirstChild("Graveyard") or workspace:FindFirstChild("Factory") then
             return 2
         elseif map:FindFirstChild("Port Town") or map:FindFirstChild("Turtle") or map:FindFirstChild("Sea Castle") or map:FindFirstChild("Floating Turtle") then
             return 3
