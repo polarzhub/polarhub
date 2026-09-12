@@ -876,8 +876,7 @@ local function GetBossStatusCard(bossName)
         table.insert(lines, string.format("Contador Oficial 3D: %s", marker.timerText))
         table.insert(lines, string.format("Reaparicion en: %s (Sincronizado con marcador)", marker.timerText))
         table.insert(lines, "Marcador: " .. marker.name)
-        return table.concat(lines, "
-")
+        return table.concat(lines, "\n")
     end
     
     -- 2. Si no hay marcador, buscar al jefe vivo con filtrado estricto
@@ -891,8 +890,7 @@ local function GetBossStatusCard(bossName)
         local pct = math.floor((hp / math.max(1, maxHp)) * 100)
         table.insert(lines, string.format("Estado: [VIVO] (Salud: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
         table.insert(lines, "Contador: Sin contador (En combate actualmente)")
-        return table.concat(lines, "
-")
+        return table.concat(lines, "\n")
     end
     
     -- 3. Si no hay marcador ni jefe vivo en el servidor
@@ -914,8 +912,7 @@ local function GetBossStatusCard(bossName)
         table.insert(lines, "Sugerencia: Presiona 'Teleport' para volar a su isla y verificar spawn.")
     end
     
-    return table.concat(lines, "
-")
+    return table.concat(lines, "\n")
 end
 
 -- Interfaz en TabStatus (Sin emojis):
@@ -1039,8 +1036,7 @@ task.spawn(function()
                 for _, m in ipairs(allMarkers) do
                     table.insert(mTexts, string.format("[ACTIVO] %s: %s", m.name, m.timer))
                 end
-                UpdatePara(LabelActiveMarkers, table.concat(mTexts, "
-"))
+                UpdatePara(LabelActiveMarkers, table.concat(mTexts, "\n"))
             else
                 UpdatePara(LabelActiveMarkers, "[NINGUNO] No hay contadores de jefes activos en este momento.")
             end
