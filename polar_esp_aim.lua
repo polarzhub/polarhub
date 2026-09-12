@@ -19,13 +19,26 @@ local Workspace = game:GetService("Workspace")
 local Camera = Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- ==================== CARGAR UI LIBRARY ====================
-local success, redzlib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua"))()
-end)
+-- ==================== CARGAR UI LIBRARY CON FALLBACKS ====================
+local redzlib = nil
+local redzUrls = {
+    "https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua",
+    "https://raw.githubusercontent.com/realredz/RedzLibV5/main/Source.lua",
+    "https://raw.githubusercontent.com/REDZ-HUB/RedzLibV5/main/Source.lua"
+}
 
-if not success or not redzlib then
-    warn("[Polar Vision] Error: No se pudo cargar RedzLib V5.")
+for _, url in ipairs(redzUrls) do
+    local ok, res = pcall(function()
+        local code = game:HttpGet(url)
+        if code and type(code) == "string" and not string.find(code, "404") then
+            local fn = loadstring(code)
+            if fn then return fn() end
+        end
+    end)
+    if ok and res and type(res) == "table" and type(res.MakeWindow) == "function" then
+        redzlib = res
+        break
+    end
 end
 
 -- ==================== CONFIGURACIÓN GLOBAL ====================

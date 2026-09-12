@@ -129,29 +129,62 @@ end)
 -- ==================== BLOX FRUITS REMOTES ====================
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
 local CommF = Remotes and Remotes:WaitForChild("CommF_", 5)
-local Net = ReplicatedStorage:WaitForChild("Modules", 5) and ReplicatedStorage.Modules:WaitForChild("Net", 5)
-local RegisterHit = Net and pcall(function() return Net["RE/RegisterHit"] end) and Net["RE/RegisterHit"]
-local RegisterAttack = Net and pcall(function() return Net["RE/RegisterAttack"] end) and Net["RE/RegisterAttack"]
+local NetModule = ReplicatedStorage:WaitForChild("Modules", 5) and ReplicatedStorage.Modules:WaitForChild("Net", 5)
+local Net = nil
+pcall(function()
+    if NetModule then
+        Net = require(NetModule)
+    end
+end)
+local RegisterHit = nil
+local RegisterAttack = nil
+pcall(function()
+    if Net then
+        RegisterHit = Net:RemoteEvent("RegisterHit", true)
+        RegisterAttack = Net:RemoteEvent("RegisterAttack")
+    end
+end)
+local GlobalModule = nil
+pcall(function()
+    GlobalModule = require(ReplicatedStorage:WaitForChild("Global", 5))
+end)
+local SendHitsToServer = function(...)
+    if GlobalModule and GlobalModule.SendHitsToServer then
+        GlobalModule.SendHitsToServer(...)
+    elseif RegisterHit and RegisterHit.FireServer then
+        RegisterHit:FireServer(...)
+    end
+end
 local enemiesFolder = workspace:FindFirstChild("Enemies")
 
+-- Helper de seguridad para Humanoids (evita crash con barcos en workspace.Enemies)
+local function GetValidHumanoid(model)
+    if not model then return nil end
+    local hum = model:FindFirstChildOfClass("Humanoid")
+    if hum and hum:IsA("Humanoid") and hum.Health > 0 then
+        return hum
+    end
+    return nil
+end
+
 -- ==================== CORE PLATFORM FRAMEWORK (POLAR ENGINE) ====================
-getgenv().Polar = {
-    Data = {
-        AllowedQuests = {},
-        QuestInfo = {},
-        QuestGiver = {},
-        QuestToIsland = {},
-        Bosses = {},
-        NPCCache = {},
-        SpawnCache = {},
-        LastBossCheckedIndex = 1,
-        CurrentState = "IDLE",
-        ActiveQuestName = nil,
-    }
+local Polar = getgenv().Polar or {}
+getgenv().Polar = Polar
+Polar.Data = Polar.Data or {
+    AllowedQuests = {},
+    QuestInfo = {},
+    QuestGiver = {},
+    QuestToIsland = {},
+    Bosses = {},
+    NPCCache = {},
+    SpawnCache = {},
+    LastBossCheckedIndex = 1,
+    CurrentState = "IDLE",
+    ActiveQuestName = nil,
 }
 
 -- Módulo de Jugador
-Polar.Player = {}
+Polar.Player = Polar.Player or {}
 
 function Polar.Player:GetLevel()
     local data = LocalPlayer:FindFirstChild("Data")
@@ -161,6 +194,17 @@ end
 -- Módulo de Teletransporte
 Polar.Teleport = {}
 
+local activeTween = nil
+
+local function CancelActiveTween()
+    if activeTween then
+        pcall(function()
+            activeTween:Cancel()
+        end)
+        activeTween = nil
+    end
+end
+
 local function MoveDirectly(targetCFrame)
     if typeof(targetCFrame) == "Vector3" then
         targetCFrame = CFrame.new(targetCFrame)
@@ -168,66 +212,76 @@ local function MoveDirectly(targetCFrame)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not hrp then return end
+    if not hrp or not hum or hum.Health <= 0 then return end
     
     local dist = (hrp.Position - targetCFrame.Position).Magnitude
-    if dist < 95 then
-        char:PivotTo(targetCFrame)
-    else
-        local oldPlatformStand = hum and hum.PlatformStand
-        if hum then hum.PlatformStand = true end
-        
-        local bp = Instance.new("BodyVelocity", hrp)
+    
+    -- Solo hacer TP instantáneo si ya estamos muy cerca (<= 15 studs) para evitar rollback del anti-cheat
+    if dist <= 15 then
+        CancelActiveTween()
+        hrp.CFrame = targetCFrame
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+        return
+    end
+    
+    CancelActiveTween()
+    
+    local oldPlatformStand = hum and hum.PlatformStand
+    if hum then hum.PlatformStand = true end
+    
+    local bp = hrp:FindFirstChild("Polar_MoveVelocity")
+    if not bp then
+        bp = Instance.new("BodyVelocity")
+        bp.Name = "Polar_MoveVelocity"
         bp.Velocity = Vector3.new(0, 0, 0)
         bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+        bp.Parent = hrp
+    else
+        bp.Velocity = Vector3.new(0, 0, 0)
+    end
+    
+    local nclConn = RunService.Stepped:Connect(function()
+        for _, v in ipairs(char:GetChildren()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end)
+    
+    local tweenSpeed = 320
+    
+    local function DoTween(cframeTarget)
+        local tDist = (hrp.Position - cframeTarget.Position).Magnitude
+        if tDist <= 5 then return end
+        local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
+        local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
+        activeTween = tween
         
-        local nclConn = RunService.Stepped:Connect(function()
-            for _, v in ipairs(char:GetChildren()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
+        local startPos = hrp.Position
+        local tpCheckConn = RunService.Stepped:Connect(function()
+            if (hrp.Position - startPos).Magnitude > 5000 then
+                tween:Cancel()
             end
         end)
         
-        local tweenSpeed = 350
-        
-        local function DoTween(cframeTarget)
-            local tDist = (hrp.Position - cframeTarget.Position).Magnitude
-            if tDist < 5 then return end
-            local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
-            local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
-            
-            local startPos = hrp.Position
-            local tpCheckConn = RunService.Stepped:Connect(function()
-                if (hrp.Position - startPos).Magnitude > 3000 then
-                    tween:Cancel()
-                end
-            end)
-            
-            tween:Play()
-            tween.Completed:Wait()
-            if tpCheckConn then tpCheckConn:Disconnect() end
-        end
-        
-        if game.PlaceId == 4442272183 or (hrp.Position.Z > 25000 and targetCFrame.Position.Z > 25000) then
-            -- En el Barco Maldito, volar recto (noclip atravesando paredes), nunca elevarse al techo porque hace daño
-            DoTween(targetCFrame)
-        else
-            if dist > 200 or math.abs(hrp.Position.Y - targetCFrame.Y) > 100 then
-                local safeY = math.max(hrp.Position.Y, targetCFrame.Y) + 300
-                local p1 = CFrame.new(hrp.Position.X, safeY, hrp.Position.Z)
-                local p2 = CFrame.new(targetCFrame.X, safeY, targetCFrame.Z)
-                
-                DoTween(p1)
-                DoTween(p2)
-                DoTween(targetCFrame)
-            else
-                DoTween(targetCFrame)
-            end
-        end
-        
-        bp:Destroy()
-        nclConn:Disconnect()
-        if hum then hum.PlatformStand = oldPlatformStand end
+        tween:Play()
+        tween.Completed:Wait()
+        if tpCheckConn then tpCheckConn:Disconnect() end
+        if activeTween == tween then activeTween = nil end
     end
+    
+    -- Tween directo y suave al objetivo (noclip sin saltos bruscos ni elevarse al cielo)
+    DoTween(targetCFrame)
+    
+    -- Snap final seguro solo si ya llegó a menos de 15 studs
+    if hrp and (hrp.Position - targetCFrame.Position).Magnitude <= 15 then
+        hrp.CFrame = targetCFrame
+        hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+        hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+    end
+    
+    nclConn:Disconnect()
+    if bp and bp.Parent then bp:Destroy() end
+    if hum and hum.Parent then hum.PlatformStand = oldPlatformStand end
 end
 
 local function FindCursedShipEntrance()
@@ -679,6 +733,16 @@ function Polar.Detection:GetEnemySpawnCFrame(enemyName)
         return cf
     end
 
+    if Polar.Data.QuestInfo then
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if qData.name and self:FuzzyMatch(qData.name, enemyName) and qData.pos then
+                local cf = qData.pos
+                Polar.Data.SpawnCache[enemyName] = cf
+                return cf
+            end
+        end
+    end
+
     return nil
 end
 
@@ -733,9 +797,27 @@ Polar.QuestEngine = Polar.QuestEngine or {}
 function Polar.QuestEngine:GetActiveQuestTitle()
     local pgui = LocalPlayer:FindFirstChild("PlayerGui")
     if not pgui then return nil end
+
+    -- Prioridad 1: Modern Blox Fruits TrackedQuestFrame
+    local tq = pgui:FindFirstChild("TrackedQuestFrame")
+    if tq then
+        local frame = tq:FindFirstChild("Frame")
+        if frame and frame.Visible then
+            local header = frame:FindFirstChild("header")
+            local headerText = header and header:FindFirstChild("textLabel")
+            if headerText and headerText.Text and headerText.Text ~= "" then
+                return headerText.Text
+            end
+            local desc = frame:FindFirstChild("description")
+            if desc and desc.Text and desc.Text ~= "" then
+                return desc.Text
+            end
+        end
+    end
+
+    -- Prioridad 2: Legacy Main.Quest
     local main = pgui:FindFirstChild("Main")
-    if not main then return nil end
-    local questUI = main:FindFirstChild("Quest")
+    local questUI = main and main:FindFirstChild("Quest")
     if questUI and questUI.Visible then
         local container = questUI:FindFirstChild("Container")
         if container then
@@ -835,6 +917,18 @@ function Polar.Quest:HasQuest()
 end
 
 function Polar.Quest:GetTargetEnemyNameFromQuest()
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    local tq = pgui and pgui:FindFirstChild("TrackedQuestFrame")
+    if tq then
+        local frame = tq:FindFirstChild("Frame")
+        if frame and frame.Visible then
+            local desc = frame:FindFirstChild("description")
+            if desc and desc.Text and desc.Text ~= "" then
+                return desc.Text
+            end
+        end
+    end
+
     local activeTitle = Polar.QuestEngine:GetActiveQuestTitle()
     if not activeTitle then return nil end
     
@@ -877,22 +971,38 @@ function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
         end
     end
     
-    if not giverName then return nil end
+    -- 1. Búsqueda directa en workspace.NPCs
+    if giverName then
+        local cf = Polar.World:FindNPC(giverName)
+        if cf then return cf end
+    end
     
-    local cf = Polar.World:FindNPC(giverName)
-    if cf then return cf end
+    -- 2. Búsqueda exacta en Polar.Data.QuestInfo (con posición pos)
+    if Polar.Data.QuestInfo then
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if (qData.q == questName or (qData.qName and qData.qName == questName)) and (not index or qData.ql == index or qData.index == index) then
+                if qData.pos then return qData.pos end
+            end
+        end
+        for _, qData in ipairs(Polar.Data.QuestInfo) do
+            if qData.q == questName or (qData.qName and qData.qName == questName) then
+                if qData.pos then return qData.pos end
+            end
+        end
+    end
     
-    -- Usar posición de respaldo si el NPC aún no ha sido cargado/renderizado a lo lejos
-    local fallbackPos = FallbackPositions[giverName]
-    if fallbackPos then
-        return CFrame.new(fallbackPos)
+    -- 3. Posición de respaldo si el NPC aún no ha sido cargado por streaming
+    if giverName and FallbackPositions and FallbackPositions[giverName] then
+        return CFrame.new(FallbackPositions[giverName])
     end
     
     local islandName = Polar.Data.QuestToIsland[questName]
     if islandName then
         Polar.Teleport:ToIsland(islandName)
-        cf = Polar.World:FindNPC(giverName)
-        if cf then return cf end
+        if giverName then
+            local cf = Polar.World:FindNPC(giverName)
+            if cf then return cf end
+        end
     end
     return nil
 end
@@ -1341,6 +1451,8 @@ task.spawn(function()
             getgenv().PolarCurrentBotState = "IDLE"
             local plat = workspace:FindFirstChild("PolarFarmPlat")
             if plat then plat:Destroy() end
+            local hoverBv = hrp:FindFirstChild("Polar_PlayerHover")
+            if hoverBv then hoverBv:Destroy() end
             task.wait(1)
             continue
         end
@@ -1373,8 +1485,8 @@ task.spawn(function()
             if enemiesFolder then
                 for _, npc in ipairs(enemiesFolder:GetChildren()) do
                     local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                    local nHum = npc:FindFirstChild("Humanoid")
-                    if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                    local nHum = GetValidHumanoid(npc)
+                    if nHrp and nHum and nHrp.Position.Y > 0 then
                         local d = (nHrp.Position - hrp.Position).Magnitude
                         if d < minDist then
                             minDist = d
@@ -1528,8 +1640,8 @@ task.spawn(function()
                 for _, npc in ipairs(enemiesFolder:GetChildren()) do
                     if MatchEnemyName(npc.Name, targetEnemyName) then
                         local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                        local nHum = npc:FindFirstChild("Humanoid")
-                        if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                        local nHum = GetValidHumanoid(npc)
+                        if nHrp and nHum and nHrp.Position.Y > 0 then
                             local d = (nHrp.Position - hrp.Position).Magnitude
                             if d < minDist then
                                 minDist = d
@@ -1543,16 +1655,34 @@ task.spawn(function()
             if firstNPC then
                 local nHrp = firstNPC:FindFirstChild("HumanoidRootPart")
                 local targetCF = nHrp.CFrame * CFrame.new(0, isHuntingBoss and 18 or 12, 0)
-                targetCF = CFrame.new(targetCF.Position) -- Mantener estable
                 
-                plat.CFrame = targetCF
-                if (hrp.Position - plat.Position).Magnitude > 15 then
-                    Polar.Teleport:To(plat.CFrame * CFrame.new(0, 3.5, 0))
+                -- BodyVelocity permanente para que el jugador flote sin caer jamás por gravedad o M1
+                local hoverBv = hrp:FindFirstChild("Polar_PlayerHover")
+                if not hoverBv then
+                    hoverBv = Instance.new("BodyVelocity")
+                    hoverBv.Name = "Polar_PlayerHover"
+                    hoverBv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                    hoverBv.Velocity = Vector3.new(0, 0, 0)
+                    hoverBv.Parent = hrp
+                else
+                    hoverBv.Velocity = Vector3.new(0, 0, 0)
                 end
-                hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                
+                plat.CFrame = targetCF * CFrame.new(0, -3.5, 0)
+                plat.CanCollide = true
+                
+                local distToTarget = (hrp.Position - targetCF.Position).Magnitude
+                if distToTarget > 15 then
+                    Polar.Teleport:To(targetCF)
+                else
+                    -- Fijar firmemente la posición en el aire mirando hacia el NPC
+                    hrp.CFrame = CFrame.lookAt(targetCF.Position, nHrp.Position)
+                    hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
+                end
                 
                 -- Congelar enemigo principal
-                local oHum = firstNPC:FindFirstChild("Humanoid")
+                local oHum = GetValidHumanoid(firstNPC)
                 if oHum then oHum.WalkSpeed = 0 oHum.JumpPower = 0 end
                 
                 local primaryBv = nHrp:FindFirstChild("Polar_AntiGlitch")
@@ -1570,8 +1700,8 @@ task.spawn(function()
                     for _, npc in ipairs(enemiesFolder:GetChildren()) do
                         if npc ~= firstNPC and MatchEnemyName(npc.Name, targetEnemyName) then
                             local tHrp = npc:FindFirstChild("HumanoidRootPart")
-                            local tHum = npc:FindFirstChild("Humanoid")
-                            if tHrp and tHum and tHum.Health > 0 then
+                            local tHum = GetValidHumanoid(npc)
+                            if tHrp and tHum then
                                 pcall(function()
                                     if setsimulationradius then setsimulationradius(math.huge, math.huge)
                                     elseif sethiddenproperty then sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge) end
@@ -1618,8 +1748,8 @@ task.spawn(function()
                 for _, npc in ipairs(enemiesFolder:GetChildren()) do
                     if MatchEnemyName(npc.Name, targetEnemyName) then
                         local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                        local nHum = npc:FindFirstChild("Humanoid")
-                        if nHrp and nHum and nHum.Health > 0 and nHrp.Position.Y > 0 then
+                        local nHum = GetValidHumanoid(npc)
+                        if nHrp and nHum and nHrp.Position.Y > 0 then
                             enemySpawned = true
                             break
                         end
@@ -1663,115 +1793,94 @@ end)
 
 
 
--- ==================== AUTO-CLICK COMBAT ENGINE (NIVEL ATERRADOR) ====================
--- Este motor GARANTIZA que el personaje ataque SIEMPRE cuando está en modo FARMING.
--- Funciona INDEPENDIENTE del Fast Attack. Simula clicks de ratón reales usando
--- VirtualInputManager (ejecutor lvl 8) para activar el combo de ataque del arma equipada.
--- También activa automáticamente el Fast Attack cuando el farm está encendido.
-task.spawn(function()
-    local VIM = game:GetService("VirtualInputManager")
-    while true do
-        task.wait(0.15)
-        local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
-        if anyFarmActive and getgenv().PolarCurrentBotState == "FARMING" then
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            local hum = char and char:FindFirstChild("Humanoid")
-            if char and hrp and hum and hum.Health > 0 then
-                -- Verificar que tiene un arma equipada (no fishing rod)
-                local tool = char:FindFirstChildOfClass("Tool")
-                local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-                if tool and validWeapons[tool.ToolTip] and tool.Name ~= "Fishing Rod" then
-                    -- MÉTODO 1: VirtualInputManager Mouse Click (simula click real del ratón)
-                    pcall(function()
-                        VIM:SendMouseButtonEvent(400, 400, 0, true, game, 1)
-                        task.wait(0.05)
-                        VIM:SendMouseButtonEvent(400, 400, 0, false, game, 1)
-                    end)
-                else
-                    -- Si no tiene arma válida, equipar automáticamente
-                    EquipWeapon(100)
-                end
-            end
-        end
+-- ==================== POLAR ULTRA FAST ATTACK & COMBAT ENGINE ====================
+local FastAttackRange = 65
+local FastAttackCombo = 1
+local attackMeleeCached = nil
+pcall(function()
+    if filtergc then
+        attackMeleeCached = filtergc("function", {Name = "attackMelee"}, true)
     end
 end)
 
--- ==================== FAST ATTACK ANTI-KICK ====================
-local FastAttackRange = 60
 task.spawn(function()
     while true do
-        -- AUTO-ACTIVACIÓN: Fast Attack se activa automáticamente cuando cualquier farm está encendido
-        local anyFarmOn = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled
-        local active = anyFarmOn -- Ya no depende de PolarFastAttackEnabled
-        if not active then
-            task.wait(1)
+        local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or KillAuraEnabled
+        if not anyFarmActive then
+            task.wait(0.5)
             continue
         end
-        -- EXECUTOR HACK: Velocidad de Relámpago (0.05s)
-        task.wait(0.05)
-        if active and RegisterHit and RegisterAttack then
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if not hrp then continue end
-            
-            local targetEnemyName = GetCurrentTargetEnemyName()
-            
-            -- 1. Escanear salud para AutoMastery ANTES de hacer yield
-            local minHealthPercent = nil
-            if enemiesFolder and targetEnemyName then
-                for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                    if not AutoFarmNearestEnabled and not MatchEnemyName(npc.Name, targetEnemyName) then continue end
-                    local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                    local hum = npc:FindFirstChild("Humanoid")
-                    if nHrp and hum and hum.Health > 0 and (nHrp.Position - hrp.Position).Magnitude <= FastAttackRange then
-                        local hPct = (hum.Health / hum.MaxHealth) * 100
-                        if not minHealthPercent or hPct < minHealthPercent then minHealthPercent = hPct end
-                    end
+        
+        task.wait(0.18) -- Cadencia óptima anti-kick verificada en servidor
+        
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = GetValidHumanoid(char)
+        if not hrp or not hum then continue end
+        
+        -- 1. Auto-Equipar Arma Válida (Melee, Sword, Blox Fruit)
+        local currentTool = char:FindFirstChildOfClass("Tool")
+        local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
+        if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
+            EquipWeapon(100)
+            currentTool = char:FindFirstChildOfClass("Tool")
+        end
+        
+        if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
+            continue
+        end
+        
+        -- 2. Bypass de cooldown interno de animación
+        if attackMeleeCached then
+            pcall(function()
+                debug.setupvalue(attackMeleeCached, 2, false)
+            end)
+        end
+        if GlobalModule then
+            GlobalModule.tapCooldown = 0
+        end
+        
+        -- 3. Detección de Buddha para AoE (al menos 3 targets sin Buda, 10 con Buda)
+        local isBuddha = hrp:FindFirstChild("Buddha") or hrp:FindFirstChild("Buddha2")
+        local maxTargets = isBuddha and 10 or 3
+        
+        local targetEnemyName = GetCurrentTargetEnemyName()
+        local targets = {}
+        local mainTargetPart = nil
+        
+        if enemiesFolder then
+            for _, npc in ipairs(enemiesFolder:GetChildren()) do
+                if not AutoFarmNearestEnabled and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
+                    continue
                 end
-            end
-            
-            -- 2. Equipar Arma (esto puede hacer un task.wait si necesita cambiar de arma)
-            EquipWeapon(minHealthPercent)
-            
-            -- 3. Recopilar objetivos de forma SEGURA después del yield
-            local targets = {}
-            local mainTargetPart = nil
-            
-            if enemiesFolder and targetEnemyName then
-                for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                    if not AutoFarmNearestEnabled and not MatchEnemyName(npc.Name, targetEnemyName) then continue end
-                    
-                    local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                    local hum = npc:FindFirstChild("Humanoid")
-                    local ff = npc:FindFirstChildOfClass("ForceField")
-                    
-                    -- Verificar firmemente que el objetivo existe y es válido
-                    if nHrp and nHrp.Parent and hum and hum.Parent and hum.Health > 0 and not ff and (nHrp.Position - hrp.Position).Magnitude <= FastAttackRange then
-                        local targetPart = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head")
-                        if targetPart and targetPart.Parent then
-                            table.insert(targets, {npc, targetPart})
-                            if not mainTargetPart then mainTargetPart = targetPart end
-                            if #targets >= 8 then break end
+                
+                local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                local nHum = GetValidHumanoid(npc)
+                local ff = npc:FindFirstChildOfClass("ForceField")
+                
+                if nHrp and nHum and not ff then
+                    local dist = (nHrp.Position - hrp.Position).Magnitude
+                    if dist <= FastAttackRange then
+                        if not mainTargetPart then
+                            mainTargetPart = nHrp
+                        else
+                            if #targets < (maxTargets - 1) then
+                                table.insert(targets, {npc, nHrp})
+                            end
                         end
                     end
                 end
             end
-            
-            -- FIX ANTI-CHEAT: Jamás atacar con armas inválidas (como Fishing Rod) ni objetos destruidos
-            local currentTool = char:FindFirstChildOfClass("Tool")
-            local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-            
-            if currentTool and validWeapons[currentTool.ToolTip] and currentTool.Name ~= "Fishing Rod" and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
-                pcall(function()
-                    -- EXECUTOR LEVEL 8 BARRAGE: Enviar Múltiples Paquetes en un solo tick
-                    -- Esto clona tu daño y derrite a los enemigos al instante
-                    for _ = 1, 5 do
-                        RegisterAttack:FireServer(0)
-                        RegisterHit:FireServer(mainTargetPart, targets)
-                    end
-                end)
-            end
+        end
+        
+        if mainTargetPart and mainTargetPart.Parent then
+            pcall(function()
+                if RegisterAttack then
+                    RegisterAttack:FireServer(0.18, FastAttackCombo)
+                end
+                SendHitsToServer(mainTargetPart, targets)
+                FastAttackCombo = (FastAttackCombo % 4) + 1
+            end)
         end
     end
 end)
@@ -2023,7 +2132,7 @@ TabStats:AddToggle({
     Name = "Player & NPC ESP",
     Callback = function(Value)
         ESPEnabled = Value
-        UpdateESPState()
+        if UpdateESPState then UpdateESPState() end
     end
 })
 
@@ -2839,50 +2948,7 @@ task.spawn(function()
     end
 end)
 
-task.spawn(function()
-    while true do
-        task.wait(0.15)
-        if KillAuraEnabled and RegisterHit and RegisterAttack then
-            local char = LocalPlayer.Character
-            local hrp = char and char:FindFirstChild("HumanoidRootPart")
-            if hrp then
-                local targets = {}
-                local mainTargetPart = nil
-
-                if enemiesFolder then
-                    local targetEnemyName = GetCurrentTargetEnemyName()
-                    local farmingActive = (AutoFarmNearestEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or getgenv().PolarCurrentBotState ~= STATE_IDLE)
-                    
-                    for _, npc in ipairs(enemiesFolder:GetChildren()) do
-                        if farmingActive and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
-                            continue
-                        end
-                        
-                        local nHrp = npc:FindFirstChild("HumanoidRootPart")
-                        local hum = npc:FindFirstChild("Humanoid")
-                        local ff = npc:FindFirstChildOfClass("ForceField")
-                        if nHrp and nHrp.Parent and hum and hum.Parent and hum.Health > 0 and not ff and (nHrp.Position - hrp.Position).Magnitude < 60 then
-                            table.insert(targets, {npc, nHrp})
-                            if not mainTargetPart then mainTargetPart = nHrp end
-                            if #targets >= 8 then break end
-                        end
-                    end
-                end
-                
-                -- FIX ANTI-CHEAT: Validar herramienta y objetivo
-                local currentTool = char:FindFirstChildOfClass("Tool")
-                local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
-                
-                if currentTool and validWeapons[currentTool.ToolTip] and #targets > 0 and mainTargetPart and mainTargetPart.Parent then
-                    pcall(function()
-                        RegisterAttack:FireServer(0)
-                        RegisterHit:FireServer(mainTargetPart, targets)
-                    end)
-                end
-            end
-        end
-    end
-end)
+-- KillAura está integrado directamente y con máxima potencia en el motor unificado Polar Fast Attack.
 
 RunService.RenderStepped:Connect(function()
     if FlyEnabled and flyBodyMover then

@@ -416,82 +416,225 @@ end)
 -- ==================== 4. AUTO BONES & DEATH KING (HAUNTED CASTLE) ====================
 local AutoBonesRunning = false
 
+local function HasHauntedQuestActive(expectedName)
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    local tq = pgui and pgui:FindFirstChild("TrackedQuestFrame")
+    if tq then
+        local frame = tq:FindFirstChild("Frame")
+        if frame and frame.Visible then
+            local progress = frame:FindFirstChild("progress")
+            if progress and progress.Text and string.find(progress.Text, "8/8") then
+                return false -- Misión ya completada
+            end
+            local desc = frame:FindFirstChild("description")
+            local descText = desc and desc.Text or ""
+            local txtLabels = ""
+            for _, l in ipairs(frame:GetChildren()) do
+                if l:IsA("TextLabel") and l.Visible then
+                    txtLabels = txtLabels .. " " .. l.Text
+                end
+            end
+            if expectedName then
+                local lowerExp = string.lower(expectedName)
+                if string.find(string.lower(descText), lowerExp) or string.find(string.lower(txtLabels), lowerExp) then
+                    return true
+                end
+                -- Compatibilidad con nombres traducidos al español (Momia, Esqueleto, Zombi, Alma)
+                if string.find(lowerExp, "mummy") and (string.find(string.lower(txtLabels), "momi") or string.find(string.lower(descText), "momi")) then
+                    return true
+                elseif string.find(lowerExp, "skeleton") and (string.find(string.lower(txtLabels), "esquelet") or string.find(string.lower(descText), "esquelet")) then
+                    return true
+                elseif string.find(lowerExp, "zombie") and (string.find(string.lower(txtLabels), "zomb") or string.find(string.lower(descText), "zomb")) then
+                    return true
+                elseif string.find(lowerExp, "soul") and (string.find(string.lower(txtLabels), "alma") or string.find(string.lower(descText), "alma")) then
+                    return true
+                end
+                return false
+            end
+            return true
+        end
+    end
+    local mainUI = pgui and pgui:FindFirstChild("Main")
+    local questUI = mainUI and mainUI:FindFirstChild("Quest")
+    if questUI and questUI.Visible then
+        local container = questUI:FindFirstChild("Container")
+        local title = container and (container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title") or container:FindFirstChild("QuestTitle"))
+        if title and title.Text and title.Text ~= "" then
+            if expectedName then
+                return string.find(string.lower(title.Text), string.lower(expectedName)) ~= nil
+            end
+            return true
+        end
+    end
+    return false
+end
+
+-- Bucle Independiente de Auto Spin Huesos (Death King) - Totalmente separado del farm
 task.spawn(function()
     while true do
-        task.wait(1)
+        task.wait(2.5)
+        if getgenv().PolarAutoSpinBones then
+            pcall(function()
+                if CommF then
+                    CommF:InvokeServer("Bones", "Buy", 1, 1)
+                end
+            end)
+        end
+    end
+end)
+
+-- Bucle de Auto Farm Huesos (Haunted Castle con Misión y Multi-Target)
+task.spawn(function()
+    while true do
+        task.wait(0.5)
         if getgenv().PolarAutoBonesEnabled and not AutoBonesRunning then
             AutoBonesRunning = true
             task.spawn(function()
                 while getgenv().PolarAutoBonesEnabled do
                     pcall(function()
+                        local char = LocalPlayer.Character
+                        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                        local hum = char and char:FindFirstChildOfClass("Humanoid")
+                        if not hrp or not hum or hum.Health <= 0 then
+                            task.wait(1)
+                            return
+                        end
+
                         local lvl = Polar.Player and Polar.Player:GetLevel() or 1
                         
-                        local targetMobName = "Reborn Skeleton"
-                        local questPos = CFrame.new(-9515.7, 169.0, 6078.6)
+                        -- Determinar mejor enemigo y misión de Haunted Castle
+                        local qName = "HauntedQuest2"
+                        local qIndex = 2
+                        local targetMobName = "Posessed Mummy"
+                        local questPos = CFrame.new(-9516.1, 175.1, 6079.2)
                         
-                        if lvl >= 2025 then
+                        if lvl < 2000 then
+                            qName = "HauntedQuest1"
+                            qIndex = 1
+                            targetMobName = "Reborn Skeleton"
+                            questPos = CFrame.new(-9515.7, 169.0, 6078.6)
+                        elseif lvl < 2025 then
+                            qName = "HauntedQuest1"
+                            qIndex = 2
+                            targetMobName = "Living Zombie"
+                            questPos = CFrame.new(-9515.7, 169.0, 6078.6)
+                        elseif lvl < 2050 then
+                            qName = "HauntedQuest2"
+                            qIndex = 1
                             targetMobName = "Demonic Soul"
                             questPos = CFrame.new(-9516.1, 175.1, 6079.2)
-                        elseif lvl >= 2000 then
-                            targetMobName = "Living Zombie"
                         end
                         
-                        -- Auto Spin Bones en Death King si está activado
-                        if getgenv().PolarAutoSpinBones then
-                            pcall(function()
-                                if CommF then CommF:InvokeServer("Bones", "Buy", 1, 1) end
-                            end)
-                        end
-                        
-                        -- Auto Invocación de Soul Reaper si tiene Hallow Essence
+                        -- 1. Auto Invocación de Soul Reaper si tiene Hallow Essence
                         local backpack = LocalPlayer:FindFirstChild("Backpack")
-                        local char = LocalPlayer.Character
                         local hasEssence = (backpack and backpack:FindFirstChild("Hallow Essence")) or (char and char:FindFirstChild("Hallow Essence"))
-                        
                         if hasEssence then
                             if Polar.Teleport then Polar.Teleport:To(CFrame.new(-8925.4, 147.2, 6055.1)) end
-                            task.wait(1)
+                            task.wait(0.8)
                             if CommF then pcall(function() CommF:InvokeServer("SummonSoulReaper") end) end
                         end
                         
-                        -- Combate Mobs / Soul Reaper
+                        -- 2. Asegurar que tenemos la misión correcta de Haunted Castle antes de atacar
+                        local hasQuest = HasHauntedQuestActive(targetMobName)
+                        if not hasQuest then
+                            if (hrp.Position - questPos.Position).Magnitude > 15 then
+                                if Polar.Teleport then Polar.Teleport:To(questPos) end
+                            end
+                            if CommF then
+                                local res = CommF:InvokeServer("StartQuest", qName, qIndex)
+                                if res == 0 then
+                                    task.wait(0.3)
+                                end
+                            end
+                            task.wait(0.3)
+                            return
+                        end
+                        
+                        -- 3. Buscar y aniquilar objetivo (Soul Reaper prioritario o Mobs de Huesos)
                         local enemies = workspace:FindFirstChild("Enemies")
                         local chars = workspace:FindFirstChild("Characters")
                         local soulReaper = (enemies and enemies:FindFirstChild("Soul Reaper")) or (chars and chars:FindFirstChild("Soul Reaper"))
+                        local targetNpc = nil
                         
-                        if soulReaper and soulReaper:FindFirstChild("HumanoidRootPart") then
-                            if Polar.Teleport then Polar.Teleport:To(soulReaper.HumanoidRootPart.CFrame * CFrame.new(0, 15, 0)) end
-                            EquipWeaponLocal()
-                            getgenv().PolarFastAttackEnabled = true
-                            VirtualUser:CaptureController()
-                            VirtualUser:ClickButton1(Vector2.new(0,0))
+                        if soulReaper and soulReaper:FindFirstChild("HumanoidRootPart") and soulReaper:FindFirstChildOfClass("Humanoid") and soulReaper.Humanoid.Health > 0 then
+                            targetNpc = soulReaper
                         else
-                            local targetNpc = nil
                             if enemies then
                                 for _, npc in ipairs(enemies:GetChildren()) do
                                     if string.find(string.lower(npc.Name), string.lower(targetMobName)) then
-                                        local hrp = npc:FindFirstChild("HumanoidRootPart")
-                                        local hum = npc:FindFirstChildOfClass("Humanoid")
-                                        if hrp and hum and hum.Health > 0 then
+                                        local nHrp = npc:FindFirstChild("HumanoidRootPart")
+                                        local nHum = npc:FindFirstChildOfClass("Humanoid")
+                                        if nHrp and nHum and nHum.Health > 0 then
                                             targetNpc = npc
                                             break
                                         end
                                     end
                                 end
                             end
+                        end
+                        
+                        if targetNpc and targetNpc:FindFirstChild("HumanoidRootPart") then
+                            local tHrp = targetNpc.HumanoidRootPart
+                            local tHum = targetNpc:FindFirstChildOfClass("Humanoid")
+                            local targetHoverCF = tHrp.CFrame * CFrame.new(0, 12, 0)
                             
-                            if targetNpc and targetNpc:FindFirstChild("HumanoidRootPart") then
-                                if Polar.Teleport then Polar.Teleport:To(targetNpc.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0)) end
-                                EquipWeaponLocal()
-                                getgenv().PolarFastAttackEnabled = true
-                                VirtualUser:CaptureController()
-                                VirtualUser:ClickButton1(Vector2.new(0,0))
+                            -- Anclaje Hover para no caer jamás al suelo ni recibir daño de los NPCs
+                            local hoverBv = hrp:FindFirstChild("Polar_PlayerHover")
+                            if not hoverBv then
+                                hoverBv = Instance.new("BodyVelocity")
+                                hoverBv.Name = "Polar_PlayerHover"
+                                hoverBv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                                hoverBv.Velocity = Vector3.zero
+                                hoverBv.Parent = hrp
                             else
-                                if Polar.Teleport then Polar.Teleport:To(questPos) end
+                                hoverBv.Velocity = Vector3.zero
                             end
+                            
+                            local dist = (hrp.Position - targetHoverCF.Position).Magnitude
+                            if dist > 15 then
+                                if Polar.Teleport then Polar.Teleport:To(targetHoverCF) end
+                            else
+                                hrp.CFrame = CFrame.lookAt(targetHoverCF.Position, tHrp.Position)
+                                hrp.AssemblyLinearVelocity = Vector3.zero
+                                hrp.AssemblyAngularVelocity = Vector3.zero
+                            end
+                            
+                            -- Agrupar otros NPCs de huesos cercanos (Bring Mobs para matar 2+ a la vez)
+                            if enemies and targetNpc ~= soulReaper then
+                                local brought = 1
+                                for _, other in ipairs(enemies:GetChildren()) do
+                                    if other ~= targetNpc and string.find(string.lower(other.Name), string.lower(targetMobName)) then
+                                        local oHrp = other:FindFirstChild("HumanoidRootPart")
+                                        local oHum = other:FindFirstChildOfClass("Humanoid")
+                                        if oHrp and oHum and oHum.Health > 0 and (oHrp.Position - tHrp.Position).Magnitude <= 300 then
+                                            if brought < 4 then
+                                                brought = brought + 1
+                                                oHrp.CFrame = tHrp.CFrame
+                                                oHrp.AssemblyLinearVelocity = Vector3.zero
+                                                oHum.WalkSpeed = 0
+                                                oHum.PlatformStand = true
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                            
+                            EquipWeaponLocal()
+                            getgenv().PolarFastAttackEnabled = true
+                        else
+                            -- Si no hay NPC spawneado, esperar en la zona de spawn
+                            if Polar.Teleport then Polar.Teleport:To(questPos * CFrame.new(0, 15, 0)) end
                         end
                     end)
-                    task.wait(0.2)
+                    task.wait(0.15)
+                end
+                
+                -- Limpieza al apagar
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then
+                    local hoverBv = hrp:FindFirstChild("Polar_PlayerHover")
+                    if hoverBv then hoverBv:Destroy() end
                 end
                 getgenv().PolarFastAttackEnabled = false
                 AutoBonesRunning = false
@@ -601,7 +744,7 @@ if TabQuest then
 
     TabQuest:AddToggle({
         Name = "Auto Spin Huesos (Death King)",
-        Default = true,
+        Default = false,
         Callback = function(Value)
             getgenv().PolarAutoSpinBones = Value
         end
