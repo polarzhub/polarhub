@@ -15,6 +15,13 @@ if not success or not redzlib then
     return
 end
 
+-- Limpiar cualquier instancia previa de la interfaz para evitar ventanas duplicadas o residuales
+pcall(function()
+    local h = (gethui and gethui()) or game:GetService("CoreGui")
+    local old = h:FindFirstChild("redz Library V5")
+    if old then old:Destroy() end
+end)
+
 local Window = redzlib:MakeWindow({
     Name = "❄️ POLAR HUB",
     SubTitle = "by polar",

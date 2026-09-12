@@ -4,6 +4,20 @@
 
 repeat task.wait() until game:IsLoaded()
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+while not LocalPlayer do
+    task.wait(0.1)
+    LocalPlayer = Players.LocalPlayer
+end
+
+-- Limpieza preventiva de interfaces previas para evitar ventanas duplicadas o congeladas
+pcall(function()
+    local h = (gethui and gethui()) or game:GetService("CoreGui")
+    local old = h:FindFirstChild("redz Library V5")
+    if old then old:Destroy() end
+end)
+
 -- IMPORTANTE: Cambia esta URL base por la de tu repositorio de GitHub real
 local baseURL = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
 
@@ -85,3 +99,12 @@ if not seaSuccess then
 else
     print("[Polar Hub] ❄️ " .. seaFile .. " integrado e inicializado con éxito.")
 end
+
+-- Notificación visual de carga completada al 100%
+pcall(function()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "❄️ Polar Hub",
+        Text = "¡Cargado al 100%! Todas las funciones listas.",
+        Duration = 4
+    })
+end)
