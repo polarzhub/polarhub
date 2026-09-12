@@ -5,64 +5,90 @@
 -- Esperar a que el juego cargue completamente antes de inyectar
 repeat task.wait() until game:IsLoaded()
 
--- Limpiar cualquier instancia previa de la interfaz antes de cargar la librería para evitar ventanas duplicadas
+-- -- Limpiar cualquier instancia previa de la interfaz antes de cargar la librería para evitar ventanas duplicadas
 pcall(function()
- local targets = {
- (gethui and gethui()),
- (get_hidden_gui and get_hidden_gui()),
- game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
- (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
- }
- for _, container in ipairs(targets) do
- if container then
- for _, child in ipairs(container:GetChildren()) do
- if child.Name == "redz Library V5" then
- pcall(function() child:Destroy() end)
- end
- end
- end
- end
+	local targets = {
+		(gethui and gethui()),
+		(get_hidden_gui and get_hidden_gui()),
+		game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
+		(pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+	}
+	for _, container in ipairs(targets) do
+		if container then
+			for _, child in ipairs(container:GetChildren()) do
+				if child.Name == "redz Library V5" or child.Name == "PolarHub_Onyx_UI" or child.Name == "Quantum_Onyx_UI" then
+					pcall(function() child:Destroy() end)
+				end
+			end
+		end
+	end
 end)
 
--- ==================== REDZ UI LIBRARY ====================
-local function GetLatestCommitSHA()
- local s, res = pcall(function()
- return game:HttpGet("https://api.github.com/repos/polarzhub/polarhub/commits/main")
- end)
- if s and res then
- local data = nil
- pcall(function() data = game:GetService("HttpService"):JSONDecode(res) end)
- if data and data.sha then
- return data.sha
- end
- end
- return "refs/heads/main"
+-- ==================== POLAR UI LIBRARY ====================
+local function LoadPolarUILibrary()
+	-- 1. Intentar cargar archivo local si existe en el entorno del ejecutor
+	local localPaths = {"polar_ui_library.lua", "polarhub_repo/polar_ui_library.lua"}
+	for _, path in ipairs(localPaths) do
+		if readfile then
+			local ok, content = pcall(readfile, path)
+			if ok and content and #content > 100 then
+				local fn, err = loadstring(content)
+				if fn then
+					local libOk, lib = pcall(fn)
+					if libOk and lib and type(lib) == "table" and lib.MakeWindow then
+						return lib
+					end
+				end
+			end
+		end
+	end
+
+	-- 2. Cargar desde GitHub con el SHA más reciente
+	local function GetLatestCommitSHA()
+		local s, res = pcall(function()
+			return game:HttpGet("https://api.github.com/repos/polarzhub/polarhub/commits/main")
+		end)
+		if s and res then
+			local data = nil
+			pcall(function() data = game:GetService("HttpService"):JSONDecode(res) end)
+			if data and data.sha then
+				return data.sha
+			end
+		end
+		return "refs/heads/main"
+	end
+
+	local sha = GetLatestCommitSHA()
+	local s, lib = pcall(function()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/" .. sha .. "/polar_ui_library.lua"))()
+	end)
+	if s and lib then return lib end
+
+	-- Fallback directo a main branch con cache buster
+	local s2, lib2 = pcall(function()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_ui_library.lua?t=" .. tostring(os.time())))()
+	end)
+	if s2 and lib2 then return lib2 end
+
+	-- Fallback de seguridad a redzlibV5
+	local s3, lib3 = pcall(function()
+		return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua?t=" .. tostring(os.time())))()
+	end)
+	if s3 and lib3 then return lib3 end
+
+	error("Error crítico: No se pudo cargar polar_ui_library.lua")
 end
 
-local sha = GetLatestCommitSHA()
-local success, redzlib = pcall(function()
- return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/" .. sha .. "/redzlibV5.lua"))()
-end)
+local PolarUI = LoadPolarUILibrary()
 
-if not success or not redzlib then
- warn("Error: No se pudo cargar RedzLib V5 desde SHA, intentando ruta directa...")
- success, redzlib = pcall(function()
- return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua?t=" .. tostring(os.time())))()
- end)
- if not success or not redzlib then
- warn("Error crítico: No se pudo cargar RedzLib V5.")
- return
- end
-end
-
-local Window = redzlib:MakeWindow({
- Name = "POLAR HUB",
- SubTitle = "by polar",
- SaveFolder = "PolarHubConfig.json"
+local Window = PolarUI:MakeWindow({
+	Name = "POLAR HUB",
+	SubTitle = '<font color="#00E5FF">Blox Fruits</font> • <font color="#C084FC">v.Powerhouse</font> • <font color="#FFD700">Official</font>',
+	SaveFolder = "PolarHubConfig.json"
 })
 pcall(function()
-	redzlib:SetScale(650) -- Escala por defecto "Grande" optimizada
-	redzlib:SetTheme("Polar Ice") -- Tema oficial Polar Hub por defecto
+	PolarUI:SetScale(650) -- Escala 1.15 calibrada
+	PolarUI:SetTheme("Polar Ice")
 end)
 
 -- CREACIÓN INMEDIATA DE PESTAÑAS (Garantiza que la UI NUNCA quede en negro)
@@ -2889,7 +2915,8 @@ TabMisc:AddSection("Personalización de la Interfaz")
 
 local themesList = {}
 pcall(function()
-	for themeName, _ in pairs(redzlib.Themes) do
+	local thSrc = (PolarUI and PolarUI.Themes) or (redzlib and redzlib.Themes) or {}
+	for themeName, _ in pairs(thSrc) do
 		table.insert(themesList, themeName)
 	end
 end)
@@ -2904,7 +2931,13 @@ TabMisc:AddDropdown({
 	Options = themesList,
 	Default = "Polar Ice",
 	Callback = function(selected)
-		pcall(function() redzlib:SetTheme(selected) end)
+		pcall(function()
+			if PolarUI and PolarUI.SetTheme then
+				PolarUI:SetTheme(selected)
+			elseif redzlib and redzlib.SetTheme then
+				redzlib:SetTheme(selected)
+			end
+		end)
 	end
 })
 
@@ -2913,11 +2946,21 @@ TabMisc:AddButton({
 	Desc = "Devuelve el botón flotante a su posición por defecto en pantalla.",
 	Callback = function()
 		pcall(function()
-			local rz = (gethui and gethui()) or game:GetService("CoreGui"):FindFirstChild("redz Library V5") or LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("redz Library V5")
-			if rz then
-				local btn = rz:FindFirstChild("PolarFloatingButton", true)
-				if btn then
-					btn.Position = UDim2.new(0, 20, 0.45, 0)
+			local targets = {
+				(gethui and gethui()),
+				(get_hidden_gui and get_hidden_gui()),
+				game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
+				(pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+			}
+			for _, c in ipairs(targets) do
+				if c then
+					local gui = c:FindFirstChild("PolarHub_Onyx_UI") or c:FindFirstChild("redz Library V5")
+					if gui then
+						local fl = gui:FindFirstChild("FloatToggle", true) or gui:FindFirstChild("PolarFloatingButton", true)
+						if fl then
+							fl.Position = UDim2.new(0.016, 0, 0.219, 0)
+						end
+					end
 				end
 			end
 		end)
@@ -2936,9 +2979,13 @@ TabMisc:AddDropdown({
  ["Grande"] = 650,
  ["Muy Grande"] = 500
  }
- local val = scaleMap[selected] or 800
+ local val = scaleMap[selected] or 650
  pcall(function()
- redzlib:SetScale(val)
+	if PolarUI and PolarUI.SetScale then
+		PolarUI:SetScale(val)
+	elseif redzlib and redzlib.SetScale then
+		redzlib:SetScale(val)
+	end
  end)
  end
 })

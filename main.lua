@@ -22,7 +22,7 @@ pcall(function()
  for _, container in ipairs(targets) do
  if container then
  for _, child in ipairs(container:GetChildren()) do
- if child.Name == "redz Library V5" then
+ if child.Name == "redz Library V5" or child.Name == "PolarHub_Onyx_UI" or child.Name == "Quantum_Onyx_UI" then
  pcall(function() child:Destroy() end)
  end
  end
@@ -97,15 +97,32 @@ end
 -- Anti-Cache dinámico para asegurar siempre la versión más reciente
 local cacheBuster = "?t=" .. tostring(os.time())
 
+local function LoadScriptFile(fileName)
+	if readfile then
+		local localPaths = {fileName, "polarhub_repo/" .. fileName}
+		for _, p in ipairs(localPaths) do
+			local ok, content = pcall(readfile, p)
+			if ok and content and #content > 100 then
+				local fn, err = loadstring(content)
+				if fn then
+					local s, res = pcall(fn)
+					if s then return true, res end
+				end
+			end
+		end
+	end
+	return pcall(function()
+		return loadstring(game:HttpGet(baseURL .. fileName .. cacheBuster))()
+	end)
+end
+
 -- Cargar Core Base primero
 print("[Polar Hub] [OK] Cargando motor principal...")
-local success, result = pcall(function()
- loadstring(game:HttpGet(baseURL .. "core.lua" .. cacheBuster))()
-end)
+local success, result = LoadScriptFile("core.lua")
 
 if not success then
- warn("[Polar Hub] [WARN] Advertencia en core.lua:")
- warn(result)
+	warn("[Polar Hub] [WARN] Advertencia en core.lua:")
+	warn(result)
 end
 
 -- Cargar script especifico del oceano detectado SIEMPRE
@@ -113,18 +130,16 @@ local detectedSea = DetectSea()
 print("[Polar Hub] [OK] Mar detectado con éxito: Sea " .. tostring(detectedSea))
 
 local seaFile = "sea" .. tostring(detectedSea) .. ".lua"
-local seaSuccess, seaResult = pcall(function()
- loadstring(game:HttpGet(baseURL .. seaFile .. cacheBuster))()
-end)
+local seaSuccess, seaResult = LoadScriptFile(seaFile)
 
 if not seaSuccess then
- warn("[Polar Hub] [WARN] Advertencia cargando " .. seaFile .. ":")
- warn(seaResult)
- if detectedSea == 1 then
- pcall(function() loadstring(game:HttpGet(baseURL .. "sea1.lua" .. cacheBuster))() end)
- end
+	warn("[Polar Hub] [WARN] Advertencia cargando " .. seaFile .. ":")
+	warn(seaResult)
+	if detectedSea == 1 then
+		pcall(function() loadstring(game:HttpGet(baseURL .. "sea1.lua" .. cacheBuster))() end)
+	end
 else
- print("[Polar Hub] [OK] " .. seaFile .. " integrado e inicializado con éxito.")
+	print("[Polar Hub] [OK] " .. seaFile .. " integrado e inicializado con éxito.")
 end
 
 -- Notificación visual de carga completada al 100%
