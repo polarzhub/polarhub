@@ -23,6 +23,41 @@ local Window = redzlib:MakeWindow({
 pcall(function()
     redzlib:SetScale(650) -- Escala por defecto "Grande" optimizada
 end)
+
+-- CREACIÓN INMEDIATA DE PESTAÑAS (Garantiza que la UI NUNCA quede en negro)
+local TabFarm = Window:MakeTab({ Title = "Farm", Icon = "swords" })
+local TabStats = Window:MakeTab({ Title = "Stats", Icon = "user" })
+local TabStatus = Window:MakeTab({ Title = "Status", Icon = "activity" })
+local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
+local TabQuest = Window:MakeTab({ Title = "Quest Farm", Icon = "map" })
+local TabTeleport = Window:MakeTab({ Title = "Teleport", Icon = "globe" })
+local TabCombat = Window:MakeTab({ Title = "Combat PvP", Icon = "crosshair" })
+local TabServers = Window:MakeTab({ Title = "Server Hop", Icon = "server" })
+local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
+
+local Polar = getgenv().Polar or {}
+getgenv().Polar = Polar
+Polar.Window = Window
+Polar.TabFarm = TabFarm
+Polar.TabStats = TabStats
+Polar.TabStatus = TabStatus
+Polar.TabShop = TabShop
+Polar.TabQuest = TabQuest
+Polar.TabTeleport = TabTeleport
+Polar.TabCombat = TabCombat
+Polar.TabServers = TabServers
+Polar.TabMisc = TabMisc
+
+getgenv().PolarWindow = Window
+getgenv().PolarTabFarm = TabFarm
+getgenv().PolarTabStats = TabStats
+getgenv().PolarTabStatus = TabStatus
+getgenv().PolarTabShop = TabShop
+getgenv().PolarTabQuest = TabQuest
+getgenv().PolarTabTeleport = TabTeleport
+getgenv().PolarTabCombat = TabCombat
+getgenv().PolarTabServers = TabServers
+getgenv().PolarTabMisc = TabMisc
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -1007,24 +1042,28 @@ function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
     return nil
 end
 
--- Bypass Global de Distancia
+-- Bypass Global de Distancia Blindado (Protegido contra excepciones de Capability Plugin)
 local bypassHookInstalled = false
 local function InstallGlobalBypass()
     if bypassHookInstalled then return end
     pcall(function()
+        if not hookmetamethod or not newcclosure or not checkcaller then return end
         local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-            local method = getnamecallmethod()
-            if not checkcaller() and method == "DistanceFromCharacter" then
+        oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
+            if checkcaller() then
+                return oldNamecall(self, ...)
+            end
+            local okMethod, method = pcall(getnamecallmethod)
+            if okMethod and method == "DistanceFromCharacter" then
                 return 0
             end
             return oldNamecall(self, ...)
-        end)
+        end))
         bypassHookInstalled = true
         print("[Polar Hub] ✅ Bypass Global de Distancia activo.")
     end)
 end
-InstallGlobalBypass()
+pcall(InstallGlobalBypass)
 
 local function BuyItem(action, arg1, arg2, npcName)
     InstallGlobalBypass()
@@ -2032,27 +2071,7 @@ end)
 
 
 -- ==================== WIND UI CONSTRUCCION ====================
-
-local TabFarm = Window:MakeTab({ Title = "Farm", Icon = "swords" })
-local TabStats = Window:MakeTab({ Title = "Stats", Icon = "user" })
-local TabStatus = Window:MakeTab({ Title = "Status", Icon = "activity" })
-local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
-local TabQuest = Window:MakeTab({ Title = "Quest Farm", Icon = "map" })
-local TabTeleport = Window:MakeTab({ Title = "Teleport", Icon = "globe" })
-local TabCombat = Window:MakeTab({ Title = "Combat PvP", Icon = "crosshair" })
-local TabServers = Window:MakeTab({ Title = "Server Hop", Icon = "server" })
-local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
-
-getgenv().PolarWindow = Window
-getgenv().PolarTabFarm = TabFarm
-getgenv().PolarTabStats = TabStats
-getgenv().PolarTabStatus = TabStatus
-getgenv().PolarTabShop = TabShop
-getgenv().PolarTabQuest = TabQuest
-getgenv().PolarTabTeleport = TabTeleport
-getgenv().PolarTabCombat = TabCombat
-getgenv().PolarTabServers = TabServers
-getgenv().PolarTabMisc = TabMisc
+-- (Pestañas ya instanciadas arriba de forma blindada para garantizar que la interfaz se muestre de inmediato)
 
 -- Exportar funciones utilitarias de core.lua para sea.lua
 -- Nota: PolarBypassTeleport y PolarIsEnemyAlive ya están exportados correctamente en líneas 788-789
@@ -2544,10 +2563,12 @@ local COMBAT_KEYWORDS = {"hit", "attack", "damage", "shoot", "skill", "combat", 
 -- ============ HOOKS DE PROTECCIÓN PROFUNDA (ANTI-CHEAT BYPASS) ============
 -- Intercepta intentos del Anti-Cheat local de borrarnos la GUI o patearnos
 pcall(function()
+    if not hookmetamethod or not newcclosure or not checkcaller then return end
     local OldNewIndex
     OldNewIndex = hookmetamethod(game, "__newindex", newcclosure(function(self, key, value)
         if not checkcaller() then
-            if (self.Name == "PlayerGui" or self == LocalPlayer) and key == "Parent" and value == nil then
+            local okName, name = pcall(function() return self.Name end)
+            if okName and (name == "PlayerGui" or self == LocalPlayer) and key == "Parent" and value == nil then
                 return -- Anular el borrado silencioso
             end
         end
@@ -2558,14 +2579,17 @@ end)
 -- ============ HOOK __namecall (con checkcaller) ============
 -- Intercepta FireServer para combate y bloquea Destroy/Kick del Anti-Cheat
 pcall(function()
+    if not hookmetamethod or not newcclosure or not checkcaller then return end
     local OldNamecall
     OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local method = getnamecallmethod()
+        local okMethod, method = pcall(getnamecallmethod)
+        if not okMethod or not method then return OldNamecall(self, ...) end
         
         -- BLOQUEADOR DE CASTIGOS (Anti-Cheat Bypass):
         if not checkcaller() then
             if method == "Destroy" or method == "ClearAllChildren" or method == "Remove" then
-                if self.Name == "PlayerGui" or self == LocalPlayer then
+                local okName, name = pcall(function() return self.Name end)
+                if okName and (name == "PlayerGui" or self == LocalPlayer) then
                     return -- Anular la ejecución (Bloqueado)
                 end
             elseif method == "Kick" or method == "kick" then
@@ -2970,16 +2994,19 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local CoreGui = game:GetService("CoreGui")
-local promptOverlay = CoreGui:FindFirstChild("RobloxPromptGui") and CoreGui.RobloxPromptGui:FindFirstChild("promptOverlay")
-if promptOverlay then
-    promptOverlay.ChildAdded:Connect(function(child)
-        if child.Name == "ErrorPrompt" and AutoRejoinEnabled then
-            task.wait(2)
-            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
-        end
-    end)
-end
+pcall(function()
+    local CoreGui = game:GetService("CoreGui")
+    local rbxPrompt = CoreGui:FindFirstChild("RobloxPromptGui")
+    local promptOverlay = rbxPrompt and rbxPrompt:FindFirstChild("promptOverlay")
+    if promptOverlay then
+        promptOverlay.ChildAdded:Connect(function(child)
+            if child.Name == "ErrorPrompt" and AutoRejoinEnabled then
+                task.wait(2)
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+            end
+        end)
+    end
+end)
 
 print("✅ Polar Hub cargado exitosamente.")
 

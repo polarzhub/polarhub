@@ -51,29 +51,31 @@ local function DetectSea()
 end
 
 -- Cargar Core Base primero
-print("Polar Hub: Cargando motor principal...")
+print("[Polar Hub] 🚀 Cargando motor principal...")
 local success, result = pcall(function()
     loadstring(game:HttpGet(baseURL .. "core.lua"))()
 end)
 
 if not success then
-    warn("Polar Hub Error: No se pudo cargar core.lua. Asegurate de haberlo subido a GitHub y de tener la URL correcta.")
+    warn("[Polar Hub] ⚠️ Advertencia en core.lua:")
     warn(result)
-    return
 end
 
--- Cargar script especifico del oceano detectado
+-- Cargar script especifico del oceano detectado SIEMPRE
 local detectedSea = DetectSea()
-if detectedSea == 1 then
-    print("Polar Hub: Sea 1 detectado.")
-    loadstring(game:HttpGet(baseURL .. "sea1.lua"))()
-elseif detectedSea == 2 then
-    print("Polar Hub: Sea 2 detectado.")
-    loadstring(game:HttpGet(baseURL .. "sea2.lua"))()
-elseif detectedSea == 3 then
-    print("Polar Hub: Sea 3 detectado.")
-    loadstring(game:HttpGet(baseURL .. "sea3.lua"))()
+print("[Polar Hub] 🌊 Mar detectado con éxito: Sea " .. tostring(detectedSea))
+
+local seaFile = "sea" .. tostring(detectedSea) .. ".lua"
+local seaSuccess, seaResult = pcall(function()
+    loadstring(game:HttpGet(baseURL .. seaFile))()
+end)
+
+if not seaSuccess then
+    warn("[Polar Hub] ⚠️ Advertencia cargando " .. seaFile .. ":")
+    warn(seaResult)
+    if detectedSea == 1 then
+        pcall(function() loadstring(game:HttpGet(baseURL .. "sea1.lua"))() end)
+    end
 else
-    warn("Polar Hub: Sea no reconocido ("..tostring(PlaceId).."). Cargando Sea 1 por defecto.")
-    loadstring(game:HttpGet(baseURL .. "sea1.lua"))()
+    print("[Polar Hub] ❄️ " .. seaFile .. " integrado e inicializado con éxito.")
 end
