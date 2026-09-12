@@ -104,6 +104,170 @@ local TabMeta = {
 -- Library Scale & State
 PolarUI.CurrentScale = 1.15
 PolarUI.ActiveWindows = {}
+PolarUI.Language = "EN"
+PolarUI.Translatables = {}
+
+PolarUI.Dictionary = {
+    ["ES"] = {
+        -- Tabs
+        ["Farm"] = "Farmear",
+        ["Stats"] = "Estadísticas",
+        ["Status"] = "Estado",
+        ["Shop"] = "Tienda",
+        ["Quest Farm"] = "Misiones",
+        ["Teleport"] = "Teletransporte",
+        ["Combat PvP"] = "Combate PvP",
+        ["Server Hop"] = "Servidores",
+        ["Misc"] = "Varios",
+
+        -- Modals & General
+        ["Close"] = "Cerrar",
+        ["Cerrar"] = "Cerrar",
+        ["UI Font"] = "Fuente de Interfaz",
+        ["BG Image Fade"] = "Opacidad de Fondo",
+        ["Language: English [EN]"] = "Idioma: Español [ES]",
+        ["Idioma: Español [ES]"] = "Language: English [EN]",
+
+        -- Sections (Core)
+        ["Combat Settings"] = "Configuración de Combate",
+        ["Auto Farm"] = "Auto Farm Automático",
+        ["Player Enhancements"] = "Mejoras de Jugador",
+        ["Distribute Stats"] = "Auto Estadísticas",
+        ["Server Telemetry"] = "Telemetría del Servidor",
+        ["Abilities"] = "Habilidades",
+        ["Fighting Styles"] = "Estilos de Pelea",
+        ["Swords"] = "Espadas",
+        ["Guns"] = "Armas de Fuego",
+        ["Island Teleport"] = "Viajes a Islas",
+        ["Combat Enhancements"] = "Mejoras de Combate",
+        ["Bounty Hunter Tracker"] = "Rastreador de Recompensas",
+        ["Combat Mode"] = "Modo Combate",
+        ["Aimbot & Hitbox"] = "Aimbot y Hitbox",
+        ["Extreme Combat"] = "Combate Extremo",
+        ["UI Customization"] = "Personalización de Interfaz",
+        ["Extra Utilities"] = "Utilidades Extra",
+        ["Movement"] = "Movimiento",
+        ["Server Management"] = "Gestión de Servidores",
+
+        -- Controls (Core)
+        ["Farm Tool"] = "Arma de Farmeo",
+        ["Smart Mastery"] = "Maestría Inteligente",
+        ["Finishes mob with secondary weapon"] = "Remata al enemigo con arma secundaria",
+        ["Mastery Weapon"] = "Arma a Masterizar",
+        ["Auto Skills"] = "Habilidades Auto",
+        ["Cast skills while farming"] = "Usa habilidades al farmear",
+        ["Auto Farm Level"] = "Auto Farm Nivel",
+        ["Auto Chest"] = "Auto Cofres",
+        ["Farm Nearest"] = "Farmear Cercano",
+        ["Player & Mob ESP"] = "ESP Jugadores y Mobs",
+        ["Auto Buso Haki"] = "Auto Haki Buso",
+        ["Auto Ken Haki"] = "Auto Haki Ken",
+        ["Melee"] = "Cuerpo a Cuerpo",
+        ["Defense"] = "Defensa",
+        ["Sword"] = "Espada",
+        ["Gun"] = "Arma",
+        ["Demon Fruit"] = "Fruta",
+        ["Auto Assign Stats"] = "Asignar Puntos",
+        ["Server Uptime"] = "Tiempo del Servidor",
+        ["Session Time"] = "Tiempo en Sesión",
+        ["Select Target"] = "Seleccionar Objetivo",
+        ["Refresh Player List"] = "Actualizar Jugadores",
+        ["Target Information"] = "Información del Objetivo",
+        ["Teleport to Target"] = "Teleport al Objetivo",
+        ["Enable Combat Mode"] = "Activar Modo Combate",
+        ["Enables hitbox & silent aim"] = "Activa hitbox y silent aim",
+        ["Hitbox Expander"] = "Expansor de Hitbox",
+        ["Expands enemy collision box"] = "Aumenta la caja de colisión",
+        ["Hitbox Size"] = "Tamaño de Hitbox",
+        ["Silent Aim"] = "Silent Aim (Aimbot)",
+        ["Redirects attacks to target"] = "Redirige ataques al objetivo",
+        ["Bring Target"] = "Atraer Objetivo",
+        ["Brings enemy player to you"] = "Teletransporta enemigo frente a ti",
+        ["Kill Aura"] = "Kill Aura",
+        ["Attacks all nearby enemies"] = "Daña a todos los enemigos cercanos",
+        ["Visual Theme"] = "Tema Visual",
+        ["Reset Floating Button"] = "Recentrar Botón Flotante",
+        ["Interface Scale"] = "Escala de Interfaz",
+        ["Fruit Finder"] = "Buscador de Frutas",
+        ["Fly Mode"] = "Modo Vuelo",
+        ["Auto Rejoin"] = "Reconexión Automática",
+        ["Walk Speed"] = "Nivel de Velocidad",
+        ["Speed Boost"] = "Aumento de Velocidad",
+        ["Infinite Jump"] = "Salto Infinito",
+        ["NoClip"] = "Atravesar Paredes",
+        ["Walk on Water"] = "Caminar sobre el Agua",
+        ["Job ID"] = "Pegar Job ID",
+        ["Join Job ID"] = "Unirse por Job ID",
+        ["Copy Current Job ID"] = "Copiar Job ID Actual",
+        ["Hop Low Players"] = "Servidor con Menos Gente",
+        ["Hop Best Ping"] = "Servidor con Mejor Ping",
+        ["Auto Join Bounty"] = "Auto-Unirse a Caza",
+
+        -- Sections (Sea 1)
+        ["Boss Status & Timers"] = "Tabla de Jefes y Respawn",
+        ["Raid Boss Radar"] = "Radar de Jefes de Raid",
+        ["Sea 1 Boss Hunter"] = "Cazador de Jefes (Sea 1)",
+        ["Saber Puzzle"] = "Puzzle de Saber",
+        ["Secrets Master"] = "Maestro de Secretos (Sea 1)",
+        ["Island Secrets Explorer"] = "Explorador de Secretos",
+        ["Second Sea Journey"] = "Viaje al Second Sea",
+        ["Haki Trainers"] = "Entrenadores de Haki",
+        ["Sea 1 Fighting Styles"] = "Estilos de Pelea (Sea 1)",
+
+        -- Controls (Sea 1)
+        ["Select Boss to Inspect"] = "Seleccionar Jefe para Inspeccionar",
+        ["Refresh Boss Status"] = "Actualizar Estado del Jefe",
+        ["Teleport to Boss"] = "Teleport a Ubicación del Jefe",
+        ["Select Boss"] = "Seleccionar Jefe",
+        ["Farm Selected Boss"] = "Farmear Jefe Seleccionado",
+        ["Farm All Bosses"] = "Farmear Todos los Jefes",
+        ["Take Boss Quest"] = "Tomar Misión del Jefe",
+        ["Start Auto Saber"] = "Iniciar Auto Saber",
+        ["Stop Auto Saber"] = "Detener Auto Saber",
+        ["Teleport to Secrets Master"] = "Teleport a Secrets Master",
+        ["Auto Read Stories"] = "Auto Leer Historias",
+        ["Equip Combat Style"] = "Equipar Estilo Combat",
+        ["Equip Advanced Combat"] = "Equipar Advanced Combat",
+        ["Select Secret Zone"] = "Seleccionar Zona Secreta",
+        ["Teleport to Secret Zone"] = "Teleport a Zona Secreta",
+        ["Start Second Sea Journey"] = "Iniciar Viaje al Second Sea",
+        ["Stop Journey"] = "Detener Viaje",
+        ["Buy Geppo - $10k"] = "Comprar Geppo - $10k",
+        ["Buy Buso - $25k"] = "Comprar Buso - $25k",
+        ["Buy Soru - $100k"] = "Comprar Soru - $100k",
+        ["Buy Ken Haki - $750k"] = "Comprar Ken Haki - $750k",
+        ["Check Ken Haki"] = "Consultar Estado Ken Haki",
+        ["Buy Dark Step - $150k"] = "Comprar Dark Step - $150k",
+        ["Buy Electro - $500k"] = "Comprar Electro - $500k",
+        ["Buy Water Kung Fu - $750k"] = "Comprar Water Kung Fu - $750k",
+        ["Select Island"] = "Elegir Isla",
+        ["Teleport to Island"] = "Volar Hacia Isla"
+    }
+}
+
+function PolarUI:RegisterTranslatable(labelObj, enText, esText)
+    if not labelObj then return end
+    local es = esText or (PolarUI.Dictionary["ES"] and PolarUI.Dictionary["ES"][enText]) or enText
+    table.insert(PolarUI.Translatables, {
+        Label = labelObj,
+        EN = enText,
+        ES = es
+    })
+    if PolarUI.Language == "ES" then
+        labelObj.Text = es
+    else
+        labelObj.Text = enText
+    end
+end
+
+function PolarUI:SetLanguage(lang)
+    PolarUI.Language = lang
+    for _, item in ipairs(PolarUI.Translatables) do
+        if item.Label and item.Label.Parent then
+            item.Label.Text = (lang == "ES") and item.ES or item.EN
+        end
+    end
+end
 
 function PolarUI:SetScale(scaleVal)
     if type(scaleVal) == "number" then
@@ -347,60 +511,77 @@ function PolarUI:MakeWindow(config)
         modal.Position = UDim2.new(0.5, 0, 0.5, 0)
         modal.Size = UDim2.new(0, 270, 0, 270)
         modal.BackgroundColor3 = Theme.ModalBase
+        modal.BackgroundTransparency = 0
         modal.BorderSizePixel = 0
-        modal.ClipsDescendants = true
         modal.ZIndex = 2000
         modal.Parent = mainFrame
 
-        local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = modal
+        local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 12); mc.Parent = modal
 
         local ms = Instance.new("UIStroke")
         ms.Color = Theme.AccentStroke
         ms.Thickness = 1.0
-        ms.Transparency = 0.45
+        ms.Transparency = 0.35
         ms.LineJoinMode = Enum.LineJoinMode.Round
         ms.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         ms.Parent = modal
 
+        -- Top gradient background header
         local mTop = Instance.new("Frame")
-        mTop.Size = UDim2.new(1, 0, 0, 56)
-        mTop.BackgroundTransparency = 1
+        mTop.Size = UDim2.new(1, 0, 0.45, 0)
+        mTop.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
+        mTop.BackgroundTransparency = 0.92
         mTop.BorderSizePixel = 0
         mTop.ZIndex = 2001
         mTop.Parent = modal
+        local mtc = Instance.new("UICorner"); mtc.CornerRadius = UDim.new(0, 12); mtc.Parent = mTop
+        local mtg = Instance.new("UIGradient")
+        mtg.Rotation = 90
+        mtg.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 100, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 40, 160))
+        })
+        mtg.Parent = mTop
 
+        -- Header Icon (20x20 at {0.5, 0}, {0, 14})
         local mIcon = Instance.new("ImageLabel")
         mIcon.AnchorPoint = Vector2.new(0.5, 0)
-        mIcon.Position = UDim2.new(0.5, 0, 0, 8)
+        mIcon.Position = UDim2.new(0.5, 0, 0, 14)
         mIcon.Size = UDim2.new(0, 20, 0, 20)
         mIcon.BackgroundTransparency = 1
-        mIcon.BorderSizePixel = 0
         mIcon.Image = iconId
-        mIcon.ImageColor3 = Theme.Accent
+        mIcon.ImageColor3 = Color3.fromRGB(190, 140, 255)
         mIcon.ZIndex = 2002
-        mIcon.Parent = mTop
+        mIcon.Parent = modal
 
+        -- Title (15px GothamBold at {0.5, 0}, {0, 38})
         local mTitle = Instance.new("TextLabel")
         mTitle.AnchorPoint = Vector2.new(0.5, 0)
-        mTitle.Position = UDim2.new(0.5, 0, 0, 32)
-        mTitle.Size = UDim2.new(1, -24, 0, 18)
+        mTitle.Position = UDim2.new(0.5, 0, 0, 38)
+        mTitle.Size = UDim2.new(1, -24, 0, 16)
         mTitle.BackgroundTransparency = 1
         mTitle.BorderSizePixel = 0
         mTitle.Text = titleText
         mTitle.Font = Enum.Font.GothamBold
         mTitle.TextSize = 15
-        mTitle.TextColor3 = Theme.TextWhite
+        mTitle.TextColor3 = Color3.fromRGB(210, 175, 255)
         mTitle.TextXAlignment = Enum.TextXAlignment.Center
         mTitle.ZIndex = 2002
-        mTitle.Parent = mTop
+        mTitle.Parent = modal
 
+        -- Gradient divider line ({0.65, 0}, {0, 1} at {0.5, 0}, {0, 57})
         local mDiv = Instance.new("Frame")
-        mDiv.Position = UDim2.new(0, 12, 0, 56)
-        mDiv.Size = UDim2.new(1, -24, 0, 1)
-        mDiv.BackgroundColor3 = Theme.AccentStroke
+        mDiv.AnchorPoint = Vector2.new(0.5, 0)
+        mDiv.Position = UDim2.new(0.5, 0, 0, 57)
+        mDiv.Size = UDim2.new(0.65, 0, 0, 1)
+        mDiv.BackgroundColor3 = Color3.fromRGB(160, 100, 255)
+        mDiv.BackgroundTransparency = 0.72
         mDiv.BorderSizePixel = 0
         mDiv.ZIndex = 2002
         mDiv.Parent = modal
+        local mdg = Instance.new("UIGradient")
+        mdg.Color = UnderlineGradient
+        mdg.Parent = mDiv
 
         local mScroll = Instance.new("ScrollingFrame")
         mScroll.AnchorPoint = Vector2.new(0.5, 0)
@@ -422,41 +603,41 @@ function PolarUI:MakeWindow(config)
         ml.Parent = mScroll
 
         local mClose = Instance.new("TextButton")
+        mClose.Name = "CloseBtn"
         mClose.AnchorPoint = Vector2.new(0.5, 1)
-        mClose.Position = UDim2.new(0.5, 0, 1, -10)
-        mClose.Size = UDim2.new(1, -24, 0, 26)
-        mClose.BackgroundColor3 = Color3.fromRGB(35, 20, 55)
+        mClose.Position = UDim2.new(0.5, 0, 1, -9)
+        mClose.Size = UDim2.new(0.52, 0, 0, 24)
+        mClose.BackgroundColor3 = Color3.fromRGB(30, 18, 52)
         mClose.BorderSizePixel = 0
-        mClose.Text = "Cerrar"
+        mClose.Text = "Close"
         mClose.Font = Enum.Font.GothamBold
-        mClose.TextSize = 13
-        mClose.TextColor3 = Theme.TextWhite
+        mClose.TextSize = 11
+        mClose.TextColor3 = Color3.fromRGB(180, 135, 255)
         mClose.ZIndex = 2003
         mClose.Parent = modal
+        PolarUI:RegisterTranslatable(mClose, "Close", "Cerrar")
 
         local mcc = Instance.new("UICorner"); mcc.CornerRadius = UDim.new(0, 6); mcc.Parent = mClose
         local mcs = Instance.new("UIStroke")
         mcs.Color = Theme.AccentStroke
         mcs.Thickness = 1.0
-        mcs.Transparency = 0.50
+        mcs.Transparency = 0.35
+        mcs.LineJoinMode = Enum.LineJoinMode.Round
         mcs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         mcs.Parent = mClose
 
         local function open()
             modalOverlay.Visible = true
             modal.Visible = true
-            modal.Size = UDim2.new(0, 240, 0, 240)
-            modal.BackgroundTransparency = 0.5
-            TweenService:Create(modal, TweenInfo.new(0.20, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, 270, 0, 270),
-                BackgroundTransparency = 0
+            modal.Size = UDim2.new(0, 0, 0, 0)
+            TweenService:Create(modal, TweenInfo.new(0.20, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+                Size = UDim2.new(0, 270, 0, 270)
             }):Play()
         end
 
         local function close()
-            local tw = TweenService:Create(modal, TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-                Size = UDim2.new(0, 240, 0, 240),
-                BackgroundTransparency = 1
+            local tw = TweenService:Create(modal, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+                Size = UDim2.new(0, 0, 0, 0)
             })
             tw:Play()
             tw.Completed:Connect(function()
@@ -469,186 +650,254 @@ function PolarUI:MakeWindow(config)
         return { Modal = modal, Scroll = mScroll, Open = open, Close = close }
     end
 
-    -- Create Config Modal
+    -- Construct Config. Modal (exact replica matching user image)
     local configModal = createAuthenticModal("Config", "Config.", "rbxassetid://81151604784579")
     do
-        local themeBox = Instance.new("TextButton")
-        themeBox.Size = UDim2.new(1, -8, 0, 28)
-        themeBox.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
-        themeBox.BorderSizePixel = 0
-        themeBox.Text = "  Tema: Polar Onyx Bloom"
-        themeBox.Font = Enum.Font.GothamBold
-        themeBox.TextSize = 12
-        themeBox.TextColor3 = Theme.TextLight
-        themeBox.TextXAlignment = Enum.TextXAlignment.Left
-        themeBox.ZIndex = 2003
-        themeBox.Parent = configModal.Scroll
-        local tbc = Instance.new("UICorner"); tbc.CornerRadius = UDim.new(0, 6); tbc.Parent = themeBox
+        -- 1. Language Translator Box
+        local langBox = Instance.new("TextButton")
+        langBox.Size = UDim2.new(1, 0, 0, 28)
+        langBox.BackgroundColor3 = Color3.fromRGB(18, 13, 30)
+        langBox.BackgroundTransparency = 0.20
+        langBox.BorderSizePixel = 0
+        langBox.Text = "Language: English [EN]"
+        langBox.Font = Enum.Font.GothamBold
+        langBox.TextSize = 10
+        langBox.TextColor3 = Color3.fromRGB(215, 185, 255)
+        langBox.ZIndex = 2004
+        langBox.Parent = configModal.Scroll
+        local lbc = Instance.new("UICorner"); lbc.CornerRadius = UDim.new(0, 6); lbc.Parent = langBox
+        local lbs = Instance.new("UIStroke")
+        lbs.Color = Theme.AccentStroke
+        lbs.Thickness = 1
+        lbs.Transparency = 0.35
+        lbs.LineJoinMode = Enum.LineJoinMode.Round
+        lbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        lbs.Parent = langBox
 
+        -- 2. BG Image Fade Slider Box
         local fadeBox = Instance.new("Frame")
-        fadeBox.Size = UDim2.new(1, -8, 0, 48)
-        fadeBox.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
+        fadeBox.Size = UDim2.new(1, 0, 0, 48)
+        fadeBox.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
+        fadeBox.BackgroundTransparency = 0.20
         fadeBox.BorderSizePixel = 0
-        fadeBox.ZIndex = 2003
+        fadeBox.ZIndex = 2004
         fadeBox.Parent = configModal.Scroll
-        local fbc = Instance.new("UICorner"); fbc.CornerRadius = UDim.new(0, 6); fbc.Parent = fadeBox
+        local fbc = Instance.new("UICorner"); fbc.CornerRadius = UDim.new(0, 8); fbc.Parent = fadeBox
+        local fbs = Instance.new("UIStroke")
+        fbs.Color = Theme.AccentStroke
+        fbs.Thickness = 1
+        fbs.Transparency = 0.35
+        fbs.LineJoinMode = Enum.LineJoinMode.Round
+        fbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        fbs.Parent = fadeBox
 
         local flbl = Instance.new("TextLabel")
-        flbl.Position = UDim2.new(0, 10, 0, 6)
-        flbl.Size = UDim2.new(1, -50, 0, 16)
+        flbl.Position = UDim2.new(0, 14, 0, 6)
+        flbl.Size = UDim2.new(1, -70, 0, 14)
         flbl.BackgroundTransparency = 1
-        flbl.BorderSizePixel = 0
-        flbl.Text = "Escala de la Interfaz"
+        flbl.Text = "BG Image Fade"
         flbl.Font = Enum.Font.GothamBold
-        flbl.TextSize = 12
-        flbl.TextColor3 = Theme.TextLight
+        flbl.TextSize = 11
+        flbl.TextColor3 = Color3.fromRGB(215, 185, 255)
         flbl.TextXAlignment = Enum.TextXAlignment.Left
-        flbl.ZIndex = 2004
+        flbl.ZIndex = 2005
         flbl.Parent = fadeBox
 
         local fVal = Instance.new("TextLabel")
-        fVal.Position = UDim2.new(1, -45, 0, 6)
-        fVal.Size = UDim2.new(0, 35, 0, 16)
+        fVal.AnchorPoint = Vector2.new(1, 0)
+        fVal.Position = UDim2.new(1, -10, 0, 6)
+        fVal.Size = UDim2.new(0, 44, 0, 14)
         fVal.BackgroundTransparency = 1
-        fVal.BorderSizePixel = 0
-        fVal.Text = tostring(math.floor(PolarUI.CurrentScale * 100)) .. "%"
+        fVal.Text = "88%"
         fVal.Font = Enum.Font.GothamBold
         fVal.TextSize = 11
-        fVal.TextColor3 = Theme.Accent
-        fVal.ZIndex = 2004
+        fVal.TextColor3 = Color3.fromRGB(192, 132, 252)
+        fVal.TextXAlignment = Enum.TextXAlignment.Right
+        fVal.ZIndex = 2005
         fVal.Parent = fadeBox
 
         local fTrack = Instance.new("Frame")
-        fTrack.Position = UDim2.new(0, 10, 0, 28)
-        fTrack.Size = UDim2.new(1, -20, 0, 8)
-        fTrack.BackgroundColor3 = Color3.fromRGB(12, 10, 20)
+        fTrack.Position = UDim2.new(0, 12, 0, 28)
+        fTrack.Size = UDim2.new(1, -24, 0, 10)
+        fTrack.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
         fTrack.BorderSizePixel = 0
-        fTrack.ZIndex = 2004
+        fTrack.ZIndex = 2005
         fTrack.Parent = fadeBox
         local ftc = Instance.new("UICorner"); ftc.CornerRadius = UDim.new(1, 0); ftc.Parent = fTrack
+        local fts = Instance.new("UIStroke")
+        fts.Color = Theme.TrackStroke
+        fts.Thickness = 1
+        fts.Transparency = 0.50
+        fts.LineJoinMode = Enum.LineJoinMode.Round
+        fts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        fts.Parent = fTrack
 
         local fFill = Instance.new("Frame")
-        fFill.Size = UDim2.new(0.65, 0, 1, 0)
-        fFill.BackgroundColor3 = Theme.Accent
+        fFill.Size = UDim2.new(0.88, 0, 1, 0)
+        fFill.BackgroundColor3 = Theme.AccentGlow
         fFill.BorderSizePixel = 0
-        fFill.ZIndex = 2005
+        fFill.ZIndex = 2006
         fFill.Parent = fTrack
         local ffc = Instance.new("UICorner"); ffc.CornerRadius = UDim.new(1, 0); ffc.Parent = fFill
+        local ffg = Instance.new("UIGradient"); ffg.Color = LavenderGradient; ffg.Parent = fFill
 
+        local fThumb = Instance.new("Frame")
+        fThumb.AnchorPoint = Vector2.new(0.5, 0.5)
+        fThumb.Position = UDim2.new(0.88, 0, 0.5, 0)
+        fThumb.Size = UDim2.new(0, 12, 0, 12)
+        fThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        fThumb.BorderSizePixel = 0
+        fThumb.ZIndex = 2007
+        fThumb.Parent = fTrack
+        local ftcc = Instance.new("UICorner"); ftcc.CornerRadius = UDim.new(1, 0); ftcc.Parent = fThumb
+
+        PolarUI:RegisterTranslatable(flbl, "BG Image Fade", "Opacidad de Fondo")
+
+        -- 3. UI Font Section Header
         local fontHdr = Instance.new("TextLabel")
-        fontHdr.Size = UDim2.new(1, -8, 0, 18)
+        fontHdr.Size = UDim2.new(1, 0, 0, 16)
         fontHdr.BackgroundTransparency = 1
-        fontHdr.BorderSizePixel = 0
-        fontHdr.Text = "Tipografía Oficial: GothamBold"
+        fontHdr.Text = "UI Font"
         fontHdr.Font = Enum.Font.GothamBold
-        fontHdr.TextSize = 11
-        fontHdr.TextColor3 = Color3.fromRGB(180, 175, 200)
+        fontHdr.TextSize = 10
+        fontHdr.TextColor3 = Color3.fromRGB(150, 105, 220)
         fontHdr.TextXAlignment = Enum.TextXAlignment.Center
-        fontHdr.ZIndex = 2003
+        fontHdr.ZIndex = 2004
         fontHdr.Parent = configModal.Scroll
+        PolarUI:RegisterTranslatable(fontHdr, "UI Font", "Fuente de Interfaz")
+
+        -- 4. Font Option: ✓ Gotham (Active)
+        local gothamBtn = Instance.new("TextButton")
+        gothamBtn.Size = UDim2.new(1, 0, 0, 26)
+        gothamBtn.BackgroundColor3 = Color3.fromRGB(30, 18, 52)
+        gothamBtn.BackgroundTransparency = 0.20
+        gothamBtn.BorderSizePixel = 0
+        gothamBtn.Text = "✓ Gotham"
+        gothamBtn.Font = Enum.Font.GothamBold
+        gothamBtn.TextSize = 11
+        gothamBtn.TextColor3 = Color3.fromRGB(215, 185, 255)
+        gothamBtn.ZIndex = 2004
+        gothamBtn.Parent = configModal.Scroll
+        local gbc = Instance.new("UICorner"); gbc.CornerRadius = UDim.new(0, 5); gbc.Parent = gothamBtn
+        local gbs = Instance.new("UIStroke")
+        gbs.Color = Theme.AccentStroke
+        gbs.Thickness = 1
+        gbs.Transparency = 0.35
+        gbs.LineJoinMode = Enum.LineJoinMode.Round
+        gbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        gbs.Parent = gothamBtn
+
+        -- Language translator toggle
+        local isEnglish = (PolarUI.Language == "EN")
+        langBox.MouseButton1Click:Connect(function()
+            isEnglish = not isEnglish
+            local targetLang = isEnglish and "EN" or "ES"
+            langBox.Text = isEnglish and "Language: English [EN]" or "Idioma: Español [ES]"
+            PolarUI:SetLanguage(targetLang)
+        end)
     end
 
-    -- Create Credits Modal
+    -- Construct Credits Modal (exact replica matching user image)
     local creditsModal = createAuthenticModal("Credits", "Credits", "rbxassetid://83474083071373")
     do
         local teamHdr = Instance.new("TextLabel")
-        teamHdr.Size = UDim2.new(1, -8, 0, 18)
+        teamHdr.Size = UDim2.new(1, 0, 0, 14)
         teamHdr.BackgroundTransparency = 1
-        teamHdr.BorderSizePixel = 0
-        teamHdr.Text = "Equipo Polar Hub"
+        teamHdr.Text = "TEAM"
         teamHdr.Font = Enum.Font.GothamBold
-        teamHdr.TextSize = 12
-        teamHdr.TextColor3 = Theme.Accent
-        teamHdr.TextXAlignment = Enum.TextXAlignment.Left
-        teamHdr.ZIndex = 2003
+        teamHdr.TextSize = 9
+        teamHdr.TextColor3 = Color3.fromRGB(150, 105, 220)
+        teamHdr.TextXAlignment = Enum.TextXAlignment.Center
+        teamHdr.ZIndex = 2004
         teamHdr.Parent = creditsModal.Scroll
 
-        local members = {
-            { name = "Polar", role = "Lead Developer", tag = "P" },
-            { name = "Polar Hub Team", role = "Powerhouse Core", tag = "H" },
-            { name = "Community", role = "Testers & Feedback", tag = "C" }
+        local team = {
+            { letter = "V", name = "Vin", role = "ServerOwner", color = Color3.fromRGB(255, 200, 80) },
+            { letter = "F", name = "Flazhy", role = "MainDeveloper", color = Color3.fromRGB(175, 115, 255) },
+            { letter = "K", name = "Kiel", role = "WebDesigner", color = Color3.fromRGB(100, 200, 255) },
+            { letter = "P", name = "Polar", role = "LeadDeveloper", color = Color3.fromRGB(0, 229, 255) },
+            { letter = "A", name = "Ans", role = "CoreEngine", color = Color3.fromRGB(175, 115, 255) }
         }
 
-        for _, m in ipairs(members) do
+        for _, member in ipairs(team) do
             local card = Instance.new("Frame")
-            card.Size = UDim2.new(1, -8, 0, 36)
-            card.BackgroundColor3 = Color3.fromRGB(18, 15, 28)
+            card.Size = UDim2.new(1, 0, 0, 50)
+            card.BackgroundColor3 = Color3.fromRGB(10, 7, 18)
             card.BorderSizePixel = 0
-            card.ZIndex = 2003
+            card.ZIndex = 2004
             card.Parent = creditsModal.Scroll
-            local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 6); cc.Parent = card
-
+            local cc = Instance.new("UICorner"); cc.CornerRadius = UDim.new(0, 8); cc.Parent = card
             local cs = Instance.new("UIStroke")
-            cs.Color = Theme.AccentStroke
-            cs.Thickness = 1.0
-            cs.Transparency = 0.65
+            cs.Color = member.color
+            cs.Thickness = 1
+            cs.Transparency = 0.50
+            cs.LineJoinMode = Enum.LineJoinMode.Round
             cs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             cs.Parent = card
 
+            -- Avatar Badge
             local av = Instance.new("Frame")
-            av.Position = UDim2.new(0, 6, 0.5, -11)
-            av.Size = UDim2.new(0, 22, 0, 22)
-            av.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+            av.Position = UDim2.new(0, 10, 0.5, -16)
+            av.Size = UDim2.new(0, 32, 0, 32)
+            av.BackgroundColor3 = Color3.fromRGB(25, 18, 40)
             av.BorderSizePixel = 0
-            av.ZIndex = 2004
+            av.ZIndex = 2005
             av.Parent = card
             local avc = Instance.new("UICorner"); avc.CornerRadius = UDim.new(1, 0); avc.Parent = av
-
             local avl = Instance.new("TextLabel")
             avl.Size = UDim2.new(1, 0, 1, 0)
             avl.BackgroundTransparency = 1
-            avl.BorderSizePixel = 0
-            avl.Text = m.tag
+            avl.Text = member.letter
             avl.Font = Enum.Font.GothamBold
-            avl.TextSize = 11
-            avl.TextColor3 = Theme.Accent
-            avl.ZIndex = 2005
+            avl.TextSize = 16
+            avl.TextColor3 = member.color
+            avl.ZIndex = 2006
             avl.Parent = av
 
+            -- Name
             local nl = Instance.new("TextLabel")
-            nl.Position = UDim2.new(0, 36, 0, 0)
-            nl.Size = UDim2.new(0.5, 0, 1, 0)
+            nl.Position = UDim2.new(0, 50, 0, 8)
+            nl.Size = UDim2.new(1, -120, 0, 16)
             nl.BackgroundTransparency = 1
-            nl.BorderSizePixel = 0
-            nl.Text = m.name
+            nl.Text = member.name
             nl.Font = Enum.Font.GothamBold
-            nl.TextSize = 12
-            nl.TextColor3 = Theme.TextWhite
+            nl.TextSize = 13
+            nl.TextColor3 = Color3.fromRGB(240, 235, 255)
             nl.TextXAlignment = Enum.TextXAlignment.Left
-            nl.ZIndex = 2004
+            nl.ZIndex = 2005
             nl.Parent = card
 
+            -- Role Badge
             local rb = Instance.new("Frame")
             rb.AnchorPoint = Vector2.new(1, 0.5)
-            rb.Position = UDim2.new(1, -6, 0.5, 0)
-            rb.Size = UDim2.new(0, 74, 0, 18)
-            rb.BackgroundColor3 = Color3.fromRGB(28, 22, 42)
+            rb.Position = UDim2.new(1, -8, 0.5, 0)
+            rb.Size = UDim2.new(0, 76, 0, 20)
+            rb.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
             rb.BorderSizePixel = 0
-            rb.ZIndex = 2004
+            rb.ZIndex = 2005
             rb.Parent = card
-            local rbc = Instance.new("UICorner"); rbc.CornerRadius = UDim.new(0, 4); rbc.Parent = rb
-
+            local rbc = Instance.new("UICorner"); rbc.CornerRadius = UDim.new(0, 5); rbc.Parent = rb
             local rbl = Instance.new("TextLabel")
             rbl.Size = UDim2.new(1, 0, 1, 0)
             rbl.BackgroundTransparency = 1
-            rbl.BorderSizePixel = 0
-            rbl.Text = m.role
+            rbl.Text = member.role
             rbl.Font = Enum.Font.GothamBold
-            rbl.TextSize = 8
-            rbl.TextColor3 = Theme.Accent
-            rbl.ZIndex = 2005
+            rbl.TextSize = 9
+            rbl.TextColor3 = member.color
+            rbl.ZIndex = 2006
             rbl.Parent = rb
         end
     end
 
-    -- Header Pill Button Builder ("Config.", "Credits")
+    -- Header Button Builder (Config. & Credits matching user screenshot 5)
     local function createHeaderPillButton(name, text, iconId, xOffset, onClick)
         local btn = Instance.new("TextButton")
         btn.Name = name
-        btn.AnchorPoint = Vector2.new(1, 0.5)
-        btn.Position = UDim2.new(1, xOffset, 0, 16)
+        btn.AnchorPoint = Vector2.new(1, 0)
+        btn.Position = UDim2.new(1, xOffset, 0, 4)
         btn.Size = UDim2.new(0, 83, 0, 23)
-        btn.BackgroundColor3 = Theme.PillBadge
+        btn.BackgroundColor3 = Color3.fromRGB(14, 10, 22)
+        btn.BackgroundTransparency = 0
         btn.BorderSizePixel = 0
         btn.Text = ""
         btn.ZIndex = 206
@@ -664,46 +913,51 @@ function PolarUI:MakeWindow(config)
         bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         bs.Parent = btn
 
+        -- Left Vertical Neon Gradient Strip (thin 2px, violet gradient - zero blue, zero CyberGradient)
         local strip = Instance.new("Frame")
-        strip.Position = UDim2.new(0, 1, 0, 2)
-        strip.Size = UDim2.new(0, 4, 1, -4)
+        strip.Position = UDim2.new(0, 0, 0.5, -7)
+        strip.Size = UDim2.new(0, 2, 0, 14)
+        strip.BackgroundColor3 = Color3.fromRGB(160, 100, 240)
         strip.BorderSizePixel = 0
         strip.ZIndex = 207
         strip.Parent = btn
-
-        local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(0, 2); sc.Parent = strip
-
+        local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(1, 0); sc.Parent = strip
         local sg = Instance.new("UIGradient")
-        sg.Color = CyberGradient
         sg.Rotation = 90
+        sg.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 160, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 60, 220))
+        })
         sg.Parent = strip
 
+        -- Icon
         local icon = Instance.new("ImageLabel")
-        icon.Position = UDim2.new(0, 10, 0.5, -6)
-        icon.Size = UDim2.new(0, 12, 0, 12)
+        icon.Position = UDim2.new(0, 8, 0.5, -7)
+        icon.Size = UDim2.new(0, 14, 0, 14)
         icon.BackgroundTransparency = 1
         icon.BorderSizePixel = 0
         icon.Image = iconId
-        icon.ImageColor3 = Theme.Accent
+        icon.ImageColor3 = Color3.fromRGB(185, 140, 255)
         icon.ZIndex = 207
         icon.Parent = btn
 
+        -- Label
         local lbl = Instance.new("TextLabel")
-        lbl.Position = UDim2.new(0, 25, 0, 0)
-        lbl.Size = UDim2.new(1, -26, 1, 0)
+        lbl.Position = UDim2.new(0, 27, 0, 0)
+        lbl.Size = UDim2.new(1, -30, 1, 0)
         lbl.BackgroundTransparency = 1
         lbl.BorderSizePixel = 0
         lbl.Text = text
         lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 11
-        lbl.TextColor3 = Theme.TextWhite
+        lbl.TextColor3 = Color3.fromRGB(195, 155, 255)
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.ZIndex = 207
         lbl.Parent = btn
 
-        btn.MouseButton1Click:Connect(function()
-            if onClick then onClick() end
-        end)
+        if onClick then
+            btn.MouseButton1Click:Connect(onClick)
+        end
 
         return btn
     end
@@ -922,6 +1176,7 @@ function PolarUI:MakeTab(tabConfig)
     btn.TextXAlignment = Enum.TextXAlignment.Right
     btn.ZIndex = 207
     btn.Parent = self.TabScroll
+    PolarUI:RegisterTranslatable(btn, tabTitle)
 
     local btnPad = Instance.new("UIPadding")
     btnPad.PaddingRight = UDim.new(0, 4)
@@ -1111,6 +1366,7 @@ function PolarUI:AddSection(sectionConfig)
     title.TextXAlignment = Enum.TextXAlignment.Center
     title.ZIndex = 210
     title.Parent = subheader
+    PolarUI:RegisterTranslatable(title, titleText)
 
     -- Flanking Cyber Gradient Lines (60-degree rotation)
     local function createCyberLine(pos)
@@ -1181,7 +1437,10 @@ function PolarUI:AddToggle(cfg, def, cb, overrideParent)
     local innerParent = resolveParent(self, overrideParent)
     local isToggled = defaultVal or false
     local isMultiLine = desc and #desc > 30
-    local height = isMultiLine and 63 or (desc and 42 or 32)
+    local isLongDesc = desc and #desc > 60
+    local hasLongTitle = #name > 26
+    local height = isLongDesc and 72 or (isMultiLine and 56 or (desc and 42 or 32))
+    if hasLongTitle and desc then height = height + 10 end
     local ord = (innerParent:GetAttribute("Order") or 1) + 1
     innerParent:SetAttribute("Order", ord)
 
@@ -1200,39 +1459,37 @@ function PolarUI:AddToggle(cfg, def, cb, overrideParent)
 
     local tLabel = Instance.new("TextLabel")
     tLabel.Position = UDim2.new(0, 10, 0, desc and 4 or 0)
-    tLabel.Size = UDim2.new(1, -66, 0, desc and 18 or height)
+    tLabel.Size = UDim2.new(1, -66, 0, desc and (hasLongTitle and 26 or 16) or height)
     tLabel.BackgroundTransparency = 1
     tLabel.BorderSizePixel = 0
     tLabel.Text = name
     tLabel.Font = Enum.Font.GothamBold
-    tLabel.TextSize = 13
-    tLabel.TextScaled = true
+    tLabel.TextSize = 12
+    tLabel.TextWrapped = true
     tLabel.TextColor3 = isToggled and Theme.TextWhite or Theme.TextMuted
     tLabel.TextXAlignment = Enum.TextXAlignment.Left
+    tLabel.TextYAlignment = desc and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center
     tLabel.ZIndex = 211
     tLabel.Parent = btn
-
-    local tlc = Instance.new("UITextSizeConstraint")
-    tlc.MaxTextSize = 13
-    tlc.MinTextSize = 8
-    tlc.Parent = tLabel
+    PolarUI:RegisterTranslatable(tLabel, name, (type(cfg) == "table" and (cfg.ES or cfg.Spanish)))
 
     if desc then
         local dLabel = Instance.new("TextLabel")
         dLabel.Name = "DescLabel"
-        dLabel.Position = UDim2.new(0, 10, 0, 22)
-        dLabel.Size = UDim2.new(1, -60, 0, isMultiLine and 35 or 14)
+        dLabel.Position = UDim2.new(0, 10, 0, hasLongTitle and 30 or 20)
+        dLabel.Size = UDim2.new(1, -60, 0, isLongDesc and 40 or (isMultiLine and 28 or 14))
         dLabel.BackgroundTransparency = 1
         dLabel.BorderSizePixel = 0
         dLabel.Text = desc
         dLabel.Font = Enum.Font.Gotham
-        dLabel.TextSize = 11
+        dLabel.TextSize = 10
         dLabel.TextColor3 = Theme.TextDesc
         dLabel.TextXAlignment = Enum.TextXAlignment.Left
         dLabel.TextYAlignment = Enum.TextYAlignment.Top
         dLabel.TextWrapped = true
         dLabel.ZIndex = 211
         dLabel.Parent = btn
+        PolarUI:RegisterTranslatable(dLabel, desc, (type(cfg) == "table" and (cfg.DescES or cfg.SpanishDesc)))
     end
 
     -- Switch Capsule (36x18)
@@ -1313,10 +1570,20 @@ end
 function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     local name, minVal, maxVal, defaultVal, callback
     if type(cfg) == "table" then
-        name = cfg.Name or cfg.Title or cfg[1]
-        minVal = cfg.MinValue or cfg.Min or 0
-        maxVal = cfg.MaxValue or cfg.Max or 100
-        defaultVal = cfg.Default or cfg.Value or minVal
+        name = cfg.Name or cfg.Title or cfg[1] or "Slider"
+        if type(cfg.Default) == "table" then
+            minVal = cfg.Default.Min or cfg.Default.MinValue or cfg.Default[1] or 0
+            maxVal = cfg.Default.Max or cfg.Default.MaxValue or cfg.Default[2] or 100
+            defaultVal = cfg.Default.Default or cfg.Default.Value or cfg.Default[3] or minVal
+        elseif type(cfg.Value) == "table" then
+            minVal = cfg.Value.Min or cfg.Value.MinValue or 0
+            maxVal = cfg.Value.Max or cfg.Value.MaxValue or 100
+            defaultVal = cfg.Value.Default or cfg.Value.Value or minVal
+        else
+            minVal = cfg.MinValue or cfg.Min or cfg[2] or 0
+            maxVal = cfg.MaxValue or cfg.Max or cfg[3] or 100
+            defaultVal = cfg.Default or cfg.Value or cfg[5] or minVal
+        end
         callback = cfg.Callback or function() end
     else
         name = tostring(cfg)
@@ -1326,8 +1593,12 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
         callback = cb or function() end
     end
 
+    minVal = tonumber(minVal) or 0
+    maxVal = tonumber(maxVal) or 100
+    defaultVal = tonumber(defaultVal) or minVal
+
     local innerParent = resolveParent(self, overrideParent)
-    local currentVal = defaultVal or minVal
+    local currentVal = defaultVal
     local ord = (innerParent:GetAttribute("Order") or 1) + 1
     innerParent:SetAttribute("Order", ord)
 
@@ -1355,6 +1626,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.ZIndex = 211
     title.Parent = frame
+    PolarUI:RegisterTranslatable(title, name, (type(cfg) == "table" and (cfg.ES or cfg.Spanish)))
 
     -- Number Badge TextBox ({0, 46}, {0, 20} with #C084FC outline)
     local valBox = Instance.new("TextBox")
@@ -1520,10 +1792,11 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     local ord = (innerParent:GetAttribute("Order") or 1) + 1
     innerParent:SetAttribute("Order", ord)
 
+    local isLongName = #name > 24
     local frame = Instance.new("Frame")
     frame.Name = "Dropdown_" .. name
     frame.LayoutOrder = ord
-    frame.Size = UDim2.new(1, -25, 0, 36)
+    frame.Size = UDim2.new(1, -25, 0, isLongName and 44 or 34)
     frame.BackgroundColor3 = Theme.ControlRow
     frame.BackgroundTransparency = 0.40
     frame.BorderSizePixel = 0
@@ -1534,28 +1807,24 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
 
     local tLabel = Instance.new("TextLabel")
     tLabel.Position = UDim2.new(0, 10, 0, 0)
-    tLabel.Size = UDim2.new(0.5, -10, 1, 0)
+    tLabel.Size = UDim2.new(1, -92, 1, 0)
     tLabel.BackgroundTransparency = 1
     tLabel.BorderSizePixel = 0
     tLabel.Text = name
     tLabel.Font = Enum.Font.GothamBold
-    tLabel.TextSize = 13
-    tLabel.TextScaled = true
+    tLabel.TextSize = 11
+    tLabel.TextWrapped = true
     tLabel.TextColor3 = Theme.TextWhite
     tLabel.TextXAlignment = Enum.TextXAlignment.Left
     tLabel.ZIndex = 211
     tLabel.Parent = frame
-
-    local tcConstraint = Instance.new("UITextSizeConstraint")
-    tcConstraint.MaxTextSize = 13
-    tcConstraint.MinTextSize = 9
-    tcConstraint.Parent = tLabel
+    PolarUI:RegisterTranslatable(tLabel, name, (type(cfg) == "table" and (cfg.ES or cfg.Spanish)))
 
     -- PillBadge Button with #C084FC border
     local pillBadge = Instance.new("Frame")
     pillBadge.AnchorPoint = Vector2.new(1, 0.5)
     pillBadge.Position = UDim2.new(1, -8, 0.5, 0)
-    pillBadge.Size = UDim2.new(0.5, 0, 0, 24)
+    pillBadge.Size = UDim2.new(0, 76, 0, 22)
     pillBadge.BackgroundColor3 = Theme.PillBadge
     pillBadge.BorderSizePixel = 0
     pillBadge.ZIndex = 211
@@ -1736,9 +2005,14 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
         Instance = frame,
         Name = name,
         Set = function(_, optVal)
-            selectedVal = optVal
-            valLabel.Text = tostring(optVal)
-            callback(optVal)
+            if type(optVal) == "table" then
+                options = optVal
+                rebuildOptions(optVal)
+            else
+                selectedVal = optVal
+                valLabel.Text = tostring(optVal)
+                callback(optVal)
+            end
         end,
         SetValues = function(_, newOptions)
             options = newOptions
@@ -1796,6 +2070,7 @@ function PolarUI:AddButton(cfg, cb, overrideParent)
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.ZIndex = 211
     lbl.Parent = btn
+    PolarUI:RegisterTranslatable(lbl, name, (type(cfg) == "table" and (cfg.ES or cfg.Spanish)))
 
     local lcConstraint = Instance.new("UITextSizeConstraint")
     lcConstraint.MaxTextSize = 13
@@ -1897,6 +2172,7 @@ function PolarUI:AddParagraph(cfg, textArg, overrideParent)
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
     titleLbl.ZIndex = 211
     titleLbl.Parent = card
+    PolarUI:RegisterTranslatable(titleLbl, titleText, (type(cfg) == "table" and (cfg.TitleES or cfg.ES)))
 
     local div = Instance.new("Frame")
     div.Name = "Divider"

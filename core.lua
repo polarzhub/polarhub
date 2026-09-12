@@ -2396,98 +2396,96 @@ getgenv().PolarBuyItem = BuyItem
 
 
 -- ===== TAB FARM =====
-TabFarm:AddSection("Configuración de Combate")
+TabFarm:AddSection("Combat Settings")
 
 TabFarm:AddDropdown({
- Name = "Farm Tool (Arma)",
- Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
- Default = "Melee",
- Callback = function(Value)
- SelectedWeaponType = Value
- end
+	Name = "Farm Tool",
+	Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
+	Default = "Melee",
+	Callback = function(Value)
+		SelectedWeaponType = Value
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Auto Mastery Inteligente",
- Desc = "Baja la vida con tu Farm Tool, y remata (cuando le quede < 20%) con el arma que elijas abajo.",
- Callback = function(Value)
- AutoMasteryEnabled = Value
- end
+	Name = "Smart Mastery",
+	Desc = "Finishes mob with secondary weapon",
+	Callback = function(Value)
+		AutoMasteryEnabled = Value
+	end
 })
 
 TabFarm:AddDropdown({
- Name = "Arma a Masterizar (Auto Mastery)",
- Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
- Default = "Sword",
- Callback = function(Value)
- AutoMasteryItem = Value
- end
+	Name = "Mastery Weapon",
+	Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
+	Default = "Sword",
+	Callback = function(Value)
+		AutoMasteryItem = Value
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Auto Skills",
- Desc = "Usa las habilidades Z, X, C, V, F automáticamente mientras farmeas.",
- Callback = function(Value)
- AutoSkillsEnabled = Value
- end
+	Name = "Auto Skills",
+	Desc = "Cast skills while farming",
+	Callback = function(Value)
+		AutoSkillsEnabled = Value
+	end
 })
 
-TabFarm:AddSection("Auto Farm Automático")
+TabFarm:AddSection("Auto Farm")
 
 TabFarm:AddToggle({
- Name = "Auto Farm Nivel (100% Automático)",
- Desc = "Detecta nivel, vuela a la isla, toma misión y ataca.",
- Callback = function(Value)
- AutoFarmEnabled = Value
- getgenv().PolarFastAttackEnabled = Value
- end
-})
-
-TabFarm:AddToggle({
- Name = "Auto Chest (Farm Beli)",
- Callback = function(Value)
- AutoChestEnabled = Value
- end
+	Name = "Auto Farm Level",
+	Callback = function(Value)
+		AutoFarmEnabled = Value
+		getgenv().PolarFastAttackEnabled = Value
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Auto Farm Nearest (Masacre Total)",
- Desc = "Ignora misiones y niveles. Aniquila al NPC más cercano en la isla actual. Exterminio masivo.",
- Callback = function(Value)
- AutoFarmNearestEnabled = Value
- getgenv().PolarFastAttackEnabled = Value
- end
+	Name = "Auto Chest",
+	Callback = function(Value)
+		AutoChestEnabled = Value
+	end
+})
+
+TabFarm:AddToggle({
+	Name = "Farm Nearest",
+	Callback = function(Value)
+		AutoFarmNearestEnabled = Value
+		getgenv().PolarFastAttackEnabled = Value
+	end
 })
 
 -- ==================== TAB FARM (BOSS SECTION) ====================
 -- ===== TAB STATS =====
-TabStats:AddSection("Mejoras de Jugador")
+TabStats:AddSection("Player Enhancements")
 
 TabStats:AddToggle({
- Name = "Player & NPC ESP",
- Callback = function(Value)
- ESPEnabled = Value
- if UpdateESPState then UpdateESPState() end
- end
+	Name = "Player & Mob ESP",
+	Callback = function(Value)
+		ESPEnabled = Value
+		if UpdateESPState then UpdateESPState() end
+	end
 })
 
 TabStats:AddToggle({
- Name = "Auto Haki (Buso)",
- Default = true,
- Callback = function(Value)
- AutoHakiEnabled = Value
- end
+	Name = "Auto Buso Haki",
+	Default = true,
+	Callback = function(Value)
+		AutoHakiEnabled = Value
+	end
 })
 
-TabStats:AddSection("Auto Stats Equitativo")
+TabStats:AddSection("Distribute Stats")
 
 local function ToggleStat(statName, value)
- if value then
- if not table.find(activeStats, statName) then table.insert(activeStats, statName) end
- else
- local idx = table.find(activeStats, statName)
- if idx then table.remove(activeStats, idx) end
- end
+	if value then
+		if not table.find(activeStats, statName) then table.insert(activeStats, statName) end
+	else
+		local idx = table.find(activeStats, statName)
+		if idx then table.remove(activeStats, idx) end
+	end
 end
 
 TabStats:AddToggle({ Name = "Melee", Callback = function(v) ToggleStat("Melee", v) end })
@@ -2497,105 +2495,106 @@ TabStats:AddToggle({ Name = "Gun", Callback = function(v) ToggleStat("Gun", v) e
 TabStats:AddToggle({ Name = "Demon Fruit", Callback = function(v) ToggleStat("Demon Fruit", v) end })
 
 TabStats:AddToggle({
- Name = "Activar Auto Stats",
- Desc = "Divide tus puntos equitativamente.",
- Callback = function(Value)
- AutoStatsEnabled = Value
- end
+	Name = "Auto Assign Stats",
+	Desc = "Evenly distribute stat points",
+	Callback = function(Value)
+		AutoStatsEnabled = Value
+	end
 })
 
 
 -- ===== TAB STATUS =====
-TabStatus:AddSection("Telemetría del Servidor")
+TabStatus:AddSection("Server Telemetry")
 
 local LabelServerUptime = TabStatus:AddParagraph({
- Title = "Tiempo de Vida del Servidor",
- Text = "Calculando..."
+	Title = "Server Uptime",
+	Text = "Calculating..."
 })
 
 local LabelPlayerTime = TabStatus:AddParagraph({
- Title = "Tiempo en Sesión (Jugador)",
- Text = "Calculando..."
+	Title = "Session Time",
+	Text = "Calculating..."
 })
 
 local telemetryStartTime = os.time()
 local function FormatTelemetryDuration(seconds)
- local h = math.floor(seconds / 3600)
- local m = math.floor((seconds % 3600) / 60)
- local s = math.floor(seconds % 60)
- return string.format("%02d:%02d:%02d", h, m, s)
+	local h = math.floor(seconds / 3600)
+	local m = math.floor((seconds % 3600) / 60)
+	local s = math.floor(seconds % 60)
+	return string.format("%02d:%02d:%02d", h, m, s)
 end
 
 task.spawn(function()
- while true do
- task.wait(5)
- pcall(function()
- local serverUptime = workspace.DistributedGameTime
- local sessionTime = os.time() - telemetryStartTime
- if LabelServerUptime and LabelServerUptime.SetDesc then
- LabelServerUptime:SetDesc(FormatTelemetryDuration(serverUptime))
- elseif LabelServerUptime and LabelServerUptime.Set then
- LabelServerUptime:Set(FormatTelemetryDuration(serverUptime))
- end
- if LabelPlayerTime and LabelPlayerTime.SetDesc then
- LabelPlayerTime:SetDesc(FormatTelemetryDuration(sessionTime))
- elseif LabelPlayerTime and LabelPlayerTime.Set then
- LabelPlayerTime:Set(FormatTelemetryDuration(sessionTime))
- end
- end)
- end
+	while true do
+		task.wait(5)
+		pcall(function()
+			local serverUptime = workspace.DistributedGameTime
+			local sessionTime = os.time() - telemetryStartTime
+			if LabelServerUptime and LabelServerUptime.SetDesc then
+				LabelServerUptime:SetDesc(FormatTelemetryDuration(serverUptime))
+			elseif LabelServerUptime and LabelServerUptime.Set then
+				LabelServerUptime:Set(FormatTelemetryDuration(serverUptime))
+			end
+			if LabelPlayerTime and LabelPlayerTime.SetDesc then
+				LabelPlayerTime:SetDesc(FormatTelemetryDuration(sessionTime))
+			elseif LabelPlayerTime and LabelPlayerTime.Set then
+				LabelPlayerTime:Set(FormatTelemetryDuration(sessionTime))
+			end
+		end)
+	end
 end)
 
 -- ===== TAB SHOP =====
-TabShop:AddSection("Habilidades (Bypass Distancia)")
-TabShop:AddButton({ Name = "Comprar Geppo (Skyjump) - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })
-TabShop:AddButton({ Name = "Comprar Buso (Aura) - $25k", Callback = function() BuyItem("BuyHaki", "Buso", nil, "Ability Teacher") end })
-TabShop:AddButton({ Name = "Comprar Soru (Flash Step) - $100k", Callback = function() BuyItem("BuyHaki", "Soru", nil, "Ability Teacher") end })
-TabShop:AddButton({ Name = "Comprar Ken Haki (Observation) - $750k", Callback = function() BuyItem("KenTalk", "Buy", nil, "Instinct Teacher") end })
+TabShop:AddSection("Abilities")
+TabShop:AddButton({ Name = "Buy Geppo - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Buy Buso - $25k", Callback = function() BuyItem("BuyHaki", "Buso", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Buy Soru - $100k", Callback = function() BuyItem("BuyHaki", "Soru", nil, "Ability Teacher") end })
+TabShop:AddButton({ Name = "Buy Ken Haki - $750k", Callback = function() BuyItem("KenTalk", "Buy", nil, "Instinct Teacher") end })
 
-TabShop:AddSection("Estilos de Pelea (Ghost TP Bypass)")
-TabShop:AddButton({ Name = "Dark Step (Teacher) - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
-TabShop:AddButton({ Name = "Electro (Mad Scientist) - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
-TabShop:AddButton({ Name = "Water Kung Fu (Teacher) - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
+TabShop:AddSection("Fighting Styles")
+TabShop:AddButton({ Name = "Dark Step - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
+TabShop:AddButton({ Name = "Electro - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
+TabShop:AddButton({ Name = "Water Kung Fu - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
 
-TabShop:AddSection("Espadas Avanzadas (Sword Dealer)")
-TabShop:AddButton({ Name = "Katana Clásica - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
+TabShop:AddSection("Swords")
+TabShop:AddButton({ Name = "Katana - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
 TabShop:AddButton({ Name = "Dual Katana - $12k", Callback = function() BuyItem("BuyItem", "Dual Katana", nil, "Sword Dealer") end })
 TabShop:AddButton({ Name = "Iron Mace - $25k", Callback = function() BuyItem("BuyItem", "Iron Mace", nil, "Sword Dealer") end })
 TabShop:AddButton({ Name = "Triple Katana - $60k", Callback = function() BuyItem("BuyItem", "Triple Katana", nil, "Sword Dealer") end })
-TabShop:AddButton({ Name = "Pipe (Tubería) - $100k", Callback = function() BuyItem("BuyItem", "Pipe", nil, "Sword Dealer") end })
-TabShop:AddButton({ Name = "Soul Cane (Bastón) - $750k", Callback = function() BuyItem("BuyItem", "Soul Cane", nil, "Living Skeleton") end })
-TabShop:AddButton({ Name = "Bisento (Barbablanca) - $1M", Callback = function() BuyItem("BuyItem", "Bisento", nil, "Master Sword Dealer") end })
+TabShop:AddButton({ Name = "Pipe - $100k", Callback = function() BuyItem("BuyItem", "Pipe", nil, "Sword Dealer") end })
+TabShop:AddButton({ Name = "Soul Cane - $750k", Callback = function() BuyItem("BuyItem", "Soul Cane", nil, "Living Skeleton") end })
+TabShop:AddButton({ Name = "Bisento - $1M", Callback = function() BuyItem("BuyItem", "Bisento", nil, "Master Sword Dealer") end })
 
-TabShop:AddSection("Armas de Fuego (Weapon Dealer)")
-TabShop:AddButton({ Name = "Slingshot (Resortera) - $5k", Callback = function() BuyItem("BuyItem", "Slingshot", nil, "Weapon Dealer") end })
-TabShop:AddButton({ Name = "Musket (Mosquete) - $8k", Callback = function() BuyItem("BuyItem", "Musket", nil, "Weapon Dealer") end })
-TabShop:AddButton({ Name = "Flintlock (Pistola) - $10k", Callback = function() BuyItem("BuyItem", "Flintlock", nil, "Weapon Dealer") end })
+TabShop:AddSection("Guns")
+TabShop:AddButton({ Name = "Slingshot - $5k", Callback = function() BuyItem("BuyItem", "Slingshot", nil, "Weapon Dealer") end })
+TabShop:AddButton({ Name = "Musket - $8k", Callback = function() BuyItem("BuyItem", "Musket", nil, "Weapon Dealer") end })
+TabShop:AddButton({ Name = "Flintlock - $10k", Callback = function() BuyItem("BuyItem", "Flintlock", nil, "Weapon Dealer") end })
 
 
 -- ===== TAB QUEST FARM =====
 
 -- ===== TAB TELEPORT =====
-TabTeleport:AddSection("Viajes Dinámicos")
+TabTeleport:AddSection("Island Teleport")
 
-local SelectedIsland = ""TabTeleport:AddDropdown({
- Name = "Isla a Volar",
- Options = ScanIslands(),
- Callback = function(Value)
- SelectedIsland = Value
- end
+local SelectedIsland = ""
+TabTeleport:AddDropdown({
+	Name = "Select Island",
+	Options = ScanIslands(),
+	Callback = function(Value)
+		SelectedIsland = Value
+	end
 })
 
 TabTeleport:AddButton({
- Name = "Volar Hacia Isla (Tween)",
- Callback = function()
- local origin = workspace:FindFirstChild("_WorldOrigin")
- local locs = origin and origin:FindFirstChild("Locations")
- if locs and SelectedIsland ~= "" and SelectedIsland ~= "None" then
- local islaObj = locs:FindFirstChild(SelectedIsland)
- if islaObj then Polar.Teleport:To(islaObj.CFrame * CFrame.new(0, 80, 0)) end
- end
- end
+	Name = "Teleport to Island",
+	Callback = function()
+		local origin = workspace:FindFirstChild("_WorldOrigin")
+		local locs = origin and origin:FindFirstChild("Locations")
+		if locs and SelectedIsland ~= "" and SelectedIsland ~= "None" then
+			local islaObj = locs:FindFirstChild(SelectedIsland)
+			if islaObj then Polar.Teleport:To(islaObj.CFrame * CFrame.new(0, 80, 0)) end
+		end
+	end
 })
 
 
@@ -2604,32 +2603,32 @@ TabTeleport:AddButton({
 -- =========================================================
 
 
-TabCombat:AddSection("Mejoras de Combate")
-TabCombat:AddToggle({ Name = "Auto Buso Haki (Aura)", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
-TabCombat:AddToggle({ Name = "Auto Ken Haki (Observation)", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
-TabCombat:AddToggle({ Name = "Auto Skills (Z, X)", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
+TabCombat:AddSection("Combat Enhancements")
+TabCombat:AddToggle({ Name = "Auto Buso Haki", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
+TabCombat:AddToggle({ Name = "Auto Ken Haki", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
+TabCombat:AddToggle({ Name = "Auto Skills", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
 
 TabCombat:AddSection("Bounty Hunter Tracker")
 
 local SelectedTarget = nil
-local TargetSetInfo = "Esperando objetivo..."
+local TargetSetInfo = "Waiting for target..."
 
 -- Desplegable para seleccionar jugador
 local PlayerDropdown = TabCombat:AddDropdown({
- Name = "Seleccionar Víctima",
- Options = {"Nadie"},
- Callback = function(Value)
- if Value and Value ~= "Nadie" then
- SelectedTarget = Players:FindFirstChild(Value)
- else
- SelectedTarget = nil
- end
- end
+	Name = "Select Target",
+	Options = {"None"},
+	Callback = function(Value)
+		if Value and Value ~= "None" and Value ~= "Nadie" then
+			SelectedTarget = Players:FindFirstChild(Value)
+		else
+			SelectedTarget = nil
+		end
+	end
 })
 
 -- Función reutilizable para refrescar la lista de jugadores
 local function RefreshPlayerList()
- local list = {"Nadie"}
+	local list = {"None"}
  for _, p in ipairs(Players:GetPlayers()) do
  if p ~= LocalPlayer then table.insert(list, p.Name) end
  end
@@ -2650,111 +2649,109 @@ end
 task.delay(2, RefreshPlayerList)
 
 TabCombat:AddButton({
- Name = "Actualizar Lista del Servidor",
- Callback = function()
- RefreshPlayerList()
- end
+	Name = "Refresh Player List",
+	Callback = function()
+		RefreshPlayerList()
+	end
 })
 
 local LabelTargetInfo = TabCombat:AddParagraph({
- Title = "Inspección Táctica (Set & Stats)",
- Text = TargetSetInfo
+	Title = "Target Information",
+	Text = TargetSetInfo
 })
 
 -- Auto-refrescar lista cuando entran/salen jugadores
 Players.PlayerAdded:Connect(function() task.delay(1, RefreshPlayerList) end)
 Players.PlayerRemoving:Connect(function(p)
- if SelectedTarget == p then SelectedTarget = nil end
- task.delay(0.5, RefreshPlayerList)
+	if SelectedTarget == p then SelectedTarget = nil end
+	task.delay(0.5, RefreshPlayerList)
 end)
 
 -- Bucle para extraer los datos del jugador seleccionado en tiempo real
 task.spawn(function()
- while task.wait(1.5) do
- if SelectedTarget and SelectedTarget.Parent and SelectedTarget.Character then
- local bounty = "Oculto"
- pcall(function()
- local data = SelectedTarget:FindFirstChild("Data")
- if data and data:FindFirstChild("Bounty") then
- bounty = tostring(data.Bounty.Value)
- elseif SelectedTarget:FindFirstChild("leaderstats") and SelectedTarget.leaderstats:FindFirstChild("Bounty") then
- bounty = tostring(SelectedTarget.leaderstats.Bounty.Value)
- end
- end)
- 
- local armas = ""
- pcall(function()
- for _, item in ipairs(SelectedTarget.Character:GetChildren()) do
- if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
- end
- local bp = SelectedTarget:FindFirstChild("Backpack")
- if bp then
- for _, item in ipairs(bp:GetChildren()) do
- if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
- end
- end
- end)
- if armas == "" then armas = "Manos vacías" else armas = string.sub(armas, 1, -3) end
+	while task.wait(1.5) do
+		if SelectedTarget and SelectedTarget.Parent and SelectedTarget.Character then
+			local bounty = "Hidden"
+			pcall(function()
+				local data = SelectedTarget:FindFirstChild("Data")
+				if data and data:FindFirstChild("Bounty") then
+					bounty = tostring(data.Bounty.Value)
+				elseif SelectedTarget:FindFirstChild("leaderstats") and SelectedTarget.leaderstats:FindFirstChild("Bounty") then
+					bounty = tostring(SelectedTarget.leaderstats.Bounty.Value)
+				end
+			end)
+			
+			local armas = ""
+			pcall(function()
+				for _, item in ipairs(SelectedTarget.Character:GetChildren()) do
+					if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
+				end
+				local bp = SelectedTarget:FindFirstChild("Backpack")
+				if bp then
+					for _, item in ipairs(bp:GetChildren()) do
+						if item:IsA("Tool") then armas = armas .. item.Name .. ", " end
+					end
+				end
+			end)
+			if armas == "" then armas = "None" else armas = string.sub(armas, 1, -3) end
 
- -- Datos extra: nivel, salud, fruta
- local extraInfo = ""
- pcall(function()
- local hum = SelectedTarget.Character:FindFirstChild("Humanoid")
- if hum then
- extraInfo = string.format("\n HP: %d/%d", math.floor(hum.Health), math.floor(hum.MaxHealth))
- end
- local data = SelectedTarget:FindFirstChild("Data")
- if data then
- local lvl = data:FindFirstChild("Level")
- if lvl then extraInfo = extraInfo .. "\n[DATA] Nivel: " .. tostring(lvl.Value) end
- local fruit = data:FindFirstChild("BloxFruit")
- if fruit and fruit.Value ~= "" then extraInfo = extraInfo .. "\n[FRUTA] Fruta: " .. tostring(fruit.Value) end
- end
- end)
+			-- Datos extra: nivel, salud, fruta
+			local extraInfo = ""
+			pcall(function()
+				local hum = SelectedTarget.Character:FindFirstChild("Humanoid")
+				if hum then
+					extraInfo = string.format("\n HP: %d/%d", math.floor(hum.Health), math.floor(hum.MaxHealth))
+				end
+				local data = SelectedTarget:FindFirstChild("Data")
+				if data then
+					local lvl = data:FindFirstChild("Level")
+					if lvl then extraInfo = extraInfo .. "\n[DATA] Level: " .. tostring(lvl.Value) end
+					local fruit = data:FindFirstChild("BloxFruit")
+					if fruit and fruit.Value ~= "" then extraInfo = extraInfo .. "\n[FRUIT] Fruit: " .. tostring(fruit.Value) end
+				end
+			end)
 
- local info = string.format("Objetivo: %s\n Bounty: %s\n[SCAN] Inventario/Armas: %s%s", SelectedTarget.Name, bounty, armas, extraInfo)
- 
- pcall(function()
- if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc(info)
- elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = info}) end
- end)
- else
- pcall(function()
- if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc("Selecciona un jugador válido...")
- elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = "Selecciona un jugador válido..."}) end
- end)
- end
- end
+			local info = string.format("Target: %s\n Bounty: %s\n[SCAN] Tools: %s%s", SelectedTarget.Name, bounty, armas, extraInfo)
+			
+			pcall(function()
+				if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc(info)
+				elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = info}) end
+			end)
+		else
+			pcall(function()
+				if LabelTargetInfo.SetDesc then LabelTargetInfo:SetDesc("Select a valid player...")
+				elseif LabelTargetInfo.Set then LabelTargetInfo:Set({Desc = "Select a valid player..."}) end
+			end)
+		end
+	end
 end)
 
 TabCombat:AddButton({
- Name = "[TP] Teletransportarse al Objetivo",
- Callback = function()
- if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
- Polar.Teleport:To(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
- end
- end
+	Name = "Teleport to Target",
+	Callback = function()
+		if SelectedTarget and SelectedTarget.Character and SelectedTarget.Character:FindFirstChild("HumanoidRootPart") then
+			Polar.Teleport:To(SelectedTarget.Character.HumanoidRootPart.CFrame * CFrame.new(0, 10, 0))
+		end
+	end
 })
 
 -- ==================== MODO COMBATE (TOGGLE MAESTRO) ====================
 -- ANTI-LAG: Los hooks y bucles de Hitbox/Silent Aim NO se ejecutan
 -- hasta que actives este toggle. Esto garantiza 0 lag si no estás en PvP.
-TabCombat:AddSection("Modo Combate (Anti-Lag)")
+TabCombat:AddSection("Combat Mode")
 
 local CombatModeEnabled = false
 local CombatHooksInjected = false -- Flag para inyectar hooks solo 1 vez
 
 TabCombat:AddToggle({
- Name = "Activar Modo Combate",
- Desc = "ACTIVA ESTO PRIMERO. Sin esto, Hitbox y Silent Aim no funcionarán. Desactívalo cuando no hagas PvP para eliminar lag.",
- Callback = function(Value)
- CombatModeEnabled = Value
- if Value and not CombatHooksInjected then
- CombatHooksInjected = true
- -- Inyectar hooks SOLO la primera vez que se activa
- -- (ver abajo: se inyectan al final de esta sección)
- end
- end
+	Name = "Enable Combat Mode",
+	Desc = "Enables hitbox & silent aim",
+	Callback = function(Value)
+		CombatModeEnabled = Value
+		if Value and not CombatHooksInjected then
+			CombatHooksInjected = true
+		end
+	end
 })
 
 -- ==================== HITBOX EXPANDER ====================
@@ -2767,112 +2764,107 @@ local lastHitboxUpdate = 0
 
 -- Función centralizada de limpieza de hitboxes
 local function RestoreAllHitboxes()
- for _, p in ipairs(Players:GetPlayers()) do
- pcall(function()
- if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
- p.Character.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
- p.Character.HumanoidRootPart.Transparency = 1
- p.Character.HumanoidRootPart.CanCollide = true
- p.Character.HumanoidRootPart.Material = Enum.Material.Plastic
- end
- end)
- end
+	for _, p in ipairs(Players:GetPlayers()) do
+		pcall(function()
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				p.Character.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+				p.Character.HumanoidRootPart.Transparency = 1
+				p.Character.HumanoidRootPart.CanCollide = true
+				p.Character.HumanoidRootPart.Material = Enum.Material.Plastic
+			end
+		end)
+	end
 end
 
 TabCombat:AddToggle({
- Name = "Activar Hitbox Expander",
- Desc = "Aumenta la caja de colisión de los enemigos. Requiere Modo Combate activado. (15-25 es óptimo)",
- Callback = function(Value)
- HitboxEnabled = Value
- if not Value then RestoreAllHitboxes() end
- end
+	Name = "Hitbox Expander",
+	Desc = "Expands enemy collision box",
+	Callback = function(Value)
+		HitboxEnabled = Value
+		if not Value then RestoreAllHitboxes() end
+	end
 })
 
 TabCombat:AddSlider({
- Name = "Tamaño de Hitbox",
- Default = { Min = 5, Max = 40, Default = 15 },
- Callback = function(Value)
- HitboxSizeValue = Value
- end
+	Name = "Hitbox Size",
+	Default = { Min = 5, Max = 40, Default = 15 },
+	Callback = function(Value)
+		HitboxSizeValue = Value
+	end
 })
 
 -- Restaurar hitboxes cuando un jugador muere (evita artefactos visuales)
 for _, p in ipairs(Players:GetPlayers()) do
- if p ~= LocalPlayer then
- p.CharacterRemoving:Connect(function(oldChar)
- pcall(function()
- if oldChar:FindFirstChild("HumanoidRootPart") then
- oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
- oldChar.HumanoidRootPart.Transparency = 1
- end
- end)
- end)
- end
+	if p ~= LocalPlayer then
+		p.CharacterRemoving:Connect(function(oldChar)
+			pcall(function()
+				if oldChar:FindFirstChild("HumanoidRootPart") then
+					oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+					oldChar.HumanoidRootPart.Transparency = 1
+				end
+			end)
+		end)
+	end
 end
 Players.PlayerAdded:Connect(function(p)
- p.CharacterRemoving:Connect(function(oldChar)
- pcall(function()
- if oldChar:FindFirstChild("HumanoidRootPart") then
- oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
- oldChar.HumanoidRootPart.Transparency = 1
- end
- end)
- end)
+	p.CharacterRemoving:Connect(function(oldChar)
+		pcall(function()
+			if oldChar:FindFirstChild("HumanoidRootPart") then
+				oldChar.HumanoidRootPart.Size = HITBOX_ORIGINAL_SIZE
+				oldChar.HumanoidRootPart.Transparency = 1
+			end
+		end)
+	end)
 end)
 
 -- Bucle de Hitbox con throttling (5 veces/seg) Y gateado por CombatModeEnabled
 RunService.Heartbeat:Connect(function()
- if CombatModeEnabled and HitboxEnabled and tick() - lastHitboxUpdate > 0.05 then
- lastHitboxUpdate = tick()
- for _, p in ipairs(Players:GetPlayers()) do
- if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
- pcall(function()
- local hrp = p.Character.HumanoidRootPart
- hrp.Size = Vector3.new(HitboxSizeValue, HitboxSizeValue, HitboxSizeValue)
- hrp.Transparency = 0.6
- hrp.Color = Color3.fromRGB(255, 0, 0)
- hrp.Material = Enum.Material.Neon
- hrp.CanCollide = false
- end)
- end
- end
- end
+	if CombatModeEnabled and HitboxEnabled and tick() - lastHitboxUpdate > 0.05 then
+		lastHitboxUpdate = tick()
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+				pcall(function()
+					local hrp = p.Character.HumanoidRootPart
+					hrp.Size = Vector3.new(HitboxSizeValue, HitboxSizeValue, HitboxSizeValue)
+					hrp.Transparency = 0.6
+					hrp.Color = Color3.fromRGB(255, 0, 0)
+					hrp.Material = Enum.Material.Neon
+					hrp.CanCollide = false
+				end)
+			end
+		end
+	end
 end)
 
 -- ==================== SILENT AIM (TÉCNICA AVANZADA - checkcaller) ====================
--- Usa checkcaller() para romper la recursión de __index:
--- Cuando NUESTRO HOOK lee propiedades (.Character, .Name) → checkcaller() = true → pasa directo
--- Cuando el JUEGO lee Mouse.Hit → checkcaller() = false → interceptamos y redirigimos
--- Esta es la técnica estándar de los script hubs profesionales.
-
 local SilentAimEnabled = false
 local BringTargetEnabled = false
 
 TabCombat:AddToggle({
- Name = "Silent Aim (Full Aimbot)",
- Desc = "Redirige Mouse.Hit, remotos y skills al objetivo. Armas como Tirachinas apuntan solas. Requiere Modo Combate.",
- Callback = function(Value)
- SilentAimEnabled = Value
- end
+	Name = "Silent Aim",
+	Desc = "Redirects attacks to target",
+	Callback = function(Value)
+		SilentAimEnabled = Value
+	end
 })
 
 TabCombat:AddToggle({
- Name = "Bring Target (Atraer Víctima)",
- Desc = "Teletransporta la víctima frente a ti. Combo letal con Silent Aim. Requiere Modo Combate.",
- Callback = function(Value)
- BringTargetEnabled = Value
- end
+	Name = "Bring Target",
+	Desc = "Brings enemy player to you",
+	Callback = function(Value)
+		BringTargetEnabled = Value
+	end
 })
 
-TabCombat:AddSection("Combate Extremo")
+TabCombat:AddSection("Extreme Combat")
 
 local KillAuraEnabled = false
 TabCombat:AddToggle({
- Name = "Kill Aura (Destrucción Total)",
- Desc = "Daña a todos los enemigos o jugadores a tu alrededor automáticamente sin apuntar.",
- Callback = function(Value)
- KillAuraEnabled = Value
- end
+	Name = "Kill Aura",
+	Desc = "Attacks all nearby enemies",
+	Callback = function(Value)
+		KillAuraEnabled = Value
+	end
 })
 
 -- Bring Target: Trae al jugador enemigo cerca de ti (no usa hooks)
@@ -2911,7 +2903,7 @@ local function InitCombatHooks()
 end
 
 -- ===== TAB MISC =====
-TabMisc:AddSection("Personalización de la Interfaz")
+TabMisc:AddSection("UI Customization")
 
 local themesList = {}
 pcall(function()
@@ -2926,8 +2918,8 @@ end
 table.sort(themesList)
 
 TabMisc:AddDropdown({
-	Name = "Tema Visual",
-	Description = "Cambia el diseño y paleta de colores de la interfaz.",
+	Name = "Visual Theme",
+	Description = "Changes UI color palette",
 	Options = themesList,
 	Default = "Polar Ice",
 	Callback = function(selected)
@@ -2942,8 +2934,8 @@ TabMisc:AddDropdown({
 })
 
 TabMisc:AddButton({
-	Name = "Recentrar Icono Flotante",
-	Desc = "Devuelve el botón flotante a su posición por defecto en pantalla.",
+	Name = "Reset Floating Button",
+	Desc = "Resets floating button position",
 	Callback = function()
 		pcall(function()
 			local targets = {
@@ -2968,175 +2960,180 @@ TabMisc:AddButton({
 })
 
 TabMisc:AddDropdown({
- Name = "Escala de la Interfaz (UI Scale)",
- Description = "Ajusta el tamaño global de la interfaz.",
- Options = {"Pequeño", "Mediano", "Grande", "Muy Grande"},
- Default = "Grande",
- Callback = function(selected)
- local scaleMap = {
- ["Pequeño"] = 950,
- ["Mediano"] = 800,
- ["Grande"] = 650,
- ["Muy Grande"] = 500
- }
- local val = scaleMap[selected] or 650
- pcall(function()
-	if PolarUI and PolarUI.SetScale then
-		PolarUI:SetScale(val)
-	elseif redzlib and redzlib.SetScale then
-		redzlib:SetScale(val)
+	Name = "Interface Scale",
+	Description = "Adjusts global UI size",
+	Options = {"Small", "Medium", "Large", "Extra Large"},
+	Default = "Large",
+	Callback = function(selected)
+		local scaleMap = {
+			["Small"] = 950,
+			["Medium"] = 800,
+			["Large"] = 650,
+			["Extra Large"] = 500,
+			["Pequeño"] = 950,
+			["Mediano"] = 800,
+			["Grande"] = 650,
+			["Muy Grande"] = 500
+		}
+		local val = scaleMap[selected] or 650
+		pcall(function()
+			if PolarUI and PolarUI.SetScale then
+				PolarUI:SetScale(val)
+			elseif redzlib and redzlib.SetScale then
+				redzlib:SetScale(val)
+			end
+		end)
 	end
- end)
- end
 })
-TabMisc:AddSection("Utilidades Extra")
+TabMisc:AddSection("Extra Utilities")
 
 local FruitFinderEnabled = false
 local foundFruits = {}
 TabMisc:AddToggle({
- Name = "Buscador de Frutas (Fruit Finder)",
- Desc = "Notifica si aparece una fruta en el mapa.",
- Callback = function(Value)
- FruitFinderEnabled = Value
- end
+	Name = "Fruit Finder",
+	Desc = "Alerts when fruit spawns",
+	Callback = function(Value)
+		FruitFinderEnabled = Value
+	end
 })
 
 local FlyEnabled = false
 local flySpeed = 50
 local flyBodyMover = nil
 TabMisc:AddToggle({
- Name = "Modo Fly Libre",
- Desc = "Vuela usando W A S D y tu cámara.",
- Callback = function(Value)
- FlyEnabled = Value
- local char = LocalPlayer.Character
- local hrp = char and char:FindFirstChild("HumanoidRootPart")
- if Value and hrp then
- local bp = Instance.new("BodyVelocity", hrp)
- bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
- bp.Velocity = Vector3.new(0, 0, 0)
- flyBodyMover = bp
- 
- local bg = Instance.new("BodyGyro", hrp)
- bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
- bg.D = 10
- bg.CFrame = hrp.CFrame
- flyBodyMover.Name = "Polar_Fly"
- bg.Name = "Polar_FlyG"
- else
- if hrp then
- local b1 = hrp:FindFirstChild("Polar_Fly")
- local b2 = hrp:FindFirstChild("Polar_FlyG")
- if b1 then b1:Destroy() end
- if b2 then b2:Destroy() end
- end
- flyBodyMover = nil
- end
- end
+	Name = "Fly Mode",
+	Desc = "Fly using WASD and camera",
+	Callback = function(Value)
+		FlyEnabled = Value
+		local char = LocalPlayer.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		if Value and hrp then
+			local bp = Instance.new("BodyVelocity", hrp)
+			bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+			bp.Velocity = Vector3.new(0, 0, 0)
+			flyBodyMover = bp
+			
+			local bg = Instance.new("BodyGyro", hrp)
+			bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+			bg.D = 10
+			bg.CFrame = hrp.CFrame
+			flyBodyMover.Name = "Polar_Fly"
+			bg.Name = "Polar_FlyG"
+		else
+			if hrp then
+				local b1 = hrp:FindFirstChild("Polar_Fly")
+				local b2 = hrp:FindFirstChild("Polar_FlyG")
+				if b1 then b1:Destroy() end
+				if b2 then b2:Destroy() end
+			end
+			flyBodyMover = nil
+		end
+	end
 })
 
 local AutoRejoinEnabled = false
 TabMisc:AddToggle({
- Name = "Auto Rejoin",
- Desc = "Te reconecta al instante si eres expulsado.",
- Callback = function(Value)
- AutoRejoinEnabled = Value
- end
+	Name = "Auto Rejoin",
+	Desc = "Rejoins automatically if disconnected",
+	Callback = function(Value)
+		AutoRejoinEnabled = Value
+	end
 })
 
-TabMisc:AddSection("Movimiento")
+TabMisc:AddSection("Movement")
 
 TabMisc:AddSlider({
- Name = "Nivel de Velocidad",
- Default = { Min = 16, Max = 500, Default = 16 },
- Callback = function(Value)
- sVal = Value
- end
+	Name = "Walk Speed",
+	Default = { Min = 16, Max = 500, Default = 16 },
+	Callback = function(Value)
+		sVal = Value
+	end
 })
 
 TabMisc:AddToggle({
- Name = "Control de Velocidad",
- Callback = function(Value)
- sAct = Value
- end
+	Name = "Speed Boost",
+	Callback = function(Value)
+		sAct = Value
+	end
 })
 
 TabMisc:AddToggle({
- Name = "Salto Infinito",
- Callback = function(Value)
- iJ = Value
- end
+	Name = "Infinite Jump",
+	Callback = function(Value)
+		iJ = Value
+	end
 })
 
 TabMisc:AddToggle({
- Name = "Atravesar Paredes (NoClip)",
- Callback = function(Value)
- ncl = Value
- end
+	Name = "NoClip",
+	Callback = function(Value)
+		ncl = Value
+	end
 })
 
 TabMisc:AddToggle({
- Name = "Caminar sobre el Agua",
- Callback = function(Value)
- walkWaterEnabled = Value
- end
+	Name = "Walk on Water",
+	Callback = function(Value)
+		walkWaterEnabled = Value
+	end
 })
 
-TabServers:AddSection("Gestión de Servidores (Job)")
+TabServers:AddSection("Server Management")
 
-local TargetJobId = ""TabServers:AddTextBox({
- Name = "Pegar Job ID",
- PlaceholderText = "Escribe o pega el Job ID aquí...",
- Callback = function(Value)
- TargetJobId = Value
- end
-})
-
-TabServers:AddButton({
- Name = "Unirse por Job ID",
- Callback = function()
- if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
- pcall(function()
- TeleportService:TeleportToPlaceInstance(GetMainPlaceIdForCurrentSea(), TargetJobId, LocalPlayer)
- end)
- else
- warn("[Polar Hub] Job ID inválido o vacío.")
- end
- end
+local TargetJobId = ""
+TabServers:AddTextBox({
+	Name = "Job ID",
+	PlaceholderText = "Paste Job ID here...",
+	Callback = function(Value)
+		TargetJobId = Value
+	end
 })
 
 TabServers:AddButton({
- Name = "Copiar Job ID de este Servidor",
- Callback = function()
- CopyToClipboard(tostring(game.JobId))
- end
+	Name = "Join Job ID",
+	Callback = function()
+		if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
+			pcall(function()
+				TeleportService:TeleportToPlaceInstance(GetMainPlaceIdForCurrentSea(), TargetJobId, LocalPlayer)
+			end)
+		else
+			warn("[Polar Hub] Invalid or empty Job ID.")
+		end
+	end
 })
 
 TabServers:AddButton({
- Name = "Saltar a Servidor con Menos Gente",
- Callback = function()
- ServerHopLowPlayers()
- end
+	Name = "Copy Current Job ID",
+	Callback = function()
+		CopyToClipboard(tostring(game.JobId))
+	end
 })
 
 TabServers:AddButton({
- Name = "Saltar a Servidor con Mejor Ping",
- Callback = function()
- ServerHopBestPing()
- end
+	Name = "Hop Low Players",
+	Callback = function()
+		ServerHopLowPlayers()
+	end
+})
+
+TabServers:AddButton({
+	Name = "Hop Best Ping",
+	Callback = function()
+		ServerHopBestPing()
+	end
 })
 
 local AutoCazarEnabled = false
 local lastTeleportedJobId = nil
 TabServers:AddToggle({
- Name = "Auto-Unirse a Caza (Bot de Discord)",
- Desc = "Te une automáticamente al servidor del objetivo cuando el bot de Discord lo localice.",
- Callback = function(Value)
- AutoCazarEnabled = Value
- if not Value then
- lastTeleportedJobId = nil
- end
- end
+	Name = "Auto Join Bounty",
+	Desc = "Joins target server automatically",
+	Callback = function(Value)
+		AutoCazarEnabled = Value
+		if not Value then
+			lastTeleportedJobId = nil
+		end
+	end
 })
 
 task.spawn(function()

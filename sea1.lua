@@ -612,67 +612,66 @@ local function GetBossStatusCard(bossName)
 end
 
 -- Interfaz en TabStatus (Sin emojis):
-TabStatus:AddSection("Tabla de Jefes & Respawn Timers")
+TabStatus:AddSection("Boss Status & Timers")
 
 local LabelSelectedBossInfo = TabStatus:AddParagraph({
- Title = "Ficha Tecnica: Gorilla King",
- Text = GetBossStatusCard("Gorilla King")
+	Title = "Boss Details: Gorilla King",
+	Text = GetBossStatusCard("Gorilla King")
 })
 
 TabStatus:AddDropdown({
- Name = "Seleccionar Jefe para Inspeccionar",
- Options = BossNamesList,
- Default = "Gorilla King",
- Callback = function(value)
- local resolved = BS.FindBossData(value)
- SelectedStatusBoss = resolved and resolved.name or value
- if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
- LabelSelectedBossInfo:SetTitle("Ficha Tecnica: " .. tostring(SelectedStatusBoss))
- end
- UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
- end
+	Name = "Select Boss to Inspect",
+	Options = BossNamesList,
+	Default = "Gorilla King",
+	Callback = function(value)
+		local resolved = BS.FindBossData(value)
+		SelectedStatusBoss = resolved and resolved.name or value
+		if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+			LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+		end
+		UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
+	end
 })
 
 TabStatus:AddButton({
- Name = "Actualizar Estado del Jefe (Manual)",
- Desc = "Escanea el marcador visual 3D oficial del juego y sincroniza el contador sin lag.",
- Callback = function()
- if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
- LabelSelectedBossInfo:SetTitle("Ficha Tecnica: " .. tostring(SelectedStatusBoss))
- end
- UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
- Notify("Polar Hub", "Ficha tecnica de " .. tostring(SelectedStatusBoss) .. " sincronizada.", 2)
- end
+	Name = "Refresh Boss Status",
+	Desc = "Syncs boss timer",
+	Callback = function()
+		if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+			LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+		end
+		UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
+		Notify("Polar Hub", "Boss details for " .. tostring(SelectedStatusBoss) .. " synced.", 2)
+	end
 })
 
 TabStatus:AddButton({
- Name = "Teleport a la Ubicacion del Jefe",
- Desc = "Vuela de forma segura al punto de aparicion del jefe seleccionado.",
- Callback = function()
- local bData = BS.FindBossData(SelectedStatusBoss) or Polar.Data.Bosses[1]
- if bData and bData.pos then
- Notify("Polar Hub", "Teletransportando hacia " .. bData.name .. "...", 3)
- local destCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
- if Polar.Teleport and Polar.Teleport.To then
- Polar.Teleport:To(destCF)
- elseif PolarBypassTeleport then
- PolarBypassTeleport(destCF)
- else
- local char = LocalPlayer.Character
- local hrp = char and char:FindFirstChild("HumanoidRootPart")
- if hrp then hrp.CFrame = destCF end
- end
- end
- end
+	Name = "Teleport to Boss",
+	Desc = "Fly to boss spawn",
+	Callback = function()
+		local bData = BS.FindBossData(SelectedStatusBoss) or Polar.Data.Bosses[1]
+		if bData and bData.pos then
+			Notify("Polar Hub", "Teleporting to " .. bData.name .. "...", 3)
+			local destCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
+			if Polar.Teleport and Polar.Teleport.To then
+				Polar.Teleport:To(destCF)
+			elseif PolarBypassTeleport then
+				PolarBypassTeleport(destCF)
+			else
+				local char = LocalPlayer.Character
+				local hrp = char and char:FindFirstChild("HumanoidRootPart")
+				if hrp then hrp.CFrame = destCF end
+			end
+		end
+	end
 })
 
--- Seccion de Jefes de Raid (Auto-actualizado cada 5 segundos sin emojis):
-TabStatus:AddSection("Radar de Jefes de Raid (Auto 5s)")
-local LabelTheSaw = TabStatus:AddParagraph({ Title = "The Saw (Nvl 100) - Middle Town", Text = "Calculando..." })
-local LabelGreybeard = TabStatus:AddParagraph({ Title = "Greybeard (Nvl 750) - Marine Fortress", Text = "Calculando..." })
-local LabelSaberRadar = TabStatus:AddParagraph({ Title = "Saber Expert (Shanks) - Jungle", Text = "Calculando..." })
-local LabelActiveMarkers = TabStatus:AddParagraph({ Title = "Contadores Visuales Activos (Marcadores 3D)", Text = "Escaneando marcadores del servidor..." })
-local LabelNextRaid = TabStatus:AddParagraph({ Title = "Proximo Jefe Especial (Raid Hint)", Text = "Calculando..." })
+TabStatus:AddSection("Raid Boss Radar")
+local LabelTheSaw = TabStatus:AddParagraph({ Title = "The Saw - Middle Town", Text = "Calculating..." })
+local LabelGreybeard = TabStatus:AddParagraph({ Title = "Greybeard - Marine Fortress", Text = "Calculating..." })
+local LabelSaberRadar = TabStatus:AddParagraph({ Title = "Saber Expert - Jungle", Text = "Calculating..." })
+local LabelActiveMarkers = TabStatus:AddParagraph({ Title = "Active Visual Timers", Text = "Scanning markers..." })
+local LabelNextRaid = TabStatus:AddParagraph({ Title = "Next Raid Event", Text = "Calculating..." })
 
 task.spawn(function()
  while true do
@@ -754,176 +753,176 @@ end)
 
 
 -- ==================== TAB FARM BOSSES ====================
-TabFarm:AddSection("Cazador de Jefes (Sea 1)")
+TabFarm:AddSection("Sea 1 Boss Hunter")
 
 TabFarm:AddDropdown({
- Name = "Seleccionar Jefe",
- Options = BossNamesList,
- Default = "Gorilla King",
- Callback = function(Value)
- getgenv().PolarSelectedBossToFarm = Value
- end
+	Name = "Select Boss",
+	Options = BossNamesList,
+	Default = "Gorilla King",
+	Callback = function(Value)
+		getgenv().PolarSelectedBossToFarm = Value
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Auto Farm Boss Seleccionado",
- Desc = "Caza exclusivamente al jefe seleccionado arriba.",
- Callback = function(Value)
- getgenv().PolarAutoFarmBossEnabled = Value
- end
+	Name = "Farm Selected Boss",
+	Desc = "Farms only the selected boss",
+	Callback = function(Value)
+		getgenv().PolarAutoFarmBossEnabled = Value
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Auto Farm ALL Bosses",
- Desc = "Modo Exterminio: Escanea el servidor y caza a TODOS los jefes vivos.",
- Callback = function(Value)
- getgenv().PolarAutoFarmAllBossesEnabled = Value
- getgenv().PolarLastBossCheckedIndex = 1
- end
+	Name = "Farm All Bosses",
+	Desc = "Scans and farms all alive bosses",
+	Callback = function(Value)
+		getgenv().PolarAutoFarmAllBossesEnabled = Value
+		getgenv().PolarLastBossCheckedIndex = 1
+	end
 })
 
 TabFarm:AddToggle({
- Name = "Tomar Misión del Jefe",
- Callback = function(Value)
- getgenv().PolarBossWithQuest = Value
- end
+	Name = "Take Boss Quest",
+	Callback = function(Value)
+		getgenv().PolarBossWithQuest = Value
+	end
 })
 
 -- ==================== TAB QUEST: SABER PUZZLE ====================
-TabQuest:AddSection("Saber Puzzle (100% Automático Sincronizado)")
+TabQuest:AddSection("Saber Puzzle")
 local SaberStatusPara = TabQuest:AddParagraph({
- Title = "Progreso del Puzzle Saber (Servidor)",
- Text = "Consultando estado en el servidor..."
+	Title = "Saber Puzzle Progress",
+	Text = "Checking progress on server..."
 })
 
 task.spawn(function()
- while true do
- task.wait(3)
- pcall(function()
- local prog = GetProQuestProgress()
- if prog then
- local pCount = 0
- if prog.Plates then
- for i = 1, 5 do if prog.Plates[i] then pCount = pCount + 1 end end
- end
- local text = string.format(
- "Placas: %d/5 | Antorcha: %s | Copa: %s\nSick Man: %s | Rich Son: %s | Mob Leader: %s\nRelic: %s | Shanks: %s",
- pCount,
- prog.UsedTorch and "[OK]" or "[ERROR]",
- prog.UsedCup and "[OK]" or "[ERROR]",
- prog.TalkedSon and "[OK]" or "[ERROR]",
- prog.TalkedSon and "[OK]" or "[ERROR]",
- prog.KilledMob and "[OK]" or "[ERROR]",
- prog.UsedRelic and "[OK]" or "[ERROR]",
- prog.KilledShanks and "[OK]" or "[ERROR]"
- )
- UpdatePara(SaberStatusPara, text)
- end
- end)
- end
+	while true do
+		task.wait(3)
+		pcall(function()
+			local prog = GetProQuestProgress()
+			if prog then
+				local pCount = 0
+				if prog.Plates then
+					for i = 1, 5 do if prog.Plates[i] then pCount = pCount + 1 end end
+				end
+				local text = string.format(
+					"Plates: %d/5 | Torch: %s | Cup: %s\nSick Man: %s | Rich Son: %s | Mob Leader: %s\nRelic: %s | Shanks: %s",
+					pCount,
+					prog.UsedTorch and "[OK]" or "[PENDING]",
+					prog.UsedCup and "[OK]" or "[PENDING]",
+					prog.TalkedSon and "[OK]" or "[PENDING]",
+					prog.TalkedSon and "[OK]" or "[PENDING]",
+					prog.KilledMob and "[OK]" or "[PENDING]",
+					prog.UsedRelic and "[OK]" or "[PENDING]",
+					prog.KilledShanks and "[OK]" or "[PENDING]"
+				)
+				UpdatePara(SaberStatusPara, text)
+			end
+		end)
+	end
 end)
 
 TabQuest:AddButton({
- Name = "[START] Iniciar Auto Saber Puzzle Completo",
- Callback = function()
- FullAutoSaber()
- end
+	Name = "Start Auto Saber",
+	Callback = function()
+		FullAutoSaber()
+	end
 })
 
 TabQuest:AddButton({
- Name = "[STOP] Detener Auto Saber Puzzle",
- Callback = function()
- AutoSaberRunning = false
- Notify("[STOP] Auto Saber", "Auto Saber detenido por el usuario.", 3)
- end
+	Name = "Stop Auto Saber",
+	Callback = function()
+		AutoSaberRunning = false
+		Notify("Auto Saber", "Auto Saber stopped.", 3)
+	end
 })
 
 -- ==================== TAB QUEST: SECRETS MASTER & COMBAT ====================
-TabQuest:AddSection("Secrets Master & Estilos Secretos (Sea 1)")
+TabQuest:AddSection("Secrets Master")
 local SecretsStatusPara = TabQuest:AddParagraph({
- Title = "Progreso de Islas & Fase de Secretos",
- Text = "Consultando progreso de las 13 islas..."
+	Title = "Secrets Progress",
+	Text = "Checking 13 islands progress..."
 })
 
 task.spawn(function()
- while true do
- task.wait(6)
- pcall(function()
- local comp, tot = CalculateCompletedIslandsCount()
- local phase = GetSecretStoriesPhase()
- local text = string.format("Islas Completas: %d / %d (%.1f%%)\nFase de Secretos: %s", comp, tot, (comp / tot) * 100, tostring(phase))
- UpdatePara(SecretsStatusPara, text)
- end)
- end
+	while true do
+		task.wait(6)
+		pcall(function()
+			local comp, tot = CalculateCompletedIslandsCount()
+			local phase = GetSecretStoriesPhase()
+			local text = string.format("Completed Islands: %d / %d (%.1f%%)\nSecrets Phase: %s", comp, tot, (comp / tot) * 100, tostring(phase))
+			UpdatePara(SecretsStatusPara, text)
+		end)
+	end
 end)
 
 TabQuest:AddButton({
- Name = "Teleport a Secrets Master (Middle Town)",
- Callback = function()
- Polar.Teleport:To(CFrame.new(-838.89, 31.77, 1603.10))
- end
+	Name = "Teleport to Secrets Master",
+	Callback = function()
+		Polar.Teleport:To(CFrame.new(-838.89, 31.77, 1603.10))
+	end
 })
 
 TabQuest:AddButton({
- Name = "Auto Leer Historias (RollStories)",
- Callback = function()
- AutoRollAllStories()
- end
+	Name = "Auto Read Stories",
+	Callback = function()
+		AutoRollAllStories()
+	end
 })
 
 TabQuest:AddButton({
- Name = "Desbloquear / Equipar Style: Combat",
- Callback = function()
- if CommF then
- local r = CommF:InvokeServer("SetSecretStyle", "Combat")
- if r == 1 then
- Notify("[OK] Éxito", "Estilo Combat activado: Back to basics.", 4)
- elseif r == 2 then
- Notify("[INFO] Info", "Ya tienes equipado el estilo Combat.", 4)
- else
- Notify("[ERROR] Bloqueado", "Aún no has completado todos los secretos del Sea 1.", 4)
- end
- end
- end
+	Name = "Equip Combat Style",
+	Callback = function()
+		if CommF then
+			local r = CommF:InvokeServer("SetSecretStyle", "Combat")
+			if r == 1 then
+				Notify("[OK] Success", "Combat style equipped.", 4)
+			elseif r == 2 then
+				Notify("[INFO] Info", "Combat style already equipped.", 4)
+			else
+				Notify("[ERROR] Locked", "Complete all Sea 1 secrets first.", 4)
+			end
+		end
+	end
 })
 
 TabQuest:AddButton({
- Name = "Desbloquear / Equipar Style: Advanced Combat",
- Callback = function()
- if CommF then
- local r = CommF:InvokeServer("SetSecretStyle", "Advanced Combat")
- if r == 1 then
- Notify("[OK] Éxito", "¡Estilo Advanced Combat desbloqueado y equipado!", 5)
- elseif r == 2 then
- Notify("[INFO] Info", "Ya tienes equipado el estilo Advanced Combat.", 4)
- else
- Notify("[ERROR] Bloqueado", "Aún no has completado todos los secretos del Sea 1.", 4)
- end
- end
- end
+	Name = "Equip Advanced Combat",
+	Callback = function()
+		if CommF then
+			local r = CommF:InvokeServer("SetSecretStyle", "Advanced Combat")
+			if r == 1 then
+				Notify("[OK] Success", "Advanced Combat unlocked and equipped!", 5)
+			elseif r == 2 then
+				Notify("[INFO] Info", "Advanced Combat already equipped.", 4)
+			else
+				Notify("[ERROR] Locked", "Complete all Sea 1 secrets first.", 4)
+			end
+		end
+	end
 })
 
 -- ==================== TAB QUEST: BONUS MOMENTS EXPLORER ====================
-TabQuest:AddSection("Explorador de Secretos de Islas (39 Bonus Moments)")
+TabQuest:AddSection("Island Secrets Explorer")
 
 local IslandSecretsLocations = {
- ["Jungle - Zipline Repair"] = CFrame.new(-1282.31, 76.33, -245.48),
- ["Jungle - Banana Tree (Gorilla King)"] = CFrame.new(-1600, 37, 153),
- ["Pirate - Windmill Maintenance"] = CFrame.new(-1231.46, 26.35, 4071.13),
- ["Pirate - Tavern Brawl (Taverna)"] = CFrame.new(-1145, 4.7, 3828.6),
- ["Desert - Rescue Hasan (Cueva Hasan)"] = CFrame.new(1288.51, 31.28, 4490.87),
- ["Desert - Archaeologist\'s Tablet"] = CFrame.new(1094, 20, 4344),
- ["Frozen Village - Snowman Location"] = CFrame.new(1485.22, 76.52, -1283.63),
- ["Frozen Village - Ability Teacher Cave"] = CFrame.new(1344.55, 42.25, -1327.89),
- ["Prison - Escape from Alcatraz"] = CFrame.new(5525.46, 9.01, 933.47),
- ["Prison - Lever Jailbreak (Palancas)"] = CFrame.new(5337.93, 22.10, 841.69),
- ["Middle Town - Early Access (Mansion)"] = CFrame.new(-838.89, 31.77, 1603.10),
- ["Middle Town - Lookout Captain"] = CFrame.new(-789, 7, 1515),
- ["Colosseum - Statues & Arena"] = CFrame.new(-1500, 7, 2500),
- ["Magma Village - Magma Ore / Volcano"] = CFrame.new(-5259, 37, 4050),
- ["Underwater City - Water Kung-fu Teacher"] = CFrame.new(61715.23, 53.00, 871.93),
- ["Sky - Electric Teacher (Mad Scientist)"] = CFrame.new(-4628.89, 12.13, -355.72),
- ["Upper Sky - Instinct Teacher (Ken Haki)"] = CFrame.new(-7374.40, 5791.68, 383.17)
+	["Jungle - Zipline Repair"] = CFrame.new(-1282.31, 76.33, -245.48),
+	["Jungle - Banana Tree (Gorilla King)"] = CFrame.new(-1600, 37, 153),
+	["Pirate - Windmill Maintenance"] = CFrame.new(-1231.46, 26.35, 4071.13),
+	["Pirate - Tavern Brawl"] = CFrame.new(-1145, 4.7, 3828.6),
+	["Desert - Rescue Hasan"] = CFrame.new(1288.51, 31.28, 4490.87),
+	["Desert - Archaeologist Tablet"] = CFrame.new(1094, 20, 4344),
+	["Frozen Village - Snowman Location"] = CFrame.new(1485.22, 76.52, -1283.63),
+	["Frozen Village - Ability Teacher Cave"] = CFrame.new(1344.55, 42.25, -1327.89),
+	["Prison - Escape from Alcatraz"] = CFrame.new(5525.46, 9.01, 933.47),
+	["Prison - Lever Jailbreak"] = CFrame.new(5337.93, 22.10, 841.69),
+	["Middle Town - Mansion"] = CFrame.new(-838.89, 31.77, 1603.10),
+	["Middle Town - Lookout Captain"] = CFrame.new(-789, 7, 1515),
+	["Colosseum - Statues & Arena"] = CFrame.new(-1500, 7, 2500),
+	["Magma Village - Magma Ore"] = CFrame.new(-5259, 37, 4050),
+	["Underwater City - Water Kung Fu"] = CFrame.new(61715.23, 53.00, 871.93),
+	["Sky - Electric Teacher"] = CFrame.new(-4628.89, 12.13, -355.72),
+	["Upper Sky - Instinct Teacher"] = CFrame.new(-7374.40, 5791.68, 383.17)
 }
 
 local LocationOptions = {}
@@ -932,110 +931,110 @@ table.sort(LocationOptions)
 
 local SelectedSecretLoc = LocationOptions[1]
 TabQuest:AddDropdown({
- Name = "Seleccionar Misión Secreta / Zona",
- Options = LocationOptions,
- Default = SelectedSecretLoc,
- Callback = function(val)
- SelectedSecretLoc = val
- end
+	Name = "Select Secret Zone",
+	Options = LocationOptions,
+	Default = SelectedSecretLoc,
+	Callback = function(val)
+		SelectedSecretLoc = val
+	end
 })
 
 TabQuest:AddButton({
- Name = "[TP] Teleport a Misión Secreta Seleccionada",
- Callback = function()
- local cf = IslandSecretsLocations[SelectedSecretLoc]
- if cf then
- Polar.Teleport:To(cf)
- Notify("[TP] Teleport", "Llegada a: " .. tostring(SelectedSecretLoc), 3)
- end
- end
+	Name = "Teleport to Secret Zone",
+	Callback = function()
+		local cf = IslandSecretsLocations[SelectedSecretLoc]
+		if cf then
+			Polar.Teleport:To(cf)
+			Notify("Teleport", "Arrived at: " .. tostring(SelectedSecretLoc), 3)
+		end
+	end
 })
 
 -- ==================== TAB QUEST: SECOND SEA PUZZLE ====================
-TabQuest:AddSection("Puzzle Second Sea (Nivel 700+)")
+TabQuest:AddSection("Second Sea Journey")
 TabQuest:AddButton({
- Name = "[START] Iniciar Viaje al Second Sea",
- Callback = function()
- AutoSecondSea()
- end
+	Name = "Start Second Sea Journey",
+	Callback = function()
+		AutoSecondSea()
+	end
 })
 
 TabQuest:AddButton({
- Name = "[STOP] Detener Viaje",
- Callback = function()
- AutoSecondSeaRunning = false
- end
+	Name = "Stop Journey",
+	Callback = function()
+		AutoSecondSeaRunning = false
+	end
 })
 
 -- ==================== TAB SHOP: HAKI & FIGHTING STYLES SEA 1 ====================
 if TabShop then
- TabShop:AddSection("Entrenadores de Haki (Sea 1)")
- 
- TabShop:AddButton({ 
- Name = "Comprar Geppo (Skyjump) - $10,000", 
- Callback = function() 
- SafeBuy("BuyHaki", "Geppo", nil, "Ability Teacher") 
- end 
- })
- 
- TabShop:AddButton({ 
- Name = "Comprar Buso Haki (Aura) - $25,000", 
- Callback = function() 
- SafeBuy("BuyHaki", "Buso", nil, "Ability Teacher") 
- end 
- })
- 
- TabShop:AddButton({ 
- Name = "Comprar Soru (Flash Step) - $100,000", 
- Callback = function() 
- SafeBuy("BuyHaki", "Soru", nil, "Ability Teacher") 
- end 
- })
- 
- TabShop:AddButton({ 
- Name = "Auto Desbloquear Ken Haki (Visión) - $750,000", 
- Callback = function() 
- local lvl = Polar.Player and Polar.Player:GetLevel() or 1
- if lvl >= 200 then
- SafeBuy("KenTalk", "Buy", nil, "Instinct Teacher")
- else
- Notify("[ERROR] Nivel Insuficiente", "Necesitas Nivel 200+ y haber vencido a Shanks.", 5)
- end
- end 
- })
+	TabShop:AddSection("Haki Trainers")
+	
+	TabShop:AddButton({ 
+		Name = "Buy Geppo - $10k", 
+		Callback = function() 
+			SafeBuy("BuyHaki", "Geppo", nil, "Ability Teacher") 
+		end 
+	})
+	
+	TabShop:AddButton({ 
+		Name = "Buy Buso - $25k", 
+		Callback = function() 
+			SafeBuy("BuyHaki", "Buso", nil, "Ability Teacher") 
+		end 
+	})
+	
+	TabShop:AddButton({ 
+		Name = "Buy Soru - $100k", 
+		Callback = function() 
+			SafeBuy("BuyHaki", "Soru", nil, "Ability Teacher") 
+		end 
+	})
+	
+	TabShop:AddButton({ 
+		Name = "Buy Ken Haki - $750k", 
+		Callback = function() 
+			local lvl = Polar.Player and Polar.Player:GetLevel() or 1
+			if lvl >= 200 then
+				SafeBuy("KenTalk", "Buy", nil, "Instinct Teacher")
+			else
+				Notify("[ERROR] Level Requirement", "Requires Level 200+ and defeated Shanks.", 5)
+			end
+		end 
+	})
 
- TabShop:AddButton({
- Name = "[DATA] Consultar Esquivas / Exp Ken Haki",
- Callback = function()
- if CommF then
- local r = CommF:InvokeServer("KenTalk", "Status")
- Notify("[WATCH] Ken Haki Status", tostring(r or "Sin datos"), 5)
- end
- end
- })
+	TabShop:AddButton({
+		Name = "Check Ken Haki",
+		Callback = function()
+			if CommF then
+				local r = CommF:InvokeServer("KenTalk", "Status")
+				Notify("Ken Haki Status", tostring(r or "No data"), 5)
+			end
+		end
+	})
 
- TabShop:AddSection("Estilos de Pelea (Sea 1)")
- 
- TabShop:AddButton({ 
- Name = "Dark Step (Black Leg) - $150,000", 
- Callback = function() 
- SafeBuy("BuyBlackLeg", nil, nil, "Dark Step Teacher") 
- end 
- })
- 
- TabShop:AddButton({ 
- Name = "Electro (Skylands) - $500,000", 
- Callback = function() 
- SafeBuy("BuyElectro", nil, nil, "Mad Scientist") 
- end 
- })
- 
- TabShop:AddButton({ 
- Name = "Water Kung-fu (Underwater) - $750,000", 
- Callback = function() 
- SafeBuy("BuyFishmanKarate", nil, nil, "Water Kung-fu Teacher") 
- end 
- })
+	TabShop:AddSection("Sea 1 Fighting Styles")
+	
+	TabShop:AddButton({ 
+		Name = "Buy Dark Step - $150k", 
+		Callback = function() 
+			SafeBuy("BuyBlackLeg", nil, nil, "Dark Step Teacher") 
+		end 
+	})
+	
+	TabShop:AddButton({ 
+		Name = "Buy Electro - $500k", 
+		Callback = function() 
+			SafeBuy("BuyElectro", nil, nil, "Mad Scientist") 
+		end 
+	})
+	
+	TabShop:AddButton({ 
+		Name = "Buy Water Kung Fu - $750k", 
+		Callback = function() 
+			SafeBuy("BuyFishmanKarate", nil, nil, "Water Kung-fu Teacher") 
+		end 
+	})
 end
 
 -- Asegurar que todos los contenedores inicien en la parte superior (0, 0)
