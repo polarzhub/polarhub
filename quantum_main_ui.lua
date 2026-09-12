@@ -3,31 +3,25 @@
     [POLAR HUB / REVERSE-ENGINEERED MASTER ARTIFACT]
     Quantum Onyx — Main Script UI (Exact 1:1 Pixel-Perfect Recreation)
     ========================================================================
-    Extracted from live memory dump (5,826 instances):
-      - Main Window: 510x330 px, AnchorPoint (0.5, 0.5), #0A0A0A (Trans 0.05), Corner 10px, Stroke #C084FC
-      - Floating Toggle Icon: 60x60 px Circle at {0, 31}, {0, 112} (Asset: rbxassetid://87383580130479)
-      - Header Bar: TitleHub ("Quantum Onyx Project"), SubtitleHub (RichText),
+    Extracted directly from live memory dump (5,809 instances):
+      - Main Window: 510x330 px, AnchorPoint (0.5, 0.5), #0A0A0A (Trans 0.05), Corner 10px, Borderless
+      - Floating Toggle Icon: 60x60 px Circle at {0.016, 0}, {0.219, 0} (Asset: rbxassetid://87383580130479)
+      - Typography: 100% GothamBold for titles, controls, badges, headers, tabs; Gotham for descriptions
+      - Header Bar: TitleHub ("Quantum Onyx Project", GothamBold 13px), SubtitleHub (Gotham 11px),
         "Config." (81151604784579) and "Credits" (83474083071373) pill buttons with
         left vertical neon gradient accent strips, Minimize (92966930061759) and Close (79324227570635).
-      - Tab Bar: SearchBarFrame at {0, 8}, {0, 1} with magnifying glass (3926305904) and count badge (6E3CBE).
-        Horizontal scrolling strip of 12 tabs with authentic asset IDs, FredokaOne font,
+      - Authentic Config. Modal (270x270 px) & Credits Modal (270x270 px):
+        Icon, Title (GothamBold 15px), gradient divider line, scrolling lists, and bottom purple "Cerrar" button.
+      - Tab Bar: SearchBarFrame at {0, 8}, {0, 1} with magnifying glass (3926305904), clear button, and count badge.
+        Horizontal scrolling strip of 12 tabs with authentic asset IDs, GothamBold 14px font,
         and glowing gradient underline indicator.
       - Dual-Column Content Architecture:
-        Col1 ({0, 240}, {0, 255}) and Col2 ({0, 240}, {0, 255}).
-        Each column has Section -> InnerSection (#191919 at 0.30 trans, Corner 6px, UIListLayout Padding 3px, Center-aligned).
-      - Subheaders: Centered title (FredokaOne 15px white) flanked by dual multi-color cyber gradient lines
+        Col1 ({0, 240}, {0, 260}) and Col2 ({0, 240}, {0, 260}), ScrollBarThickness = 0, 19px column padding.
+      - Subheaders: Centered title (GothamBold 15px white) flanked by dual multi-color cyber gradient lines
         (#3C145A -> #5A2882 -> #3C3CA0 -> #2864BE -> #1E8CC8 at 60 deg).
-      - Selector Cards (e.g. Debug Functions): #050505 card (trans 0.40), GothamBold title,
-        thin purple divider line (#6E37BE), and Gotham subtitle value (#A5A5B9).
-      - Dropdowns: Frame {1, -25}, {0, 32} with title, option pill badge (#0C0C12, stroke #C084FC),
-        and dropdown chevron icon (rbxassetid://95968409641902). Opens centered modal dialog with search filter!
-      - Sliders: Frame {1, -25}, {0, 54} with title, number badge TextBox (#0C0C12, stroke #C084FC),
-        pill track frame (#0A0A10), fill bar with gradient (#8B5CF6 -> #D8B4FE),
-        and white thumb knob (13x13px) with violet stroke and inner violet dot (#C084FC, 5x5px).
-      - Toggles: TextButton {1, -25}, {0, 32/42} with title (and optional DescLabel #828291),
-        switch pill (#0F0F0F, stroke #646464), and inner knob icon (asset 12266946128)
-        with 90-degree 5-color cyber gradient!
-      - Action Buttons: Title with chevron '›' in #C084FC.
+      - Multi-line Toggles: 63px height for Bypass TP with wrapped Gotham 11px description.
+      - Sliders: Frame {1, -25}, {0, 54} with GothamBold 13px title, number badge TextBox ({0, 46}, {0, 20}, GothamBold 12px, #C084FC),
+        10px track, lavender fill gradient (#8B5CF6 -> #D8B4FE), and white thumb knob (13x13px) with inner violet dot (#C084FC, 5x5px).
     ========================================================================
 ]]--
 
@@ -44,14 +38,14 @@ local Theme = {
     WindowBase = Color3.fromRGB(10, 10, 10),      -- #0A0A0A (Trans 0.05)
     InnerCard = Color3.fromRGB(25, 25, 25),       -- #191919 (Trans 0.30)
     ControlRow = Color3.fromRGB(5, 5, 5),         -- #050505 (Trans 0.40)
-    PillBadge = Color3.fromRGB(12, 12, 18),        -- #0C0C12 (Trans 0.15 - 0.20)
+    PillBadge = Color3.fromRGB(12, 12, 18),        -- #0C0C12
     SearchBase = Color3.fromRGB(22, 17, 34),       -- #161122 (Trans 0.40)
-    ModalBase = Color3.fromRGB(14, 14, 20),        -- #0E0E14 (Trans 0.18)
+    ModalBase = Color3.fromRGB(11, 8, 18),        -- #0B0812
     
     Accent = Color3.fromRGB(192, 132, 252),        -- #C084FC (Primary Violet Bloom)
     AccentGlow = Color3.fromRGB(160, 100, 255),    -- #A064FF
     AccentDeep = Color3.fromRGB(110, 55, 190),     -- #6E37BE
-    AccentStroke = Color3.fromRGB(140, 80, 220),   -- #8C50DC
+    AccentStroke = Color3.fromRGB(140, 90, 220),   -- #8C5ADC
     
     SwitchOff = Color3.fromRGB(15, 15, 15),        -- #0F0F0F
     SwitchOn = Color3.fromRGB(15, 15, 15),         -- #0F0F0F
@@ -131,10 +125,10 @@ function QuantumOnyxUI.new(customTitle, customSub)
     screenGui.DisplayOrder = 999999
     self.ScreenGui = screenGui
 
-    -- 2. Floating Toggle Button (60x60 Circle at {0, 19}, {0, 126})
+    -- 2. Floating Toggle Button (60x60 Circle at {0.016, 0}, {0.219, 0})
     local floatFrame = Instance.new("Frame")
     floatFrame.Name = "FloatToggle"
-    floatFrame.Position = UDim2.new(0, 19, 0, 126)
+    floatFrame.Position = UDim2.new(0.016, 0, 0.219, 0)
     floatFrame.Size = UDim2.new(0, 60, 0, 60)
     floatFrame.BackgroundTransparency = 1
     floatFrame.ZIndex = 500
@@ -238,9 +232,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
     titleLabel.Size = UDim2.new(1, -255, 0, 16)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Text = customTitle or "Quantum Onyx Project"
-    titleLabel.Font = Enum.Font.FredokaOne
+    titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 13
-    titleLabel.TextColor3 = Theme.TextWhite
+    titleLabel.TextColor3 = Theme.TextLight
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.ZIndex = 206
     titleLabel.Parent = topBar
@@ -253,8 +247,8 @@ function QuantumOnyxUI.new(customTitle, customSub)
     subtitleLabel.RichText = true
     subtitleLabel.Text = customSub or '<font color="#C084FC">Blox Fruit</font> • <font color="#FFD700">v.Premium</font> • <font color="#FF9E9E">Saturday</font>'
     subtitleLabel.Font = Enum.Font.Gotham
-    subtitleLabel.TextSize = 10
-    subtitleLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    subtitleLabel.TextSize = 11
+    subtitleLabel.TextColor3 = Color3.fromRGB(165, 165, 185)
     subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     subtitleLabel.ZIndex = 206
     subtitleLabel.Parent = topBar
@@ -269,112 +263,144 @@ function QuantumOnyxUI.new(customTitle, customSub)
     modalOverlay.ZIndex = 1000
     modalOverlay.Parent = mainFrame
 
-    local function createCenteredModal(titleText, width, height)
+    -- Authentic 270x270 Modal Builder
+    local function createAuthenticModal(name, titleText, iconId)
         local modal = Instance.new("Frame")
-        modal.Name = "Modal_" .. titleText
+        modal.Name = "Modal_" .. name
         modal.Visible = false
         modal.AnchorPoint = Vector2.new(0.5, 0.5)
         modal.Position = UDim2.new(0.5, 0, 0.5, 0)
-        modal.Size = UDim2.new(0, width or 270, 0, height or 270)
+        modal.Size = UDim2.new(0, 270, 0, 270)
         modal.BackgroundColor3 = Theme.ModalBase
-        modal.BackgroundTransparency = 0.05
+        modal.BackgroundTransparency = 0
         modal.BorderSizePixel = 0
         modal.ZIndex = 2000
         modal.Parent = mainFrame
 
         local mc = Instance.new("UICorner")
-        mc.CornerRadius = UDim.new(0, 8)
+        mc.CornerRadius = UDim.new(0, 12)
         mc.Parent = modal
 
         local ms = Instance.new("UIStroke")
-        ms.Color = Theme.Accent
+        ms.Color = Theme.AccentStroke
         ms.Thickness = 1.0
         ms.Transparency = 0.60
         ms.Parent = modal
 
-        local mHeader = Instance.new("Frame")
-        mHeader.Size = UDim2.new(1, 0, 0, 30)
-        mHeader.BackgroundTransparency = 1
-        mHeader.ZIndex = 2001
-        mHeader.Parent = modal
+        -- Top gradient background header
+        local mTop = Instance.new("Frame")
+        mTop.Size = UDim2.new(1, 0, 0.45, 0)
+        mTop.BackgroundColor3 = Color3.fromRGB(80, 40, 160)
+        mTop.BackgroundTransparency = 0.92
+        mTop.BorderSizePixel = 0
+        mTop.ZIndex = 2001
+        mTop.Parent = modal
+        local mtc = Instance.new("UICorner")
+        mtc.CornerRadius = UDim.new(0, 12)
+        mtc.Parent = mTop
+        local mtg = Instance.new("UIGradient")
+        mtg.Rotation = 90
+        mtg.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(160, 100, 255)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 40, 160))
+        })
+        mtg.Parent = mTop
 
+        -- Header Icon (20x20 at {0.5, 0}, {0, 14})
+        local mIcon = Instance.new("ImageLabel")
+        mIcon.AnchorPoint = Vector2.new(0.5, 0)
+        mIcon.Position = UDim2.new(0.5, 0, 0, 14)
+        mIcon.Size = UDim2.new(0, 20, 0, 20)
+        mIcon.BackgroundTransparency = 1
+        mIcon.Image = iconId
+        mIcon.ImageColor3 = Color3.fromRGB(190, 140, 255)
+        mIcon.ZIndex = 2002
+        mIcon.Parent = modal
+
+        -- Title (15px GothamBold at {0.5, 0}, {0, 38})
         local mTitle = Instance.new("TextLabel")
-        mTitle.Position = UDim2.new(0, 12, 0, 0)
-        mTitle.Size = UDim2.new(1, -40, 1, 0)
+        mTitle.AnchorPoint = Vector2.new(0.5, 0)
+        mTitle.Position = UDim2.new(0.5, 0, 0, 38)
+        mTitle.Size = UDim2.new(1, -24, 0, 16)
         mTitle.BackgroundTransparency = 1
         mTitle.Text = titleText
-        mTitle.Font = Enum.Font.FredokaOne
-        mTitle.TextSize = 13
-        mTitle.TextColor3 = Theme.TextWhite
-        mTitle.TextXAlignment = Enum.TextXAlignment.Left
+        mTitle.Font = Enum.Font.GothamBold
+        mTitle.TextSize = 15
+        mTitle.TextColor3 = Color3.fromRGB(210, 175, 255)
+        mTitle.TextXAlignment = Enum.TextXAlignment.Center
         mTitle.ZIndex = 2002
-        mTitle.Parent = mHeader
+        mTitle.Parent = modal
 
-        local mClose = Instance.new("TextButton")
-        mClose.AnchorPoint = Vector2.new(1, 0.5)
-        mClose.Position = UDim2.new(1, -8, 0.5, 0)
-        mClose.Size = UDim2.new(0, 20, 0, 20)
-        mClose.BackgroundTransparency = 1
-        mClose.Text = "✕"
-        mClose.Font = Enum.Font.GothamBold
-        mClose.TextSize = 12
-        mClose.TextColor3 = Theme.Accent
-        mClose.ZIndex = 2002
-        mClose.Parent = mHeader
+        -- Gradient divider line ({0.65, 0}, {0, 1} at {0.5, 0}, {0, 57})
+        local mDiv = Instance.new("Frame")
+        mDiv.AnchorPoint = Vector2.new(0.5, 0)
+        mDiv.Position = UDim2.new(0.5, 0, 0, 57)
+        mDiv.Size = UDim2.new(0.65, 0, 0, 1)
+        mDiv.BackgroundColor3 = Color3.fromRGB(160, 100, 255)
+        mDiv.BackgroundTransparency = 0.72
+        mDiv.BorderSizePixel = 0
+        mDiv.ZIndex = 2002
+        mDiv.Parent = modal
+        local mdg = Instance.new("UIGradient")
+        mdg.Color = UnderlineGradient
+        mdg.Parent = mDiv
 
-        local mSearch = Instance.new("Frame")
-        mSearch.Position = UDim2.new(0, 10, 0, 32)
-        mSearch.Size = UDim2.new(1, -20, 0, 24)
-        mSearch.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
-        mSearch.BackgroundTransparency = 0.10
-        mSearch.ZIndex = 2001
-        mSearch.Parent = modal
-        local msc = Instance.new("UICorner")
-        msc.CornerRadius = UDim.new(0, 6)
-        msc.Parent = mSearch
-        local mss = Instance.new("UIStroke")
-        mss.Color = Theme.AccentDeep
-        mss.Thickness = 1
-        mss.Transparency = 0.78
-        mss.Parent = mSearch
-
-        local mBox = Instance.new("TextBox")
-        mBox.Position = UDim2.new(0, 8, 0, 0)
-        mBox.Size = UDim2.new(1, -16, 1, 0)
-        mBox.BackgroundTransparency = 1
-        mBox.PlaceholderText = "Filter options..."
-        mBox.PlaceholderColor3 = Color3.fromRGB(120, 110, 140)
-        mBox.Text = ""
-        mBox.Font = Enum.Font.Gotham
-        mBox.TextSize = 10
-        mBox.TextColor3 = Theme.TextWhite
-        mBox.TextXAlignment = Enum.TextXAlignment.Left
-        mBox.ClearTextOnFocus = false
-        mBox.ZIndex = 2002
-        mBox.Parent = mSearch
-
+        -- Body ScrollingFrame ({1, -16}, {1, -100} at {0.5, 0}, {0, 64})
         local mScroll = Instance.new("ScrollingFrame")
-        mScroll.Position = UDim2.new(0, 10, 0, 62)
-        mScroll.Size = UDim2.new(1, -20, 1, -70)
+        mScroll.AnchorPoint = Vector2.new(0.5, 0)
+        mScroll.Position = UDim2.new(0.5, 0, 0, 64)
+        mScroll.Size = UDim2.new(1, -16, 1, -100)
         mScroll.BackgroundTransparency = 1
-        mScroll.ScrollBarThickness = 2
-        mScroll.ScrollBarImageColor3 = Theme.AccentDeep
+        mScroll.ScrollBarThickness = 0
         mScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
         mScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-        mScroll.ZIndex = 2001
+        mScroll.ZIndex = 2002
         mScroll.Parent = modal
 
         local ml = Instance.new("UIListLayout")
-        ml.Padding = UDim.new(0, 4)
+        ml.Padding = UDim.new(0, 6)
         ml.SortOrder = Enum.SortOrder.LayoutOrder
+        ml.HorizontalAlignment = Enum.HorizontalAlignment.Center
         ml.Parent = mScroll
+
+        local mp = Instance.new("UIPadding")
+        mp.PaddingLeft = UDim.new(0, 4)
+        mp.PaddingRight = UDim.new(0, 4)
+        mp.PaddingTop = UDim.new(0, 4)
+        mp.PaddingBottom = UDim.new(0, 4)
+        mp.Parent = mScroll
+
+        -- Bottom Close Button ("Cerrar" / "Close", {0.52, 0}, {0, 24} at {0.5, 0}, {1, -9})
+        local mClose = Instance.new("TextButton")
+        mClose.Name = "CloseBtn"
+        mClose.AnchorPoint = Vector2.new(0.5, 1)
+        mClose.Position = UDim2.new(0.5, 0, 1, -9)
+        mClose.Size = UDim2.new(0.52, 0, 0, 24)
+        mClose.BackgroundColor3 = Color3.fromRGB(30, 18, 52)
+        mClose.BorderSizePixel = 0
+        mClose.Text = "Cerrar"
+        mClose.Font = Enum.Font.GothamBold
+        mClose.TextSize = 11
+        mClose.TextColor3 = Color3.fromRGB(180, 135, 255)
+        mClose.ZIndex = 2003
+        mClose.Parent = modal
+
+        local mcc = Instance.new("UICorner")
+        mcc.CornerRadius = UDim.new(0, 6)
+        mcc.Parent = mClose
+
+        local mcs = Instance.new("UIStroke")
+        mcs.Color = Theme.AccentStroke
+        mcs.Thickness = 1.0
+        mcs.Transparency = 0.65
+        mcs.Parent = mClose
 
         local function open()
             modalOverlay.Visible = true
             modal.Visible = true
             modal.Size = UDim2.new(0, 0, 0, 0)
             TweenService:Create(modal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-                Size = UDim2.new(0, width or 270, 0, height or 270)
+                Size = UDim2.new(0, 270, 0, 270)
             }):Play()
         end
 
@@ -394,15 +420,244 @@ function QuantumOnyxUI.new(customTitle, customSub)
         return {
             Frame = modal,
             Body = mScroll,
-            SearchBox = mBox,
+            CloseBtn = mClose,
             Open = open,
             Close = close
         }
     end
-    self.CreateCenteredModal = createCenteredModal
 
-    -- Header Button Builder (SettingsBtn & CreditsBtn with left neon strip)
-    local function createHeaderPillButton(name, text, iconId, xOffset)
+    -- Construct Config. Modal (matching memory dump & user image)
+    local configModal = createAuthenticModal("Config", "Config.", "rbxassetid://81151604784579")
+    do
+        -- 1. Theme Dropdown Box
+        local themeBox = Instance.new("TextButton")
+        themeBox.Size = UDim2.new(1, 0, 0, 28)
+        themeBox.BackgroundColor3 = Color3.fromRGB(18, 13, 30)
+        themeBox.BackgroundTransparency = 0.20
+        themeBox.BorderSizePixel = 0
+        themeBox.Text = "None (theme default)"
+        themeBox.Font = Enum.Font.GothamBold
+        themeBox.TextSize = 10
+        themeBox.TextColor3 = Color3.fromRGB(215, 185, 255)
+        themeBox.ZIndex = 2004
+        themeBox.Parent = configModal.Body
+        local tbc = Instance.new("UICorner")
+        tbc.CornerRadius = UDim.new(0, 6)
+        tbc.Parent = themeBox
+        local tbs = Instance.new("UIStroke")
+        tbs.Color = Theme.AccentStroke
+        tbs.Thickness = 1
+        tbs.Transparency = 0.70
+        tbs.Parent = themeBox
+
+        -- 2. BG Image Fade Slider Box
+        local fadeBox = Instance.new("Frame")
+        fadeBox.Size = UDim2.new(1, 0, 0, 48)
+        fadeBox.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
+        fadeBox.BackgroundTransparency = 0.20
+        fadeBox.BorderSizePixel = 0
+        fadeBox.ZIndex = 2004
+        fadeBox.Parent = configModal.Body
+        local fbc = Instance.new("UICorner")
+        fbc.CornerRadius = UDim.new(0, 8)
+        fbc.Parent = fadeBox
+        local fbs = Instance.new("UIStroke")
+        fbs.Color = Theme.AccentStroke
+        fbs.Thickness = 1
+        fbs.Transparency = 0.70
+        fbs.Parent = fadeBox
+
+        local flbl = Instance.new("TextLabel")
+        flbl.Position = UDim2.new(0, 14, 0, 6)
+        flbl.Size = UDim2.new(1, -70, 0, 14)
+        flbl.BackgroundTransparency = 1
+        flbl.Text = "BG Image Fade"
+        flbl.Font = Enum.Font.GothamBold
+        flbl.TextSize = 11
+        flbl.TextColor3 = Color3.fromRGB(215, 185, 255)
+        flbl.TextXAlignment = Enum.TextXAlignment.Left
+        flbl.ZIndex = 2005
+        flbl.Parent = fadeBox
+
+        local fVal = Instance.new("TextLabel")
+        fVal.AnchorPoint = Vector2.new(1, 0)
+        fVal.Position = UDim2.new(1, -10, 0, 6)
+        fVal.Size = UDim2.new(0, 44, 0, 14)
+        fVal.BackgroundTransparency = 1
+        fVal.Text = "88%"
+        fVal.Font = Enum.Font.GothamBold
+        fVal.TextSize = 11
+        fVal.TextColor3 = Color3.fromRGB(192, 132, 252)
+        fVal.TextXAlignment = Enum.TextXAlignment.Right
+        fVal.ZIndex = 2005
+        fVal.Parent = fadeBox
+
+        local fTrack = Instance.new("Frame")
+        fTrack.Position = UDim2.new(0, 12, 0, 28)
+        fTrack.Size = UDim2.new(1, -24, 0, 10)
+        fTrack.BackgroundColor3 = Color3.fromRGB(10, 10, 16)
+        fTrack.BorderSizePixel = 0
+        fTrack.ZIndex = 2005
+        fTrack.Parent = fadeBox
+        local ftc = Instance.new("UICorner")
+        ftc.CornerRadius = UDim.new(1, 0)
+        ftc.Parent = fTrack
+        local fFill = Instance.new("Frame")
+        fFill.Size = UDim2.new(0.88, 0, 1, 0)
+        fFill.BackgroundColor3 = Theme.AccentGlow
+        fFill.BorderSizePixel = 0
+        fFill.ZIndex = 2006
+        fFill.Parent = fTrack
+        local ffc = Instance.new("UICorner")
+        ffc.CornerRadius = UDim.new(1, 0)
+        ffc.Parent = fFill
+        local ffg = Instance.new("UIGradient")
+        ffg.Color = LavenderGradient
+        ffg.Parent = fFill
+        local fThumb = Instance.new("Frame")
+        fThumb.AnchorPoint = Vector2.new(0.5, 0.5)
+        fThumb.Position = UDim2.new(0.88, 0, 0.5, 0)
+        fThumb.Size = UDim2.new(0, 12, 0, 12)
+        fThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        fThumb.BorderSizePixel = 0
+        fThumb.ZIndex = 2007
+        fThumb.Parent = fTrack
+        local ftcc = Instance.new("UICorner")
+        ftcc.CornerRadius = UDim.new(1, 0)
+        ftcc.Parent = fThumb
+
+        -- 3. UI Font Section Header
+        local fontHdr = Instance.new("TextLabel")
+        fontHdr.Size = UDim2.new(1, 0, 0, 16)
+        fontHdr.BackgroundTransparency = 1
+        fontHdr.Text = "UI Font"
+        fontHdr.Font = Enum.Font.GothamBold
+        fontHdr.TextSize = 10
+        fontHdr.TextColor3 = Color3.fromRGB(150, 105, 220)
+        fontHdr.TextXAlignment = Enum.TextXAlignment.Center
+        fontHdr.ZIndex = 2004
+        fontHdr.Parent = configModal.Body
+
+        -- 4. Font Option: ✓ Gotham (Active)
+        local gothamBtn = Instance.new("TextButton")
+        gothamBtn.Size = UDim2.new(1, 0, 0, 26)
+        gothamBtn.BackgroundColor3 = Color3.fromRGB(30, 18, 52)
+        gothamBtn.BackgroundTransparency = 0.20
+        gothamBtn.BorderSizePixel = 0
+        gothamBtn.Text = "✓ Gotham"
+        gothamBtn.Font = Enum.Font.GothamBold
+        gothamBtn.TextSize = 11
+        gothamBtn.TextColor3 = Color3.fromRGB(215, 185, 255)
+        gothamBtn.ZIndex = 2004
+        gothamBtn.Parent = configModal.Body
+        local gbc = Instance.new("UICorner")
+        gbc.CornerRadius = UDim.new(0, 5)
+        gbc.Parent = gothamBtn
+        local gbs = Instance.new("UIStroke")
+        gbs.Color = Theme.AccentStroke
+        gbs.Thickness = 1
+        gbs.Transparency = 0.42
+        gbs.Parent = gothamBtn
+    end
+
+    -- Construct Credits Modal (matching memory dump)
+    local creditsModal = createAuthenticModal("Credits", "Credits", "rbxassetid://83474083071373")
+    do
+        local teamHdr = Instance.new("TextLabel")
+        teamHdr.Size = UDim2.new(1, 0, 0, 14)
+        teamHdr.BackgroundTransparency = 1
+        teamHdr.Text = "TEAM"
+        teamHdr.Font = Enum.Font.GothamBold
+        teamHdr.TextSize = 9
+        teamHdr.TextColor3 = Color3.fromRGB(150, 105, 220)
+        teamHdr.TextXAlignment = Enum.TextXAlignment.Center
+        teamHdr.ZIndex = 2004
+        teamHdr.Parent = creditsModal.Body
+
+        local team = {
+            { letter = "V", name = "Vin", role = "ServerOwner", color = Color3.fromRGB(255, 200, 80) },
+            { letter = "F", name = "Flazhy", role = "MainDeveloper", color = Color3.fromRGB(175, 115, 255) },
+            { letter = "K", name = "Kiel", role = "WebDesigner", color = Color3.fromRGB(100, 200, 255) },
+            { letter = "C", name = "CudalPH", role = "Tester", color = Color3.fromRGB(80, 225, 160) },
+            { letter = "P", name = "Pierce", role = "Support", color = Color3.fromRGB(175, 115, 255) },
+        }
+
+        for _, member in ipairs(team) do
+            local card = Instance.new("Frame")
+            card.Size = UDim2.new(1, 0, 0, 50)
+            card.BackgroundColor3 = Color3.fromRGB(10, 7, 18)
+            card.BorderSizePixel = 0
+            card.ZIndex = 2004
+            card.Parent = creditsModal.Body
+            local cc = Instance.new("UICorner")
+            cc.CornerRadius = UDim.new(0, 8)
+            cc.Parent = card
+            local cs = Instance.new("UIStroke")
+            cs.Color = member.color
+            cs.Thickness = 1
+            cs.Transparency = 0.70
+            cs.Parent = card
+
+            -- Avatar Badge
+            local av = Instance.new("Frame")
+            av.Position = UDim2.new(0, 10, 0.5, -16)
+            av.Size = UDim2.new(0, 32, 0, 32)
+            av.BackgroundColor3 = Color3.fromRGB(25, 18, 40)
+            av.BorderSizePixel = 0
+            av.ZIndex = 2005
+            av.Parent = card
+            local avc = Instance.new("UICorner")
+            avc.CornerRadius = UDim.new(1, 0)
+            avc.Parent = av
+            local avl = Instance.new("TextLabel")
+            avl.Size = UDim2.new(1, 0, 1, 0)
+            avl.BackgroundTransparency = 1
+            avl.Text = member.letter
+            avl.Font = Enum.Font.GothamBold
+            avl.TextSize = 16
+            avl.TextColor3 = member.color
+            avl.ZIndex = 2006
+            avl.Parent = av
+
+            -- Name
+            local nl = Instance.new("TextLabel")
+            nl.Position = UDim2.new(0, 50, 0, 8)
+            nl.Size = UDim2.new(1, -120, 0, 16)
+            nl.BackgroundTransparency = 1
+            nl.Text = member.name
+            nl.Font = Enum.Font.GothamBold
+            nl.TextSize = 13
+            nl.TextColor3 = Color3.fromRGB(240, 235, 255)
+            nl.TextXAlignment = Enum.TextXAlignment.Left
+            nl.ZIndex = 2005
+            nl.Parent = card
+
+            -- Role Badge
+            local rb = Instance.new("Frame")
+            rb.AnchorPoint = Vector2.new(1, 0.5)
+            rb.Position = UDim2.new(1, -8, 0.5, 0)
+            rb.Size = UDim2.new(0, 72, 0, 20)
+            rb.BackgroundColor3 = Color3.fromRGB(18, 12, 30)
+            rb.BorderSizePixel = 0
+            rb.ZIndex = 2005
+            rb.Parent = card
+            local rbc = Instance.new("UICorner")
+            rbc.CornerRadius = UDim.new(0, 5)
+            rbc.Parent = rb
+            local rbl = Instance.new("TextLabel")
+            rbl.Size = UDim2.new(1, 0, 1, 0)
+            rbl.BackgroundTransparency = 1
+            rbl.Text = member.role
+            rbl.Font = Enum.Font.GothamBold
+            rbl.TextSize = 9
+            rbl.TextColor3 = member.color
+            rbl.ZIndex = 2006
+            rbl.Parent = rb
+        end
+    end
+
+    -- Header Button Builder (Config. & Credits with left neon strip)
+    local function createHeaderPillButton(name, text, iconId, xOffset, onClick)
         local btn = Instance.new("TextButton")
         btn.Name = name
         btn.AnchorPoint = Vector2.new(1, 0)
@@ -467,11 +722,19 @@ function QuantumOnyxUI.new(customTitle, customSub)
         lbl.ZIndex = 207
         lbl.Parent = btn
 
+        if onClick then
+            btn.MouseButton1Click:Connect(onClick)
+        end
+
         return btn
     end
 
-    local settingsBtn = createHeaderPillButton("SettingsBtn", "Settings", "rbxassetid://81151604784579", -153)
-    local creditsBtn = createHeaderPillButton("CreditsBtn", "Credits", "rbxassetid://83474083071373", -62)
+    local configBtn = createHeaderPillButton("ConfigBtn", "Config.", "rbxassetid://81151604784579", -153, function()
+        configModal.Open()
+    end)
+    local creditsBtn = createHeaderPillButton("CreditsBtn", "Credits", "rbxassetid://83474083071373", -62, function()
+        creditsModal.Open()
+    end)
 
     -- Minimize Button
     local minBtn = Instance.new("ImageButton")
@@ -628,13 +891,13 @@ function QuantumOnyxUI.new(customTitle, customSub)
     for idx, def in ipairs(TabDefs) do
         local isDefaultActive = (def.name == "Home")
 
-        -- Tab Button
+        -- Tab Button (GothamBold 14px)
         local btn = Instance.new("TextButton")
         btn.Name = "TabBtn_" .. def.name
         btn.Size = UDim2.new(0, def.width, 0, 24)
         btn.BackgroundTransparency = 1
         btn.Text = def.name
-        btn.Font = Enum.Font.FredokaOne
+        btn.Font = Enum.Font.GothamBold
         btn.TextSize = 14
         btn.TextColor3 = isDefaultActive and Theme.TextWhite or Theme.TextTabOff
         btn.TextXAlignment = Enum.TextXAlignment.Right
@@ -800,7 +1063,7 @@ function QuantumOnyxUI:CreateSectionCard(columnParent, titleText)
     title.Size = UDim2.new(0.6, 0, 1, 0)
     title.BackgroundTransparency = 1
     title.Text = titleText
-    title.Font = Enum.Font.FredokaOne
+    title.Font = Enum.Font.GothamBold
     title.TextSize = 15
     title.TextColor3 = Theme.TextWhite
     title.TextXAlignment = Enum.TextXAlignment.Center
@@ -831,7 +1094,7 @@ function QuantumOnyxUI:CreateSectionCard(columnParent, titleText)
     return innerSection
 end
 
--- Selector Card Control (e.g. Debug Functions) - Fixed 62px height
+-- Selector Card Control (e.g. Debug Functions / Secret Quests)
 function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callback)
     callback = callback or function() end
     local ord = (innerParent:GetAttribute("Order") or 1) + 1; innerParent:SetAttribute("Order", ord)
@@ -875,7 +1138,7 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     titleLbl.Text = labelText
     titleLbl.Font = Enum.Font.GothamBold
     titleLbl.TextSize = 13
-    titleLbl.TextColor3 = Color3.fromRGB(230, 230, 240)
+    titleLbl.TextColor3 = Theme.TextLight
     titleLbl.TextXAlignment = Enum.TextXAlignment.Left
     titleLbl.ZIndex = 211
     titleLbl.Parent = card
@@ -896,7 +1159,7 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     descLbl.Text = valueText or "None"
     descLbl.Font = Enum.Font.Gotham
     descLbl.TextSize = 11
-    descLbl.TextColor3 = Color3.fromRGB(165, 165, 185)
+    descLbl.TextColor3 = Theme.TextDesc
     descLbl.TextXAlignment = Enum.TextXAlignment.Left
     descLbl.ZIndex = 211
     descLbl.Parent = card
@@ -924,23 +1187,22 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     fc.CornerRadius = UDim.new(0, 6)
     fc.Parent = frame
 
-    local fs = Instance.new("UIStroke")
-    fs.Color = Theme.Accent
-    fs.Thickness = 1.0
-    fs.Transparency = 1.00
-    fs.Parent = frame
-
     local tLabel = Instance.new("TextLabel")
     tLabel.Position = UDim2.new(0, 12, 0, 0)
     tLabel.Size = UDim2.new(1, -95, 1, 0)
     tLabel.BackgroundTransparency = 1
     tLabel.Text = labelText
     tLabel.Font = Enum.Font.GothamBold
-    tLabel.TextSize = 10
+    tLabel.TextSize = 13
+    tLabel.TextScaled = true
     tLabel.TextColor3 = Theme.TextLight
     tLabel.TextXAlignment = Enum.TextXAlignment.Left
     tLabel.ZIndex = 211
     tLabel.Parent = frame
+    local tcConstraint = Instance.new("UITextSizeConstraint")
+    tcConstraint.MaxTextSize = 13
+    tcConstraint.MinTextSize = 8
+    tcConstraint.Parent = tLabel
 
     -- Option Pill Badge (#0C0C12, stroke #C084FC)
     local pillBadge = Instance.new("Frame")
@@ -968,12 +1230,17 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     valLabel.BackgroundTransparency = 1
     valLabel.Text = selected
     valLabel.Font = Enum.Font.GothamBold
-    valLabel.TextSize = 10
+    valLabel.TextSize = 11
+    valLabel.TextScaled = true
     valLabel.TextColor3 = Theme.Accent
     valLabel.TextXAlignment = Enum.TextXAlignment.Left
     valLabel.TextTruncate = Enum.TextTruncate.AtEnd
     valLabel.ZIndex = 212
     valLabel.Parent = pillBadge
+    local vbcConstraint = Instance.new("UITextSizeConstraint")
+    vbcConstraint.MaxTextSize = 11
+    vbcConstraint.MinTextSize = 8
+    vbcConstraint.Parent = valLabel
 
     -- Dropdown Arrow (asset 95968409641902)
     local arrow = Instance.new("ImageButton")
@@ -986,9 +1253,93 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     arrow.ZIndex = 212
     arrow.Parent = frame
 
-    -- Centered Modal
-    local modal = self.CreateCenteredModal(labelText, 250, 260)
-    local optButtons = {}
+    -- Dropdown Selection Modal
+    local modal = Instance.new("Frame")
+    modal.Name = "DropdownModal_" .. labelText
+    modal.Visible = false
+    modal.AnchorPoint = Vector2.new(0.5, 0.5)
+    modal.Position = UDim2.new(0.5, 0, 0.5, 0)
+    modal.Size = UDim2.new(0, 250, 0, 260)
+    modal.BackgroundColor3 = Theme.ModalBase
+    modal.BorderSizePixel = 0
+    modal.ZIndex = 2000
+    modal.Parent = self.MainFrame
+
+    local mc = Instance.new("UICorner")
+    mc.CornerRadius = UDim.new(0, 8)
+    mc.Parent = modal
+
+    local ms = Instance.new("UIStroke")
+    ms.Color = Theme.AccentStroke
+    ms.Thickness = 1.0
+    ms.Transparency = 0.60
+    ms.Parent = modal
+
+    local mHeader = Instance.new("Frame")
+    mHeader.Size = UDim2.new(1, 0, 0, 30)
+    mHeader.BackgroundTransparency = 1
+    mHeader.ZIndex = 2001
+    mHeader.Parent = modal
+
+    local mTitle = Instance.new("TextLabel")
+    mTitle.Position = UDim2.new(0, 12, 0, 0)
+    mTitle.Size = UDim2.new(1, -40, 1, 0)
+    mTitle.BackgroundTransparency = 1
+    mTitle.Text = labelText
+    mTitle.Font = Enum.Font.GothamBold
+    mTitle.TextSize = 13
+    mTitle.TextColor3 = Theme.TextWhite
+    mTitle.TextXAlignment = Enum.TextXAlignment.Left
+    mTitle.ZIndex = 2002
+    mTitle.Parent = mHeader
+
+    local mClose = Instance.new("TextButton")
+    mClose.AnchorPoint = Vector2.new(1, 0.5)
+    mClose.Position = UDim2.new(1, -8, 0.5, 0)
+    mClose.Size = UDim2.new(0, 20, 0, 20)
+    mClose.BackgroundTransparency = 1
+    mClose.Text = "✕"
+    mClose.Font = Enum.Font.GothamBold
+    mClose.TextSize = 12
+    mClose.TextColor3 = Theme.Accent
+    mClose.ZIndex = 2002
+    mClose.Parent = mHeader
+
+    local mScroll = Instance.new("ScrollingFrame")
+    mScroll.Position = UDim2.new(0, 10, 0, 34)
+    mScroll.Size = UDim2.new(1, -20, 1, -42)
+    mScroll.BackgroundTransparency = 1
+    mScroll.ScrollBarThickness = 2
+    mScroll.ScrollBarImageColor3 = Theme.AccentDeep
+    mScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+    mScroll.ZIndex = 2001
+    mScroll.Parent = modal
+
+    local ml = Instance.new("UIListLayout")
+    ml.Padding = UDim.new(0, 4)
+    ml.SortOrder = Enum.SortOrder.LayoutOrder
+    ml.Parent = mScroll
+
+    local function openModal()
+        modal.Visible = true
+        modal.Size = UDim2.new(0, 0, 0, 0)
+        TweenService:Create(modal, TweenInfo.new(0.2, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 250, 0, 260)
+        }):Play()
+    end
+
+    local function closeModal()
+        local tw = TweenService:Create(modal, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 0, 0, 0)
+        })
+        tw:Play()
+        tw.Completed:Connect(function()
+            modal.Visible = false
+        end)
+    end
+
+    mClose.MouseButton1Click:Connect(closeModal)
+
     for _, opt in ipairs(options) do
         local optBtn = Instance.new("TextButton")
         optBtn.Size = UDim2.new(1, 0, 0, 26)
@@ -996,31 +1347,22 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
         optBtn.BackgroundTransparency = 0.4
         optBtn.Text = "  " .. opt
         optBtn.Font = Enum.Font.GothamBold
-        optBtn.TextSize = 10
+        optBtn.TextSize = 11
         optBtn.TextColor3 = (opt == selected) and Theme.Accent or Theme.TextWhite
         optBtn.TextXAlignment = Enum.TextXAlignment.Left
-        optBtn.ZIndex = 2013
+        optBtn.ZIndex = 2003
         local oc = Instance.new("UICorner")
         oc.CornerRadius = UDim.new(0, 4)
         oc.Parent = optBtn
-        optBtn.Parent = modal.Body
-
-        table.insert(optButtons, { btn = optBtn, text = opt })
+        optBtn.Parent = mScroll
 
         optBtn.MouseButton1Click:Connect(function()
             selected = opt
             valLabel.Text = opt
-            modal.Close()
+            closeModal()
             callback(opt)
         end)
     end
-
-    modal.SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-        local f = modal.SearchBox.Text:lower()
-        for _, itm in ipairs(optButtons) do
-            itm.btn.Visible = (f == "" or itm.text:lower():find(f) ~= nil)
-        end
-    end)
 
     local clickBlock = Instance.new("TextButton")
     clickBlock.Size = UDim2.new(1, 0, 1, 0)
@@ -1028,8 +1370,8 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     clickBlock.Text = ""
     clickBlock.ZIndex = 213
     clickBlock.Parent = frame
-    clickBlock.MouseButton1Click:Connect(function() modal.Open() end)
-    arrow.MouseButton1Click:Connect(function() modal.Open() end)
+    clickBlock.MouseButton1Click:Connect(openModal)
+    arrow.MouseButton1Click:Connect(openModal)
 
     return frame
 end
@@ -1038,7 +1380,9 @@ end
 function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, callback)
     callback = callback or function(v) end
     local isToggled = defaultVal or false
-    local height = descText and 42 or 32
+    -- Height: 63px for multi-line description (like Bypass TP), 32px for single line
+    local isMultiLine = descText and #descText > 30
+    local height = isMultiLine and 63 or (descText and 42 or 32)
     local ord = (innerParent:GetAttribute("Order") or 1) + 1; innerParent:SetAttribute("Order", ord)
 
     local btn = Instance.new("TextButton")
@@ -1057,28 +1401,34 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     bc.Parent = btn
 
     local tLabel = Instance.new("TextLabel")
-    tLabel.Position = UDim2.new(0, 10, 0, descText and 3 or 0)
+    tLabel.Position = UDim2.new(0, 10, 0, descText and 4 or 0)
     tLabel.Size = UDim2.new(1, -66, 0, descText and 18 or height)
     tLabel.BackgroundTransparency = 1
     tLabel.Text = labelText
     tLabel.Font = Enum.Font.GothamBold
-    tLabel.TextSize = 10
-    tLabel.TextColor3 = isToggled and Color3.fromRGB(230, 230, 230) or Theme.TextMuted
+    tLabel.TextSize = 13
+    tLabel.TextScaled = true
+    tLabel.TextColor3 = isToggled and Theme.TextWhite or Theme.TextMuted
     tLabel.TextXAlignment = Enum.TextXAlignment.Left
     tLabel.ZIndex = 211
     tLabel.Parent = btn
+    local tlc = Instance.new("UITextSizeConstraint")
+    tlc.MaxTextSize = 13
+    tlc.MinTextSize = 8
+    tlc.Parent = tLabel
 
     if descText then
         local dLabel = Instance.new("TextLabel")
         dLabel.Name = "DescLabel"
         dLabel.Position = UDim2.new(0, 10, 0, 22)
-        dLabel.Size = UDim2.new(1, -60, 0, 14)
+        dLabel.Size = UDim2.new(1, -60, 0, isMultiLine and 35 or 14)
         dLabel.BackgroundTransparency = 1
         dLabel.Text = descText
         dLabel.Font = Enum.Font.Gotham
         dLabel.TextSize = 11
         dLabel.TextColor3 = Theme.TextDesc
         dLabel.TextXAlignment = Enum.TextXAlignment.Left
+        dLabel.TextYAlignment = Enum.TextYAlignment.Top
         dLabel.TextWrapped = true
         dLabel.ZIndex = 211
         dLabel.Parent = btn
@@ -1123,7 +1473,7 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     btn.MouseButton1Click:Connect(function()
         isToggled = not isToggled
         local targetPos = isToggled and UDim2.new(0, 20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
-        local targetTextCol = isToggled and Color3.fromRGB(230, 230, 230) or Theme.TextMuted
+        local targetTextCol = isToggled and Theme.TextWhite or Theme.TextMuted
 
         TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Position = targetPos,
@@ -1137,7 +1487,7 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     return btn
 end
 
--- Slider Control (Real Track + Lavender Fill Gradient + White Knob with Inner Violet Dot)
+-- Slider Control (Authentic Track + Lavender Fill Gradient + White Knob with Inner Violet Dot)
 function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, defaultVal, callback)
     callback = callback or function(v) end
     local currentVal = defaultVal or minVal
@@ -1169,7 +1519,7 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     title.ZIndex = 211
     title.Parent = frame
 
-    -- Value Badge TextBox (#0C0C12, stroke #C084FC)
+    -- Value Badge TextBox ({0, 46}, {0, 20} at {1, -56}, {0, 6}, GothamBold 12px, #C084FC)
     local valBox = Instance.new("TextBox")
     valBox.Position = UDim2.new(1, -56, 0, 6)
     valBox.Size = UDim2.new(0, 46, 0, 20)
@@ -1185,7 +1535,7 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     vbc.CornerRadius = UDim.new(0, 5)
     vbc.Parent = valBox
     local vbs = Instance.new("UIStroke")
-    vbs.Color = Theme.Accent
+    vbs.Color = Theme.AccentStroke
     vbs.Thickness = 1.0
     vbs.Transparency = 0.72
     vbs.Parent = valBox
@@ -1203,7 +1553,7 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     tc.CornerRadius = UDim.new(1, 0)
     tc.Parent = track
     local ts = Instance.new("UIStroke")
-    ts.Color = Theme.Accent
+    ts.Color = Theme.AccentStroke
     ts.Thickness = 1.0
     ts.Transparency = 0.81
     ts.Parent = track
@@ -1324,11 +1674,16 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
     lbl.BackgroundTransparency = 1
     lbl.Text = labelText
     lbl.Font = Enum.Font.GothamBold
-    lbl.TextSize = 10
+    lbl.TextSize = 13
+    lbl.TextScaled = true
     lbl.TextColor3 = Theme.TextLight
     lbl.TextXAlignment = Enum.TextXAlignment.Left
     lbl.ZIndex = 211
     lbl.Parent = btn
+    local lcConstraint = Instance.new("UITextSizeConstraint")
+    lcConstraint.MaxTextSize = 13
+    lcConstraint.MinTextSize = 8
+    lcConstraint.Parent = lbl
 
     local arrow = Instance.new("TextLabel")
     arrow.Name = "Arrow"
@@ -1338,7 +1693,7 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
     arrow.BackgroundTransparency = 1
     arrow.Text = "›"
     arrow.Font = Enum.Font.GothamBold
-    arrow.TextSize = 12
+    arrow.TextSize = 14
     arrow.TextColor3 = Theme.Accent
     arrow.ZIndex = 211
     arrow.Parent = btn
