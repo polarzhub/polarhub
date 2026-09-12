@@ -3,9 +3,21 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
-local CoreGui = (gethui and gethui()) 
-	or (get_hidden_gui and get_hidden_gui()) 
-	or Player:WaitForChild("PlayerGui")
+local CoreGui = (function()
+	if gethui then
+		local success, res = pcall(gethui)
+		if success and res and not res:IsDescendantOf(game:GetService("CoreGui")) then
+			return res
+		end
+	end
+	if get_hidden_gui then
+		local success, res = pcall(get_hidden_gui)
+		if success and res and not res:IsDescendantOf(game:GetService("CoreGui")) then
+			return res
+		end
+	end
+	return Player:WaitForChild("PlayerGui")
+end)()
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerMouse = Player:GetMouse()
@@ -1451,6 +1463,17 @@ function redzlib:MakeWindow(Configs)
 		end
 	end;LoadFile()
 	
+	if not ScreenGui or not ScreenGui.Parent or not ScreenGui:IsDescendantOf(game) then
+		ScreenGui = Create("ScreenGui", CoreGui, {
+			Name = "redz Library V5",
+		}, {
+			Create("UIScale", {
+				Scale = UIScale,
+				Name = "Scale"
+			})
+		})
+	end
+	
 	local UISizeX, UISizeY = unpack(redzlib.Save.UISize)
 	local MainFrame = InsertTheme(Create("ImageButton", ScreenGui, {
 		Size = UDim2.fromOffset(UISizeX, UISizeY),
@@ -2368,17 +2391,17 @@ function redzlib:MakeWindow(Configs)
 				UpdateSelected()
 			end
 			
-			Button.Activated:Connect(Minimize)
-			NoClickFrame.MouseButton1Down:Connect(Disable)
-			NoClickFrame.MouseButton1Click:Connect(Disable)
-			MainFrame:GetPropertyChangedSignal("Visible"):Connect(Disable)
-			SelectedFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(CalculatePos)
+			pcall(function() Button.Activated:Connect(Minimize) end)
+			pcall(function() NoClickFrame.MouseButton1Down:Connect(Disable) end)
+			pcall(function() NoClickFrame.MouseButton1Click:Connect(Disable) end)
+			pcall(function() MainFrame:GetPropertyChangedSignal("Visible"):Connect(Disable) end)
+			pcall(function() SelectedFrame:GetPropertyChangedSignal("AbsolutePosition"):Connect(CalculatePos) end)
 			
-			Button.Activated:Connect(CalculateSize)
-			ScrollFrame.ChildAdded:Connect(CalculateSize)
-			ScrollFrame.ChildRemoved:Connect(CalculateSize)
-			CalculatePos()
-			CalculateSize()
+			pcall(function() Button.Activated:Connect(CalculateSize) end)
+			pcall(function() ScrollFrame.ChildAdded:Connect(CalculateSize) end)
+			pcall(function() ScrollFrame.ChildRemoved:Connect(CalculateSize) end)
+			pcall(CalculatePos)
+			pcall(CalculateSize)
 			
 			local Dropdown = {}
 			function Dropdown:Visible(...) Funcs:ToggleVisible(Button, ...) end

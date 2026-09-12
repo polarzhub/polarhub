@@ -5,24 +5,7 @@
 -- Esperar a que el juego cargue completamente antes de inyectar
 repeat task.wait() until game:IsLoaded()
 
--- ==================== REDZ UI LIBRARY ====================
-local cacheBuster = "?t=" .. tostring(os.time())
-local success, redzlib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua" .. cacheBuster))()
-end)
-
-if not success or not redzlib then
-    warn("Error: No se pudo cargar RedzLib V5 desde refs/heads/main, intentando ruta alterna...")
-    success, redzlib = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua" .. cacheBuster))()
-    end)
-    if not success or not redzlib then
-        warn("Error crítico: No se pudo cargar RedzLib V5.")
-        return
-    end
-end
-
--- Limpiar cualquier instancia previa de la interfaz para evitar ventanas duplicadas o residuales
+-- Limpiar cualquier instancia previa de la interfaz antes de cargar la librería para evitar ventanas duplicadas
 pcall(function()
     local targets = {
         (gethui and gethui()),
@@ -40,6 +23,23 @@ pcall(function()
         end
     end
 end)
+
+-- ==================== REDZ UI LIBRARY ====================
+local cacheBuster = "?t=" .. tostring(os.time())
+local success, redzlib = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua" .. cacheBuster))()
+end)
+
+if not success or not redzlib then
+    warn("Error: No se pudo cargar RedzLib V5 desde refs/heads/main, intentando ruta alterna...")
+    success, redzlib = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua" .. cacheBuster))()
+    end)
+    if not success or not redzlib then
+        warn("Error crítico: No se pudo cargar RedzLib V5.")
+        return
+    end
+end
 
 local Window = redzlib:MakeWindow({
     Name = "❄️ POLAR HUB",
