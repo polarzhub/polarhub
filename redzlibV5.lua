@@ -3,7 +3,9 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
-local CoreGui = game:GetService("CoreGui")
+local CoreGui = (gethui and gethui()) 
+	or (get_hidden_gui and get_hidden_gui()) 
+	or Player:WaitForChild("PlayerGui")
 local Players = game:GetService("Players")
 local Player = Players.LocalPlayer
 local PlayerMouse = Player:GetMouse()
@@ -905,7 +907,7 @@ local SetProps, SetChildren, InsertTheme, Create do
 	SetChildren = function(Instance, Children)
 		if Children then
 			table.foreach(Children, function(_,Child)
-				Child.Parent = Instance
+				pcall(function() Child.Parent = Instance end)
 			end)
 		end
 		return Instance
@@ -931,10 +933,12 @@ local SetProps, SetChildren, InsertTheme, Create do
 			SetChildren(new, args[3])
 			Children = args[3] or {}
 		elseif typeof(args[2]) == "Instance" then
-			new.Parent = args[2]
 			SetProps(new, args[3])
 			SetChildren(new, args[4])
 			Children = args[4] or {}
+			pcall(function()
+				new.Parent = args[2]
+			end)
 		end
 		return new
 	end
@@ -985,11 +989,13 @@ local Funcs = {} do
 	end
 	
 	function Funcs:ToggleParent(Obj, Parent)
-		if Bool ~= nil then
-			Obj.Parent = Bool
-		else
-			Obj.Parent = not Obj.Parent and Parent
-		end
+		pcall(function()
+			if Bool ~= nil then
+				Obj.Parent = Bool
+			else
+				Obj.Parent = not Obj.Parent and Parent
+			end
+		end)
 	end
 	
 	function Funcs:GetConnectionFunctions(ConnectedFuncs, func)
@@ -1102,6 +1108,24 @@ local GetFlag, SetFlag, CheckFlag do
 	end)
 end
 
+pcall(function()
+	local targets = {
+		(gethui and gethui()),
+		(get_hidden_gui and get_hidden_gui()),
+		Player:FindFirstChild("PlayerGui"),
+		(pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+	}
+	for _, c in ipairs(targets) do
+		if c then
+			for _, child in ipairs(c:GetChildren()) do
+				if child.Name == "redz Library V5" then
+					pcall(function() child:Destroy() end)
+				end
+			end
+		end
+	end
+end)
+
 local ScreenGui = Create("ScreenGui", CoreGui, {
 	Name = "redz Library V5",
 }, {
@@ -1110,11 +1134,6 @@ local ScreenGui = Create("ScreenGui", CoreGui, {
 		Name = "Scale"
 	})
 })
-
-local ScreenFind = CoreGui:FindFirstChild(ScreenGui.Name)
-if ScreenFind and ScreenFind ~= ScreenGui then
-	ScreenFind:Destroy()
-end
 
 local function GetStr(val)
 	if type(val) == "function" then
@@ -1724,8 +1743,8 @@ function redzlib:MakeWindow(Configs)
 			Name = "Dialog"
 		}), "Stroke")
 		
-		MainCorner:Clone().Parent = Screen
-		Frame.Parent = Screen
+		pcall(function() MainCorner:Clone().Parent = Screen end)
+		pcall(function() Frame.Parent = Screen end)
 		CreateTween({Frame, "Size", UDim2.fromOffset(250, 150), 0.2})
 		CreateTween({Frame, "Transparency", 0, 0.15})
 		CreateTween({Screen, "Transparency", 0.3, 0.15})
@@ -1847,16 +1866,16 @@ function redzlib:MakeWindow(Configs)
 		
 		table.insert(ContainerList, Container)
 		
-		if not FirstTab then Container.Parent = Containers end
+		if not FirstTab then pcall(function() Container.Parent = Containers end) end
 		
 		local function Tabs()
 			if Container.Parent then return end
 			for _,Frame in pairs(ContainerList) do
 				if Frame:IsA("ScrollingFrame") and Frame ~= Container then
-					Frame.Parent = nil
+					pcall(function() Frame.Parent = nil end)
 				end
 			end
-			Container.Parent = Containers
+			pcall(function() Container.Parent = Containers end)
 			Container.Size = UDim2.new(1, 0, 1, 150)
 			pcall(function() Container.CanvasPosition = Vector2.new(0, 0) end)
 			table.foreach(redzlib.Tabs, function(_,Tab)
@@ -1878,7 +1897,7 @@ function redzlib:MakeWindow(Configs)
 		Tab.Cont = Container
 		
 		function Tab:Disable()
-			Container.Parent = nil
+			pcall(function() Container.Parent = nil end)
 			CreateTween({LabelTitle, "TextTransparency", 0.3, 0.35})
 			CreateTween({LabelIcon, "ImageTransparency", 0.3, 0.35})
 			CreateTween({Selected, "Size", UDim2.new(0, 4, 0, 4), 0.35})

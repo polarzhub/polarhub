@@ -6,20 +6,39 @@
 repeat task.wait() until game:IsLoaded()
 
 -- ==================== REDZ UI LIBRARY ====================
+local cacheBuster = "?t=" .. tostring(os.time())
 local success, redzlib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua"))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua" .. cacheBuster))()
 end)
 
 if not success or not redzlib then
-    warn("Error: No se pudo cargar RedzLib V5.")
-    return
+    warn("Error: No se pudo cargar RedzLib V5 desde refs/heads/main, intentando ruta alterna...")
+    success, redzlib = pcall(function()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua" .. cacheBuster))()
+    end)
+    if not success or not redzlib then
+        warn("Error crítico: No se pudo cargar RedzLib V5.")
+        return
+    end
 end
 
 -- Limpiar cualquier instancia previa de la interfaz para evitar ventanas duplicadas o residuales
 pcall(function()
-    local h = (gethui and gethui()) or game:GetService("CoreGui")
-    local old = h:FindFirstChild("redz Library V5")
-    if old then old:Destroy() end
+    local targets = {
+        (gethui and gethui()),
+        (get_hidden_gui and get_hidden_gui()),
+        game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
+        (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+    }
+    for _, container in ipairs(targets) do
+        if container then
+            for _, child in ipairs(container:GetChildren()) do
+                if child.Name == "redz Library V5" then
+                    pcall(function() child:Destroy() end)
+                end
+            end
+        end
+    end
 end)
 
 local Window = redzlib:MakeWindow({

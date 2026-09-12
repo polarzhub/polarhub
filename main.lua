@@ -13,9 +13,21 @@ end
 
 -- Limpieza preventiva de interfaces previas para evitar ventanas duplicadas o congeladas
 pcall(function()
-    local h = (gethui and gethui()) or game:GetService("CoreGui")
-    local old = h:FindFirstChild("redz Library V5")
-    if old then old:Destroy() end
+    local targets = {
+        (gethui and gethui()),
+        (get_hidden_gui and get_hidden_gui()),
+        LocalPlayer:FindFirstChild("PlayerGui"),
+        (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+    }
+    for _, container in ipairs(targets) do
+        if container then
+            for _, child in ipairs(container:GetChildren()) do
+                if child.Name == "redz Library V5" then
+                    pcall(function() child:Destroy() end)
+                end
+            end
+        end
+    end
 end)
 
 -- IMPORTANTE: Cambia esta URL base por la de tu repositorio de GitHub real
