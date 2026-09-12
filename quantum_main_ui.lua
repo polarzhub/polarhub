@@ -146,6 +146,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     floatFrame.Position = UDim2.new(0.016, 0, 0.219, 0)
     floatFrame.Size = UDim2.new(0, 60, 0, 60)
     floatFrame.BackgroundTransparency = 1
+    floatFrame.BorderSizePixel = 0
     floatFrame.ZIndex = 500
     floatFrame.Parent = screenGui
 
@@ -157,6 +158,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     floatBtn.Name = "ToggleLogo"
     floatBtn.Size = UDim2.new(1, 0, 1, 0)
     floatBtn.BackgroundTransparency = 1
+    floatBtn.BorderSizePixel = 0
     floatBtn.Image = "rbxassetid://87383580130479"
     floatBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     floatBtn.ZIndex = 501
@@ -205,22 +207,21 @@ function QuantumOnyxUI.new(customTitle, customSub)
         end
     end)
 
-    -- Window Dragging Logic
-    local dragging, dragInput, dragStart, startPos
+    -- Dragging State & Logic
+    local dragging = false
+    local dragInput, dragStart, startPos
     local function update(input)
         local delta = input.Position - dragStart
         mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
     mainFrame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            if input.Position.Y - mainFrame.AbsolutePosition.Y <= 34 then
-                dragging = true
-                dragStart = input.Position
-                startPos = mainFrame.Position
-                input.Changed:Connect(function()
-                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
-                end)
-            end
+            dragging = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
         end
     end)
     mainFrame.InputChanged:Connect(function(input)
@@ -238,6 +239,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     topBar.Position = UDim2.new(0, 0, 0, 0)
     topBar.Size = UDim2.new(1, 0, 0, 32)
     topBar.BackgroundTransparency = 1
+    topBar.BorderSizePixel = 0
     topBar.ZIndex = 205
     topBar.Parent = mainFrame
 
@@ -246,6 +248,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     titleLabel.Position = UDim2.new(0, 12, 0, 2)
     titleLabel.Size = UDim2.new(1, -255, 0, 16)
     titleLabel.BackgroundTransparency = 1
+    titleLabel.BorderSizePixel = 0
     titleLabel.Text = customTitle or "Quantum Onyx Project"
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.TextSize = 13
@@ -259,6 +262,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     subtitleLabel.Position = UDim2.new(0, 12, 0, 18)
     subtitleLabel.Size = UDim2.new(1, -255, 0, 12)
     subtitleLabel.BackgroundTransparency = 1
+    subtitleLabel.BorderSizePixel = 0
     subtitleLabel.RichText = true
     subtitleLabel.Text = customSub or '<font color="#C084FC">Blox Fruit</font> • <font color="#FFD700">v.Premium</font> • <font color="#FF9E9E">Saturday</font>'
     subtitleLabel.Font = Enum.Font.Gotham
@@ -275,6 +279,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     modalOverlay.Size = UDim2.new(1, 0, 1, 0)
     modalOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
     modalOverlay.BackgroundTransparency = 0.55
+    modalOverlay.BorderSizePixel = 0
     modalOverlay.ZIndex = 1000
     modalOverlay.Parent = mainFrame
 
@@ -780,6 +785,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     minBtn.Position = UDim2.new(1, -34, 0, 16)
     minBtn.Size = UDim2.new(0, 20, 0, 20)
     minBtn.BackgroundTransparency = 1
+    minBtn.BorderSizePixel = 0
     minBtn.Image = "rbxassetid://92966930061759"
     minBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     minBtn.ZIndex = 206
@@ -791,6 +797,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     closeBtn.Position = UDim2.new(1, -8, 0, 16)
     closeBtn.Size = UDim2.new(0, 20, 0, 20)
     closeBtn.BackgroundTransparency = 1
+    closeBtn.BorderSizePixel = 0
     closeBtn.Image = "rbxassetid://79324227570635"
     closeBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     closeBtn.ZIndex = 206
@@ -810,6 +817,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     tabBar.Position = UDim2.new(0, 0, 0, 36)
     tabBar.Size = UDim2.new(1, 0, 0, 40)
     tabBar.BackgroundTransparency = 1
+    tabBar.BorderSizePixel = 0
     tabBar.ZIndex = 205
     tabBar.Parent = mainFrame
 
@@ -840,6 +848,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     searchIcon.Position = UDim2.new(0, 6, 0.5, -6)
     searchIcon.Size = UDim2.new(0, 12, 0, 12)
     searchIcon.BackgroundTransparency = 1
+    searchIcon.BorderSizePixel = 0
     searchIcon.Image = "rbxassetid://3926305904"
     searchIcon.ImageColor3 = Color3.fromRGB(175, 140, 230)
     searchIcon.ZIndex = 207
@@ -849,6 +858,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     searchBox.Position = UDim2.new(0, 21, 0, 0)
     searchBox.Size = UDim2.new(1, -36, 1, 0)
     searchBox.BackgroundTransparency = 1
+    searchBox.BorderSizePixel = 0
     searchBox.Text = ""
     searchBox.PlaceholderText = "Search..."
     searchBox.PlaceholderColor3 = Color3.fromRGB(175, 145, 215)
@@ -865,6 +875,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     searchClear.AnchorPoint = Vector2.new(1, 0.5)
     searchClear.Size = UDim2.new(0, 14, 0, 14)
     searchClear.BackgroundTransparency = 1
+    searchClear.BorderSizePixel = 0
     searchClear.Text = "×"
     searchClear.Font = Enum.Font.GothamBold
     searchClear.TextSize = 12
@@ -878,6 +889,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     searchCount.Size = UDim2.new(0, 22, 0, 14)
     searchCount.BackgroundColor3 = Theme.AccentDeep
     searchCount.BackgroundTransparency = 0.20
+    searchCount.BorderSizePixel = 0
     searchCount.Text = "6"
     searchCount.Font = Enum.Font.GothamBold
     searchCount.TextSize = 9
@@ -894,7 +906,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
     tabScroll.Position = UDim2.new(0, 140, 0, -3)
     tabScroll.Size = UDim2.new(1, -148, 0, 30)
     tabScroll.BackgroundTransparency = 1
+    tabScroll.BorderSizePixel = 0
     tabScroll.ScrollBarThickness = 0
+    tabScroll.ScrollBarImageTransparency = 1
     tabScroll.CanvasSize = UDim2.new(0, 0, 0, 0)
     tabScroll.AutomaticCanvasSize = Enum.AutomaticSize.X
     tabScroll.ZIndex = 206
@@ -912,6 +926,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     contentFrame.Position = UDim2.new(0, 5, 0, 70)
     contentFrame.Size = UDim2.new(0, 500, 0, 255)
     contentFrame.BackgroundTransparency = 1
+    contentFrame.BorderSizePixel = 0
     contentFrame.ZIndex = 205
     contentFrame.Parent = mainFrame
 
@@ -942,6 +957,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
         btn.Name = "TabBtn_" .. def.name
         btn.Size = UDim2.new(0, def.width, 0, 24)
         btn.BackgroundTransparency = 1
+        btn.BorderSizePixel = 0
         btn.Text = def.name
         btn.Font = Enum.Font.GothamBold
         btn.TextSize = 14
@@ -959,6 +975,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
         tabIcon.AnchorPoint = Vector2.new(0, 0.5)
         tabIcon.Size = UDim2.new(0, 16, 0, 16)
         tabIcon.BackgroundTransparency = 1
+        tabIcon.BorderSizePixel = 0
         tabIcon.Image = def.icon
         tabIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
         tabIcon.ZIndex = 208
@@ -988,6 +1005,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
         tabView.Name = "TabView_" .. def.name
         tabView.Size = UDim2.new(1, 0, 1, 0)
         tabView.BackgroundTransparency = 1
+        tabView.BorderSizePixel = 0
         tabView.Visible = isDefaultActive
         tabView.ZIndex = 206
         tabView.Parent = contentFrame
@@ -1005,7 +1023,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         col1.Position = UDim2.new(0, 0, 0, 0)
         col1.Size = UDim2.new(0, 240, 0, 260)
         col1.BackgroundTransparency = 1
+        col1.BorderSizePixel = 0
         col1.ScrollBarThickness = 0
+        col1.ScrollBarImageTransparency = 1
         col1.CanvasSize = UDim2.new(0, 0, 0, 0)
         col1.AutomaticCanvasSize = Enum.AutomaticSize.Y
         col1.ClipsDescendants = true
@@ -1023,7 +1043,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         col2.Position = UDim2.new(0, 0, 0, 0)
         col2.Size = UDim2.new(0, 240, 0, 260)
         col2.BackgroundTransparency = 1
+        col2.BorderSizePixel = 0
         col2.ScrollBarThickness = 0
+        col2.ScrollBarImageTransparency = 1
         col2.CanvasSize = UDim2.new(0, 0, 0, 0)
         col2.AutomaticCanvasSize = Enum.AutomaticSize.Y
         col2.ClipsDescendants = true
@@ -1055,6 +1077,20 @@ function QuantumOnyxUI.new(customTitle, customSub)
         end)
     end
 
+    -- Universal Border & Scrollbar Sanitizer to ensure zero rogue border lines or scrollbar glitches
+    local function sanitizeGuiObject(obj)
+        if obj:IsA("GuiObject") then
+            obj.BorderSizePixel = 0
+        end
+        if obj:IsA("ScrollingFrame") then
+            obj.ScrollBarImageTransparency = 1
+        end
+    end
+    mainFrame.DescendantAdded:Connect(sanitizeGuiObject)
+    for _, desc in ipairs(mainFrame:GetDescendants()) do
+        sanitizeGuiObject(desc)
+    end
+
     screenGui.Parent = parentGui
     return self
 end
@@ -1068,6 +1104,7 @@ function QuantumOnyxUI:CreateSectionCard(columnParent, titleText)
     section.Size = UDim2.new(1, 0, 0, 0)
     section.AutomaticSize = Enum.AutomaticSize.Y
     section.BackgroundTransparency = 1
+    section.BorderSizePixel = 0
     section.ZIndex = 208
     section.Parent = columnParent
 
@@ -1101,6 +1138,7 @@ function QuantumOnyxUI:CreateSectionCard(columnParent, titleText)
     subheader.LayoutOrder = 1
     subheader.Size = UDim2.new(1, 0, 0, 22)
     subheader.BackgroundTransparency = 1
+    subheader.BorderSizePixel = 0
     subheader.ZIndex = 209
     subheader.Parent = innerSection
 
@@ -1108,6 +1146,7 @@ function QuantumOnyxUI:CreateSectionCard(columnParent, titleText)
     title.Position = UDim2.new(0.2, 0, 0, 0)
     title.Size = UDim2.new(0.6, 0, 1, 0)
     title.BackgroundTransparency = 1
+    title.BorderSizePixel = 0
     title.Text = titleText
     title.Font = Enum.Font.GothamBold
     title.TextSize = 15
@@ -1159,14 +1198,6 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     cc.CornerRadius = UDim.new(0, 6)
     cc.Parent = card
 
-    local cs = Instance.new("UIStroke")
-    cs.Color = Theme.AccentStroke
-    cs.Thickness = 1.0
-    cs.Transparency = 0.55
-    cs.LineJoinMode = Enum.LineJoinMode.Round
-    cs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    cs.Parent = card
-
     local cPad = Instance.new("UIPadding")
     cPad.PaddingTop = UDim.new(0, 8)
     cPad.PaddingBottom = UDim.new(0, 8)
@@ -1183,6 +1214,7 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     titleLbl.Name = "TitleLabel"
     titleLbl.Size = UDim2.new(1, 0, 0, 18)
     titleLbl.BackgroundTransparency = 1
+    titleLbl.BorderSizePixel = 0
     titleLbl.Text = labelText
     titleLbl.Font = Enum.Font.GothamBold
     titleLbl.TextSize = 13
@@ -1523,6 +1555,7 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     local kg = Instance.new("UIGradient")
     kg.Rotation = 90
     kg.Color = CyberGradient
+    kg.Enabled = isToggled
     kg.Parent = knob
 
     btn.MouseButton1Click:Connect(function()
@@ -1530,6 +1563,7 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
         local targetPos = isToggled and UDim2.new(0, 20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
         local targetTextCol = isToggled and Theme.TextWhite or Theme.TextMuted
 
+        kg.Enabled = isToggled
         TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
             Position = targetPos,
             ImageTransparency = isToggled and 0.0 or 0.5
@@ -1732,18 +1766,11 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
     bc.CornerRadius = UDim.new(0, 6)
     bc.Parent = btn
 
-    local bs = Instance.new("UIStroke")
-    bs.Color = Theme.AccentStroke
-    bs.Thickness = 1.0
-    bs.Transparency = 0.55
-    bs.LineJoinMode = Enum.LineJoinMode.Round
-    bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    bs.Parent = btn
-
     local lbl = Instance.new("TextLabel")
     lbl.Position = UDim2.new(0, 12, 0, 0)
     lbl.Size = UDim2.new(1, -36, 1, 0)
     lbl.BackgroundTransparency = 1
+    lbl.BorderSizePixel = 0
     lbl.Text = labelText
     lbl.Font = Enum.Font.GothamBold
     lbl.TextSize = 13
@@ -1763,6 +1790,7 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
     arrow.Position = UDim2.new(1, -12, 0.5, 0)
     arrow.Size = UDim2.new(0, 14, 0, 14)
     arrow.BackgroundTransparency = 1
+    arrow.BorderSizePixel = 0
     arrow.Text = "›"
     arrow.Font = Enum.Font.GothamBold
     arrow.TextSize = 14
