@@ -2224,6 +2224,34 @@ local LabelPlayerTime = TabStatus:AddParagraph({
     Text = "Calculando..."
 })
 
+local telemetryStartTime = os.time()
+local function FormatTelemetryDuration(seconds)
+    local h = math.floor(seconds / 3600)
+    local m = math.floor((seconds % 3600) / 60)
+    local s = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", h, m, s)
+end
+
+task.spawn(function()
+    while true do
+        task.wait(5)
+        pcall(function()
+            local serverUptime = workspace.DistributedGameTime
+            local sessionTime = os.time() - telemetryStartTime
+            if LabelServerUptime and LabelServerUptime.SetDesc then
+                LabelServerUptime:SetDesc(FormatTelemetryDuration(serverUptime))
+            elseif LabelServerUptime and LabelServerUptime.Set then
+                LabelServerUptime:Set(FormatTelemetryDuration(serverUptime))
+            end
+            if LabelPlayerTime and LabelPlayerTime.SetDesc then
+                LabelPlayerTime:SetDesc(FormatTelemetryDuration(sessionTime))
+            elseif LabelPlayerTime and LabelPlayerTime.Set then
+                LabelPlayerTime:Set(FormatTelemetryDuration(sessionTime))
+            end
+        end)
+    end
+end)
+
 -- ===== TAB SHOP =====
 TabShop:AddSection("Habilidades (Bypass Distancia)")
 TabShop:AddButton({ Name = "Comprar Geppo (Skyjump) - $10k", Callback = function() BuyItem("BuyHaki", "Geppo", nil, "Ability Teacher") end })

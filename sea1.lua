@@ -108,22 +108,22 @@ Polar.Data.QuestInfo = {
 }
 
 Polar.Data.Bosses = {
-    {name = "Gorilla King", q = "JungleQuest", ql = 3, giver = "Adventurer", island = "Jungle", lvl = 20},
-    {name = "Bobby", q = "BuggyQuest1", ql = 3, giver = "Pirate Adventurer", island = "Pirate", lvl = 55},
-    {name = "Yeti", q = "SnowQuest", ql = 3, giver = "Villager", island = "Snow", lvl = 105},
-    {name = "Mob Leader", q = nil, ql = nil, giver = nil, island = "Pirate", lvl = 120},
-    {name = "Vice Admiral", q = "MarineQuest2", ql = 2, giver = "Marine", island = "Marine", lvl = 130},
-    {name = "Warden", q = "ImpelQuest", ql = 1, giver = "Head Jailer", island = "Prison", lvl = 220},
-    {name = "Chief Warden", q = "ImpelQuest", ql = 2, giver = "Head Jailer", island = "Prison", lvl = 230},
-    {name = "Swan", q = "ImpelQuest", ql = 3, giver = "Head Jailer", island = "Prison", lvl = 240},
-    {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350},
-    {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "Neptune", island = "Fishman", lvl = 425},
-    {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 500},
-    {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 575},
-    {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Fountain Quest Giver", island = "Fountain", lvl = 675},
-    {name = "Saber Expert", q = nil, ql = nil, giver = nil, island = "Jungle", lvl = 200},
-    {name = "The Saw", q = nil, ql = nil, giver = nil, island = "Town", lvl = 100},
-    {name = "Greybeard", q = nil, ql = nil, giver = nil, island = "Marine", lvl = 750}
+    {name = "Gorilla King", q = "JungleQuest", ql = 3, giver = "Adventurer", island = "Jungle", lvl = 20, cd = 600, pos = Vector3.new(-1125, 4, -485)},
+    {name = "Bobby", q = "BuggyQuest1", ql = 3, giver = "Pirate Adventurer", island = "Pirate", lvl = 55, cd = 900, pos = Vector3.new(-1130, 14, 4080)},
+    {name = "Yeti", q = "SnowQuest", ql = 3, giver = "Villager", island = "Snow", lvl = 105, cd = 900, pos = Vector3.new(1185, 105, -1518)},
+    {name = "Mob Leader", q = nil, ql = nil, giver = nil, island = "Pirate", lvl = 120, cd = 900, pos = Vector3.new(-2850, 7, 5320)},
+    {name = "Vice Admiral", q = "MarineQuest2", ql = 2, giver = "Marine", island = "Marine", lvl = 130, cd = 900, pos = Vector3.new(-4914, 21, 4281)},
+    {name = "Warden", q = "ImpelQuest", ql = 1, giver = "Head Jailer", island = "Prison", lvl = 220, cd = 600, pos = Vector3.new(4853, 5, 743)},
+    {name = "Chief Warden", q = "ImpelQuest", ql = 2, giver = "Head Jailer", island = "Prison", lvl = 230, cd = 600, pos = Vector3.new(5080, 5, 680)},
+    {name = "Swan", q = "ImpelQuest", ql = 3, giver = "Head Jailer", island = "Prison", lvl = 240, cd = 900, pos = Vector3.new(5230, 4, 750)},
+    {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350, cd = 1200, pos = Vector3.new(-5694, 18, 8935)},
+    {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "Neptune", island = "Fishman", lvl = 425, cd = 1200, pos = Vector3.new(61123, 18, 1569)},
+    {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 500, cd = 1200, pos = Vector3.new(-7927, 5551, -637)},
+    {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 575, cd = 1200, pos = Vector3.new(-7748, 5607, -2306)},
+    {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Fountain Quest Giver", island = "Fountain", lvl = 675, cd = 1200, pos = Vector3.new(5259, 38, 4050)},
+    {name = "Saber Expert", q = nil, ql = nil, giver = nil, island = "Jungle", lvl = 200, cd = 1800, pos = Vector3.new(-1461, 30, -51)},
+    {name = "The Saw", q = nil, ql = nil, giver = nil, island = "Town", lvl = 100, cd = 4500, pos = Vector3.new(-690, 15, 1582)},
+    {name = "Greybeard", q = nil, ql = nil, giver = nil, island = "Marine", lvl = 750, cd = 21600, pos = Vector3.new(-5020, 85, 4350)}
 }
 
 for _, q in ipairs(Polar.Data.QuestInfo) do
@@ -593,52 +593,226 @@ task.spawn(function()
     end
 end)
 
--- ==================== UI RADARS & TELEMETRY ====================
-TabStatus:AddSection("Radar de Jefes Especiales (Sea 1)")
+-- ==================== TAB STATUS: RADAR Y TEMPORIZADOR DE JEFES ====================
+local BossNamesList = {}
+for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
+
+local BossTracker = getgenv().PolarBossTracker or {}
+getgenv().PolarBossTracker = BossTracker
+
+for _, b in ipairs(Polar.Data.Bosses) do
+    if not BossTracker[b.name] then
+        BossTracker[b.name] = {
+            status = "UNKNOWN",
+            aliveAt = nil,
+            deadAt = nil
+        }
+    end
+end
+
+-- Escucha pasiva de eventos de enemigos en tiempo real (0% LAG, evento nativo)
+local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
+if enemiesFolder then
+    enemiesFolder.ChildAdded:Connect(function(child)
+        local cName = child.Name:lower()
+        for _, b in ipairs(Polar.Data.Bosses) do
+            if string.find(cName, b.name:lower()) then
+                BossTracker[b.name].status = "ALIVE"
+                BossTracker[b.name].aliveAt = os.time()
+                break
+            end
+        end
+    end)
+    
+    enemiesFolder.ChildRemoved:Connect(function(child)
+        local cName = child.Name:lower()
+        for _, b in ipairs(Polar.Data.Bosses) do
+            if string.find(cName, b.name:lower()) then
+                BossTracker[b.name].status = "DEAD"
+                BossTracker[b.name].deadAt = os.time()
+                break
+            end
+        end
+    end)
+end
+
+local SelectedStatusBoss = "Gorilla King"
+
+local function GetBossStatusCard(bossName)
+    local bData = nil
+    for _, b in ipairs(Polar.Data.Bosses) do
+        if b.name == bossName then bData = b break end
+    end
+    if not bData then return "Boss no encontrado." end
+    
+    local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
+    local liveBoss = nil
+    if enemies then
+        for _, e in ipairs(enemies:GetChildren()) do
+            if string.find(e.Name:lower(), bData.name:lower()) then
+                local hum = e:FindFirstChild("Humanoid")
+                if hum and hum.Health > 0 then
+                    liveBoss = e
+                    break
+                end
+            end
+        end
+    end
+    
+    local trk = BossTracker[bData.name] or {}
+    local cdMins = math.floor(bData.cd / 60)
+    
+    local lines = {
+        string.format("👑 Jefe: %s  |  Nivel: %d", bData.name, bData.lvl),
+        string.format("🏝️ Ubicación: Isla %s", bData.island),
+        string.format("⏱️ Cooldown Respawn: ~%d minutos (%d seg)", cdMins, bData.cd)
+    }
+    
+    if liveBoss then
+        trk.status = "ALIVE"
+        trk.aliveAt = os.time()
+        local hum = liveBoss:FindFirstChild("Humanoid")
+        local hp = hum and math.floor(hum.Health) or 0
+        local maxHp = hum and math.floor(hum.MaxHealth) or 1
+        local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+        table.insert(lines, string.format("📍 Estado: 🟢 ¡VIVO EN EL MAPA! (Salud: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
+        table.insert(lines, "⏳ Temporizador: ¡En el campo de batalla listo para combatir!")
+    elseif trk.deadAt then
+        trk.status = "DEAD"
+        local elapsed = os.time() - trk.deadAt
+        local remaining = math.max(0, bData.cd - elapsed)
+        local elapsedM = math.floor(elapsed / 60)
+        local elapsedS = elapsed % 60
+        local remainM = math.floor(remaining / 60)
+        local remainS = remaining % 60
+        
+        table.insert(lines, string.format("📍 Estado: 🔴 MUERTO (Murió hace: %02dm %02ds)", elapsedM, elapsedS))
+        if remaining > 0 then
+            table.insert(lines, string.format("⏳ Reaparición estimada: ~%02dm %02ds restantes", remainM, remainS))
+        else
+            table.insert(lines, "⏳ Reaparición estimada: ¡Cooldown cumplido! Reapareciendo en cualquier momento.")
+        end
+    else
+        table.insert(lines, "📍 Estado: ⚪ NO DETECTADO ACTUALMENTE")
+        table.insert(lines, "⏳ Estimado: Depende del último asesinato en el servidor.")
+        table.insert(lines, "💡 Presiona 'Actualizar' al acercarte a su isla para re-escanear.")
+    end
+    
+    return table.concat(lines, "\n")
+end
+
+-- Interfaz en TabStatus:
+TabStatus:AddSection("👑 Tabla de Jefes & Respawn Timers")
+
+local LabelSelectedBossInfo = TabStatus:AddParagraph({
+    Title = "📋 Ficha Técnica: Gorilla King",
+    Text = GetBossStatusCard("Gorilla King")
+})
+
+TabStatus:AddDropdown({
+    Name = "Seleccionar Jefe para Inspeccionar",
+    Options = BossNamesList,
+    Default = "Gorilla King",
+    Callback = function(value)
+        SelectedStatusBoss = value
+        if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+            LabelSelectedBossInfo:SetTitle("📋 Ficha Técnica: " .. tostring(value))
+        end
+        UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(value))
+    end
+})
+
+TabStatus:AddButton({
+    Name = "🔄 Actualizar Estado del Jefe (Manual)",
+    Desc = "Escaneo instantáneo y ligero de presencia y temporizador sin causar lag.",
+    Callback = function()
+        if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+            LabelSelectedBossInfo:SetTitle("📋 Ficha Técnica: " .. tostring(SelectedStatusBoss))
+        end
+        UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
+        Notify("Polar Hub", "Ficha técnica de " .. tostring(SelectedStatusBoss) .. " actualizada.", 2)
+    end
+})
+
+TabStatus:AddButton({
+    Name = "🚀 Teleport a la Ubicación del Jefe",
+    Desc = "Vuela de forma segura al punto de aparición del jefe seleccionado.",
+    Callback = function()
+        local bData = nil
+        for _, b in ipairs(Polar.Data.Bosses) do
+            if b.name == SelectedStatusBoss then bData = b break end
+        end
+        if bData and bData.pos then
+            Notify("Polar Hub", "Teletransportando hacia " .. bData.name .. "...", 3)
+            local destCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
+            if Polar.Teleport and Polar.Teleport.To then
+                Polar.Teleport:To(destCF)
+            elseif PolarBypassTeleport then
+                PolarBypassTeleport(destCF)
+            else
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp then hrp.CFrame = destCF end
+            end
+        end
+    end
+})
+
+-- Sección de Jefes de Raid (Auto-actualizado cada 5 segundos para evitar lag):
+TabStatus:AddSection("⚡ Radar de Jefes de Raid (Auto 5s)")
 local LabelTheSaw = TabStatus:AddParagraph({ Title = "The Saw (Nvl 100) - Middle Town", Text = "Calculando..." })
 local LabelGreybeard = TabStatus:AddParagraph({ Title = "Greybeard (Nvl 750) - Marine Fortress", Text = "Calculando..." })
 local LabelSaberRadar = TabStatus:AddParagraph({ Title = "Saber Expert (Shanks) - Jungle", Text = "Calculando..." })
 local LabelNextRaid = TabStatus:AddParagraph({ Title = "Próximo Jefe Especial (Raid Hint)", Text = "Calculando..." })
-local LabelServerUptime = TabStatus:AddParagraph({ Title = "Tiempo de Vida del Servidor", Text = "Calculando..." })
-local LabelPlayerTime = TabStatus:AddParagraph({ Title = "Tiempo en Sesión (Jugador)", Text = "Calculando..." })
-
-local scriptStartTime = os.time()
-local function FormatTime(seconds)
-    local h = math.floor(seconds / 3600)
-    local m = math.floor((seconds % 3600) / 60)
-    local s = math.floor(seconds % 60)
-    return string.format("%02d:%02d:%02d", h, m, s)
-end
 
 task.spawn(function()
     while true do
         task.wait(5)
         pcall(function()
-            local serverUptime = workspace.DistributedGameTime
-            UpdatePara(LabelServerUptime, FormatTime(serverUptime))
-            
-            local sessionTime = os.time() - scriptStartTime
-            UpdatePara(LabelPlayerTime, FormatTime(sessionTime))
-            
             local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
+            local serverUptime = workspace.DistributedGameTime or 0
+            
+            -- Countdown estimado para The Saw (cada 75 min = 4500s)
+            local sawInterval = 4500
+            local nextSawSecs = math.floor(sawInterval - (serverUptime % sawInterval))
+            local sawMin = math.floor(nextSawSecs / 60)
+            local sawSec = nextSawSecs % 60
             
             local sawAlive = enemies and enemies:FindFirstChild("The Saw")
-            UpdatePara(LabelTheSaw, sawAlive and "🟢 SPAWNEADO! (¡Ve a matarlo!)" or "🔴 MUERTO / NO SPAWNEADO")
+            if sawAlive then
+                UpdatePara(LabelTheSaw, "🟢 ¡SPAWNEADO EN MIDDLE TOWN! (¡Ve a matarlo antes de 15 min!)")
+            else
+                UpdatePara(LabelTheSaw, string.format("🔴 NO SPAWNEADO (Próximo ciclo estimado en: ~%02dm %02ds)", sawMin, sawSec))
+            end
+            
+            -- Countdown estimado para Greybeard (cada 6 horas = 21600s)
+            local greyInterval = 21600
+            local nextGreySecs = math.floor(greyInterval - (serverUptime % greyInterval))
+            local greyH = math.floor(nextGreySecs / 3600)
+            local greyMin = math.floor((nextGreySecs % 3600) / 60)
             
             local greyAlive = enemies and enemies:FindFirstChild("Greybeard")
-            UpdatePara(LabelGreybeard, greyAlive and "🟢 SPAWNEADO! (¡Ve a matarlo!)" or "🔴 MUERTO / NO SPAWNEADO")
+            if greyAlive then
+                UpdatePara(LabelGreybeard, "🟢 ¡SPAWNEADO EN MARINE FORTRESS! (¡Raid activa!)")
+            else
+                UpdatePara(LabelGreybeard, string.format("🔴 NO SPAWNEADO (Próximo ciclo estimado en: ~%02dh %02dm)", greyH, greyMin))
+            end
             
+            -- Saber Expert (Shanks)
             local shanksAlive = enemies and enemies:FindFirstChild("Saber Expert")
-            UpdatePara(LabelSaberRadar, shanksAlive and "🟢 SPAWNEADO EN BÓVEDA!" or "🔴 NO DISPONIBLE / NO SPAWNEADO")
-
+            UpdatePara(LabelSaberRadar, shanksAlive and "🟢 ¡SPAWNEADO EN LA BÓVEDA DE JUNGLE!" or "🔴 NO DISPONIBLE / EN COOLDOWN (~30m)")
+            
+            -- Raid Hint
             if RequestNextRaidHint then
                 local s, hint = pcall(function() return RequestNextRaidHint:InvokeServer() end)
                 if s and type(hint) == "table" and hint.Boss and hint.Island then
                     local mins = hint.Seconds and math.ceil(hint.Seconds / 60) or 0
                     UpdatePara(LabelNextRaid, string.format("🔮 %s en %s (Estado: %s, ~%d min)", tostring(hint.Boss), tostring(hint.Island), tostring(hint.State or "Desconocido"), mins))
                 else
-                    UpdatePara(LabelNextRaid, "Sin actividad inminente.")
+                    UpdatePara(LabelNextRaid, "Sin actividad inminente en el servidor.")
                 end
+            else
+                UpdatePara(LabelNextRaid, "Servidor sin eventos inminentes.")
             end
         end)
     end
@@ -646,8 +820,6 @@ end)
 
 -- ==================== TAB FARM BOSSES ====================
 TabFarm:AddSection("Cazador de Jefes (Sea 1)")
-local BossNamesList = {}
-for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
 TabFarm:AddDropdown({
     Name = "Seleccionar Jefe",
