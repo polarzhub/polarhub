@@ -43,12 +43,12 @@ local redzlib = {
 		},
 		["Liquid Glass"] = {
 			["Color Hub 1"] = ColorSequence.new({
-				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(18, 24, 38)),
-				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(28, 38, 56)),
-				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(18, 24, 38))
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(16, 22, 34)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(26, 36, 52)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(16, 22, 34))
 			}),
-			["Color Hub 2"] = Color3.fromRGB(24, 32, 48),
-			["Color Stroke"] = Color3.fromRGB(200, 225, 255),
+			["Color Hub 2"] = Color3.fromRGB(22, 30, 44),
+			["Color Stroke"] = Color3.fromRGB(205, 230, 255),
 			["Color Theme"] = Color3.fromRGB(255, 255, 255),
 			["Color Text"] = Color3.fromRGB(255, 255, 255),
 			["Color Dark Text"] = Color3.fromRGB(220, 235, 255)
@@ -1383,10 +1383,32 @@ AddEle("Button", function(parent, props, ...)
 	}), props), "Frame")
 	
 	New.MouseEnter:Connect(function()
-		New.BackgroundTransparency = 0.4
+		if redzlib.Save.Theme == "Liquid Glass" then
+			CreateTween({New, "BackgroundTransparency", 0.15, 0.22})
+			local s = New:FindFirstChild("GlassOptionStroke") or New:FindFirstChildOfClass("UIStroke")
+			if s and s.Name == "GlassOptionStroke" then CreateTween({s, "Transparency", 0.20, 0.22}) end
+		else
+			CreateTween({New, "BackgroundTransparency", 0.25, 0.2})
+		end
 	end)
 	New.MouseLeave:Connect(function()
-		New.BackgroundTransparency = 0
+		if redzlib.Save.Theme == "Liquid Glass" then
+			CreateTween({New, "BackgroundTransparency", 0.28, 0.22})
+			local s = New:FindFirstChild("GlassOptionStroke") or New:FindFirstChildOfClass("UIStroke")
+			if s and s.Name == "GlassOptionStroke" then CreateTween({s, "Transparency", 0.65, 0.22}) end
+		else
+			CreateTween({New, "BackgroundTransparency", 0, 0.2})
+		end
+	end)
+	New.MouseButton1Down:Connect(function()
+		if redzlib.Save.Theme == "Liquid Glass" then
+			CreateTween({New, "BackgroundTransparency", 0.10, 0.12})
+		end
+	end)
+	New.MouseButton1Up:Connect(function()
+		if redzlib.Save.Theme == "Liquid Glass" then
+			CreateTween({New, "BackgroundTransparency", 0.28, 0.18})
+		end
 	end)
 	if args[1] then
 		New.Activated:Connect(args[1])
@@ -1437,6 +1459,15 @@ local function ButtonFrame(Instance, Title, Description, HolderSize)
 		AutomaticSize = "Y",
 		Name = "Option"
 	})Make("Corner", Frame, UDim.new(0, 6))
+	
+	Create("UIStroke", Frame, {
+		Name = "GlassOptionStroke",
+		Color = Color3.fromRGB(220, 240, 255),
+		Thickness = 1,
+		Transparency = (redzlib.Save.Theme == "Liquid Glass" and 0.65 or 1),
+		Enabled = (redzlib.Save.Theme == "Liquid Glass"),
+		ApplyStrokeMode = "Border"
+	})
 	
 	LabelHolder = Create("Frame", Frame, {
 		AutomaticSize = "Y",
@@ -1528,24 +1559,113 @@ local function StopGlassAnimation()
 		task.cancel(glassAnimationThread)
 		glassAnimationThread = nil
 	end
+	pcall(function()
+		if ScreenGui then
+			local hub = ScreenGui:FindFirstChild("Hub")
+			if hub then
+				local effects = hub:FindFirstChild("GlassEffects")
+				if effects then
+					local sheen = effects:FindFirstChild("SpecularSheen")
+					if sheen then sheen.Visible = false end
+					local rim = effects:FindFirstChild("TopRimLight")
+					if rim then rim.Visible = false end
+				end
+				local grad = hub:FindFirstChildOfClass("UIGradient")
+				if grad then
+					grad.Rotation = 45
+					grad.Offset = Vector2.new(0, 0)
+				end
+				local stroke = hub:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					stroke.Color = Theme["Color Stroke"]
+					stroke.Transparency = 0
+				end
+			end
+			local floatBtn = ScreenGui:FindFirstChild("PolarFloatingButton")
+			if floatBtn then
+				floatBtn.BackgroundTransparency = 0.1
+				local fStroke = floatBtn:FindFirstChildOfClass("UIStroke")
+				if fStroke then
+					fStroke.Color = Theme["Color Theme"]
+					fStroke.Transparency = 0.1
+				end
+			end
+		end
+	end)
 end
 
 local function StartGlassAnimation(gui)
 	StopGlassAnimation()
 	glassAnimationThread = task.spawn(function()
 		local t = 0
+		local sheenCycle = 4.5
+		local sheenDuration = 1.5
+		
 		while true do
-			task.wait(0.04)
-			t = t + 0.04
+			task.wait(0.033)
+			t = t + 0.033
 			if not gui or not gui.Parent then break end
-			local hub = gui:FindFirstChild("Hub")
-			if hub then
-				local stroke = hub:FindFirstChildOfClass("UIStroke")
-				if stroke then
-					local sVal = (math.sin(t * 2.2) + 1) / 2
-					stroke.Transparency = 0.12 + (sVal * 0.28)
+			
+			pcall(function()
+				local hub = gui:FindFirstChild("Hub")
+				if hub and hub.Visible then
+					-- 1. Borde de cristal con respiración y refracción iridiscente
+					local stroke = hub:FindFirstChildOfClass("UIStroke")
+					local sVal = (math.sin(t * 2.0) + 1) / 2
+					local strokeColor = Color3.fromRGB(205, 230, 255):Lerp(Color3.fromRGB(255, 255, 255), sVal)
+					if stroke then
+						stroke.Transparency = 0.10 + (sVal * 0.25)
+						stroke.Color = strokeColor
+					end
+					
+					-- 2. Movimiento acrílico líquido dinámico en el degradado de fondo
+					local mainGrad = hub:FindFirstChildOfClass("UIGradient")
+					if mainGrad then
+						mainGrad.Rotation = 45 + math.sin(t * 0.75) * 6
+						mainGrad.Offset = Vector2.new(math.cos(t * 0.5) * 0.03, math.sin(t * 0.5) * 0.03)
+					end
+					
+					-- 3. Rayo de luz especular diagonal (Specular Sheen Sweep) y bisel superior
+					local effects = hub:FindFirstChild("GlassEffects")
+					if effects then
+						local sheen = effects:FindFirstChild("SpecularSheen")
+						if sheen then
+							local sheenGrad = sheen:FindFirstChildOfClass("UIGradient")
+							if sheenGrad then
+								local cycleTime = t % sheenCycle
+								if cycleTime < sheenDuration then
+									local p = cycleTime / sheenDuration
+									local smoothP = p * p * (3 - 2 * p)
+									local posX = -1.2 + (smoothP * 2.4)
+									sheenGrad.Offset = Vector2.new(posX, 0)
+									sheen.Visible = true
+								else
+									sheen.Visible = false
+									sheenGrad.Offset = Vector2.new(-1.2, 0)
+								end
+							end
+						end
+						
+						local rim = effects:FindFirstChild("TopRimLight")
+						if rim then
+							rim.Visible = true
+							rim.BackgroundTransparency = 0.22 + (sVal * 0.32)
+						end
+					end
 				end
-			end
+				
+				-- 4. Sincronización de refracción en el icono flotante Polar Hub
+				local floatBtn = gui:FindFirstChild("PolarFloatingButton")
+				if floatBtn then
+					floatBtn.BackgroundTransparency = 0.20
+					local fStroke = floatBtn:FindFirstChildOfClass("UIStroke")
+					if fStroke then
+						local sVal = (math.sin(t * 2.0) + 1) / 2
+						fStroke.Transparency = 0.08 + (sVal * 0.24)
+						fStroke.Color = Color3.fromRGB(210, 235, 255):Lerp(Color3.fromRGB(255, 255, 255), sVal)
+					end
+				end
+			end)
 		end
 	end)
 end
@@ -1576,7 +1696,7 @@ function redzlib:SetTheme(NewTheme)
 						if inst.Name == "Hub" then
 							CreateTween({inst, "BackgroundTransparency", 0.18, 0.35})
 						elseif inst.Name == "Option" or inst.Name == "TabSelect" or inst.Name == "SectionFrame" then
-							CreateTween({inst, "BackgroundTransparency", 0.30, 0.35})
+							CreateTween({inst, "BackgroundTransparency", 0.28, 0.35})
 						end
 					else
 						if inst.Name == "Hub" then
@@ -1591,7 +1711,7 @@ function redzlib:SetTheme(NewTheme)
 						inst[prop] = Theme["Color Stroke"]
 					end
 					if isGlass and inst:IsA("UIStroke") then
-						inst.Transparency = 0.25
+						inst.Transparency = 0.20
 					elseif inst:IsA("UIStroke") then
 						inst.Transparency = 0
 					end
@@ -1621,9 +1741,96 @@ function redzlib:SetTheme(NewTheme)
 	end
 	redzlib.Instances = liveList
 	
-	-- Barrido exhaustivo por ScreenGui para sincronizar al 100% todos los controles:
+	-- Barrido exhaustivo por ScreenGui para sincronizar al 100% todos los controles y efectos:
 	pcall(function()
 		if ScreenGui then
+			local hub = ScreenGui:FindFirstChild("Hub")
+			if hub then
+				local hubStroke = hub:FindFirstChildOfClass("UIStroke")
+				if not hubStroke then
+					hubStroke = InsertTheme(Make("Stroke", hub, {
+						Color = Theme["Color Stroke"],
+						Thickness = 1.5,
+						ApplyStrokeMode = "Border"
+					}), "Stroke")
+				end
+				
+				local glassEffects = hub:FindFirstChild("GlassEffects")
+				if isGlass then
+					if not glassEffects then
+						glassEffects = Create("Frame", hub, {
+							Size = UDim2.new(1, 0, 1, 0),
+							BackgroundTransparency = 1,
+							ClipsDescendants = true,
+							ZIndex = 1,
+							Name = "GlassEffects"
+						})
+						Make("Corner", glassEffects)
+						
+						local sheen = Create("Frame", glassEffects, {
+							Size = UDim2.new(2.2, 0, 2.2, 0),
+							Position = UDim2.new(-0.6, 0, -0.6, 0),
+							BackgroundTransparency = 0,
+							BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+							ZIndex = 1,
+							Visible = true,
+							Name = "SpecularSheen"
+						})
+						Create("UIGradient", sheen, {
+							Rotation = 65,
+							Transparency = NumberSequence.new({
+								NumberSequenceKeypoint.new(0.00, 1),
+								NumberSequenceKeypoint.new(0.38, 1),
+								NumberSequenceKeypoint.new(0.48, 0.90),
+								NumberSequenceKeypoint.new(0.50, 0.74),
+								NumberSequenceKeypoint.new(0.52, 0.90),
+								NumberSequenceKeypoint.new(0.62, 1),
+								NumberSequenceKeypoint.new(1.00, 1)
+							}),
+							Color = ColorSequence.new({
+								ColorSequenceKeypoint.new(0.00, Color3.fromRGB(215, 240, 255)),
+								ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
+								ColorSequenceKeypoint.new(1.00, Color3.fromRGB(215, 240, 255))
+							}),
+							Offset = Vector2.new(-1.2, 0)
+						})
+						
+						Create("Frame", glassEffects, {
+							Size = UDim2.new(1, -16, 0, 1),
+							Position = UDim2.new(0, 8, 0, 1),
+							BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+							BackgroundTransparency = 0.35,
+							BorderSizePixel = 0,
+							Visible = true,
+							ZIndex = 2,
+							Name = "TopRimLight"
+						}, {
+							Create("UIGradient", {
+								Transparency = NumberSequence.new({
+									NumberSequenceKeypoint.new(0.00, 1),
+									NumberSequenceKeypoint.new(0.20, 0.45),
+									NumberSequenceKeypoint.new(0.50, 0.15),
+									NumberSequenceKeypoint.new(0.80, 0.45),
+									NumberSequenceKeypoint.new(1.00, 1)
+								})
+							})
+						})
+					else
+						local sheen = glassEffects:FindFirstChild("SpecularSheen")
+						if sheen then sheen.Visible = true end
+						local rim = glassEffects:FindFirstChild("TopRimLight")
+						if rim then rim.Visible = true end
+					end
+				else
+					if glassEffects then
+						local sheen = glassEffects:FindFirstChild("SpecularSheen")
+						if sheen then sheen.Visible = false end
+						local rim = glassEffects:FindFirstChild("TopRimLight")
+						if rim then rim.Visible = false end
+					end
+				end
+			end
+			
 			for _, item in ipairs(ScreenGui:GetDescendants()) do
 				pcall(function()
 					if item.Name == "Toggle" and item:IsA("Frame") then
@@ -1631,7 +1838,27 @@ function redzlib:SetTheme(NewTheme)
 					elseif item.Name == "ToggleHolder" and item:IsA("Frame") then
 						item.BackgroundColor3 = Theme["Color Stroke"]
 					elseif item.Name == "SelectedFrame" and item:IsA("Frame") then
-						item.BackgroundColor3 = Theme["Color Stroke"]
+						if isGlass then
+							item.BackgroundColor3 = Color3.fromRGB(28, 40, 58)
+							local s = item:FindFirstChild("GlassSelectedStroke") or item:FindFirstChildOfClass("UIStroke")
+							if not s then
+								s = Create("UIStroke", item, {
+									Name = "GlassSelectedStroke",
+									Color = Color3.fromRGB(200, 225, 255),
+									Thickness = 1,
+									Transparency = 0.35,
+									ApplyStrokeMode = "Border"
+								})
+							else
+								s.Color = Color3.fromRGB(200, 225, 255)
+								s.Transparency = 0.35
+								s.Enabled = true
+							end
+						else
+							item.BackgroundColor3 = Theme["Color Stroke"]
+							local s = item:FindFirstChild("GlassSelectedStroke")
+							if s then s.Enabled = false end
+						end
 					elseif item.Name == "IsSelected" and item:IsA("Frame") then
 						item.BackgroundColor3 = Theme["Color Theme"]
 					elseif item.Name == "Indicator" and item:IsA("Frame") then
@@ -1640,6 +1867,27 @@ function redzlib:SetTheme(NewTheme)
 						item.BackgroundColor3 = Theme["Color Stroke"]
 					elseif item.Parent and item.Parent.Name == "PolarFloatingButton" and item:IsA("UIStroke") then
 						item.Color = Theme["Color Theme"]
+					elseif item.Name == "Option" and (item:IsA("TextButton") or item:IsA("Frame")) then
+						local optStroke = item:FindFirstChild("GlassOptionStroke")
+						if isGlass then
+							if not optStroke then
+								optStroke = Create("UIStroke", item, {
+									Name = "GlassOptionStroke",
+									Color = Color3.fromRGB(220, 240, 255),
+									Thickness = 1,
+									Transparency = 0.65,
+									ApplyStrokeMode = "Border"
+								})
+							else
+								optStroke.Enabled = true
+								optStroke.Transparency = 0.65
+								optStroke.Color = Color3.fromRGB(220, 240, 255)
+							end
+						else
+							if optStroke then
+								optStroke.Enabled = false
+							end
+						end
 					end
 				end)
 			end
@@ -1695,7 +1943,7 @@ function redzlib:MakeWindow(Configs)
 	local MainFrame = InsertTheme(Create("ImageButton", ScreenGui, {
 		Size = UDim2.fromOffset(UISizeX, UISizeY),
 		Position = UDim2.new(0.5, -UISizeX/2, 0.5, -UISizeY/2),
-		BackgroundTransparency = 0.03,
+		BackgroundTransparency = (redzlib.Save.Theme == "Liquid Glass" and 0.18 or 0.03),
 		Name = "Hub"
 	}), "Main")
 	Make("Gradient", MainFrame, {
@@ -1703,6 +1951,70 @@ function redzlib:MakeWindow(Configs)
 	})MakeDrag(MainFrame)
 	
 	local MainCorner = Make("Corner", MainFrame)
+	local MainStroke = InsertTheme(Make("Stroke", MainFrame, {
+		Color = (redzlib.Save.Theme == "Liquid Glass" and Color3.fromRGB(205, 230, 255) or Theme["Color Stroke"]),
+		Thickness = 1.5,
+		Transparency = (redzlib.Save.Theme == "Liquid Glass" and 0.20 or 0),
+		ApplyStrokeMode = "Border"
+	}), "Stroke")
+	
+	local GlassEffects = Create("Frame", MainFrame, {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		ZIndex = 1,
+		Name = "GlassEffects"
+	})
+	Make("Corner", GlassEffects)
+	
+	local SpecularSheen = Create("Frame", GlassEffects, {
+		Size = UDim2.new(2.2, 0, 2.2, 0),
+		Position = UDim2.new(-0.6, 0, -0.6, 0),
+		BackgroundTransparency = 0,
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		ZIndex = 1,
+		Visible = (redzlib.Save.Theme == "Liquid Glass"),
+		Name = "SpecularSheen"
+	})
+	Create("UIGradient", SpecularSheen, {
+		Rotation = 65,
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0.00, 1),
+			NumberSequenceKeypoint.new(0.38, 1),
+			NumberSequenceKeypoint.new(0.48, 0.90),
+			NumberSequenceKeypoint.new(0.50, 0.74),
+			NumberSequenceKeypoint.new(0.52, 0.90),
+			NumberSequenceKeypoint.new(0.62, 1),
+			NumberSequenceKeypoint.new(1.00, 1)
+		}),
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0.00, Color3.fromRGB(215, 240, 255)),
+			ColorSequenceKeypoint.new(0.50, Color3.fromRGB(255, 255, 255)),
+			ColorSequenceKeypoint.new(1.00, Color3.fromRGB(215, 240, 255))
+		}),
+		Offset = Vector2.new(-1.2, 0)
+	})
+	
+	local TopRimLight = Create("Frame", GlassEffects, {
+		Size = UDim2.new(1, -16, 0, 1),
+		Position = UDim2.new(0, 8, 0, 1),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BackgroundTransparency = 0.35,
+		BorderSizePixel = 0,
+		Visible = (redzlib.Save.Theme == "Liquid Glass"),
+		ZIndex = 2,
+		Name = "TopRimLight"
+	}, {
+		Create("UIGradient", {
+			Transparency = NumberSequence.new({
+				NumberSequenceKeypoint.new(0.00, 1),
+				NumberSequenceKeypoint.new(0.20, 0.45),
+				NumberSequenceKeypoint.new(0.50, 0.15),
+				NumberSequenceKeypoint.new(0.80, 0.45),
+				NumberSequenceKeypoint.new(1.00, 1)
+			})
+		})
+	})
 	
 	local Components = Create("Folder", MainFrame, {
 		Name = "Components"
