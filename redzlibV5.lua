@@ -31,15 +31,17 @@ local redzlib = {
 	Themes = {
 		["Polar Ice"] = {
 			["Color Hub 1"] = ColorSequence.new({
-				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(6, 14, 28)),
-				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(10, 22, 42)),
-				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(6, 14, 28))
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(10, 22, 44)),
+				ColorSequenceKeypoint.new(0.35, Color3.fromRGB(22, 48, 86)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(36, 72, 118)),
+				ColorSequenceKeypoint.new(0.65, Color3.fromRGB(22, 48, 86)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(10, 22, 44))
 			}),
-			["Color Hub 2"] = Color3.fromRGB(8, 18, 34),
-			["Color Stroke"] = Color3.fromRGB(25, 65, 115),
-			["Color Theme"] = Color3.fromRGB(0, 215, 255),
-			["Color Text"] = Color3.fromRGB(250, 253, 255),
-			["Color Dark Text"] = Color3.fromRGB(160, 210, 250)
+			["Color Hub 2"] = Color3.fromRGB(16, 32, 60),
+			["Color Stroke"] = Color3.fromRGB(130, 205, 255),
+			["Color Theme"] = Color3.fromRGB(225, 248, 255),
+			["Color Text"] = Color3.fromRGB(255, 255, 255),
+			["Color Dark Text"] = Color3.fromRGB(195, 230, 255)
 		},
 		["Liquid Glass"] = {
 			["Color Hub 1"] = ColorSequence.new({
@@ -1565,6 +1567,7 @@ local function StopGlassAnimation()
 			if hub then
 				local effects = hub:FindFirstChild("GlassEffects")
 				if effects then
+					effects.Visible = false
 					local sheen = effects:FindFirstChild("SpecularSheen")
 					if sheen then sheen.Visible = false end
 					local rim = effects:FindFirstChild("TopRimLight")
@@ -1628,6 +1631,7 @@ local function StartGlassAnimation(gui)
 					-- 3. Rayo de luz especular diagonal (Specular Sheen Sweep) y bisel superior
 					local effects = hub:FindFirstChild("GlassEffects")
 					if effects then
+						effects.Visible = true
 						local sheen = effects:FindFirstChild("SpecularSheen")
 						if sheen then
 							local sheenGrad = sheen:FindFirstChildOfClass("UIGradient")
@@ -1670,6 +1674,74 @@ local function StartGlassAnimation(gui)
 	end)
 end
 
+local polarIceAnimationThread = nil
+local function StopPolarIceAnimation()
+	if polarIceAnimationThread then
+		task.cancel(polarIceAnimationThread)
+		polarIceAnimationThread = nil
+	end
+	pcall(function()
+		if ScreenGui then
+			local hub = ScreenGui:FindFirstChild("Hub")
+			if hub then
+				local polarEffects = hub:FindFirstChild("PolarEffects")
+				if polarEffects then
+					polarEffects.Visible = false
+				end
+			end
+		end
+	end)
+end
+
+local function StartPolarIceAnimation(gui)
+	StopPolarIceAnimation()
+	polarIceAnimationThread = task.spawn(function()
+		local t = 0
+		while true do
+			task.wait(0.033)
+			t = t + 0.033
+			if not gui or not gui.Parent then break end
+			
+			pcall(function()
+				local hub = gui:FindFirstChild("Hub")
+				if hub and hub.Visible then
+					-- Borde de hielo majestuoso con respiración luminosa
+					local stroke = hub:FindFirstChildOfClass("UIStroke")
+					if stroke then
+						local sVal = (math.sin(t * 1.8) + 1) / 2
+						stroke.Color = Color3.fromRGB(120, 205, 255):Lerp(Color3.fromRGB(250, 253, 255), sVal)
+						stroke.Transparency = 0.02 + (sVal * 0.14)
+					end
+					
+					-- Micro-destellos de diamante en las esquinas superiores
+					local polarEffects = hub:FindFirstChild("PolarEffects")
+					if polarEffects and polarEffects.Visible then
+						local sparkle1 = polarEffects:FindFirstChild("Sparkle1")
+						if sparkle1 then
+							local s1 = (math.sin(t * 2.5) + 1) / 2
+							sparkle1.TextTransparency = 0.15 + (s1 * 0.70)
+						end
+						local sparkle2 = polarEffects:FindFirstChild("Sparkle2")
+						if sparkle2 then
+							local s2 = (math.sin(t * 2.1 + 1.5) + 1) / 2
+							sparkle2.TextTransparency = 0.15 + (s2 * 0.70)
+						end
+					end
+				end
+				
+				local floatBtn = gui:FindFirstChild("PolarFloatingButton")
+				if floatBtn then
+					local fStroke = floatBtn:FindFirstChildOfClass("UIStroke")
+					if fStroke then
+						local sVal = (math.sin(t * 1.8) + 1) / 2
+						fStroke.Color = Color3.fromRGB(130, 210, 255):Lerp(Color3.fromRGB(255, 255, 255), sVal)
+					end
+				end
+			end)
+		end
+	end)
+end
+
 function redzlib:SetTheme(NewTheme)
 	if not VerifyTheme(NewTheme) then return end
 	
@@ -1678,6 +1750,7 @@ function redzlib:SetTheme(NewTheme)
 	Theme = redzlib.Themes[NewTheme]
 	
 	local isGlass = (NewTheme == "Liquid Glass")
+	local isPolarIce = (NewTheme == "Polar Ice")
 	
 	Connection:FireConnection("ThemeChanged", NewTheme)
 	
@@ -1755,6 +1828,7 @@ function redzlib:SetTheme(NewTheme)
 					}), "Stroke")
 				end
 				
+				-- Manejo estricto de GlassEffects (ocultar por completo en otros temas)
 				local glassEffects = hub:FindFirstChild("GlassEffects")
 				if isGlass then
 					if not glassEffects then
@@ -1763,6 +1837,7 @@ function redzlib:SetTheme(NewTheme)
 							BackgroundTransparency = 1,
 							ClipsDescendants = true,
 							ZIndex = 1,
+							Visible = true,
 							Name = "GlassEffects"
 						})
 						Make("Corner", glassEffects)
@@ -1816,6 +1891,7 @@ function redzlib:SetTheme(NewTheme)
 							})
 						})
 					else
+						glassEffects.Visible = true
 						local sheen = glassEffects:FindFirstChild("SpecularSheen")
 						if sheen then sheen.Visible = true end
 						local rim = glassEffects:FindFirstChild("TopRimLight")
@@ -1823,10 +1899,53 @@ function redzlib:SetTheme(NewTheme)
 					end
 				else
 					if glassEffects then
+						glassEffects.Visible = false
 						local sheen = glassEffects:FindFirstChild("SpecularSheen")
 						if sheen then sheen.Visible = false end
 						local rim = glassEffects:FindFirstChild("TopRimLight")
 						if rim then rim.Visible = false end
+					end
+				end
+				
+				-- Manejo de PolarEffects (efectos y destellos de hielo en Polar Ice)
+				local polarEffects = hub:FindFirstChild("PolarEffects")
+				if isPolarIce then
+					if not polarEffects then
+						polarEffects = Create("Frame", hub, {
+							Size = UDim2.new(1, 0, 1, 0),
+							BackgroundTransparency = 1,
+							ClipsDescendants = true,
+							ZIndex = 4,
+							Visible = true,
+							Name = "PolarEffects"
+						})
+						Make("Corner", polarEffects)
+						
+						Create("TextLabel", polarEffects, {
+							Text = "✦",
+							Font = Enum.Font.GothamBold,
+							TextSize = 13,
+							TextColor3 = Color3.fromRGB(225, 248, 255),
+							BackgroundTransparency = 1,
+							Position = UDim2.new(1, -75, 0, 7),
+							Name = "Sparkle1"
+						})
+						
+						Create("TextLabel", polarEffects, {
+							Text = "✦",
+							Font = Enum.Font.GothamBold,
+							TextSize = 9,
+							TextColor3 = Color3.fromRGB(180, 230, 255),
+							BackgroundTransparency = 1,
+							Position = UDim2.new(0, 115, 0, 10),
+							Name = "Sparkle2"
+						})
+					else
+						polarEffects.Visible = true
+					end
+				else
+					if polarEffects then
+						polarEffects.Visible = false
 					end
 				end
 			end
@@ -1898,6 +2017,12 @@ function redzlib:SetTheme(NewTheme)
 		StartGlassAnimation(ScreenGui)
 	else
 		StopGlassAnimation()
+	end
+	
+	if isPolarIce then
+		StartPolarIceAnimation(ScreenGui)
+	else
+		StopPolarIceAnimation()
 	end
 end
 
@@ -2014,6 +2139,36 @@ function redzlib:MakeWindow(Configs)
 				NumberSequenceKeypoint.new(1.00, 1)
 			})
 		})
+	})
+	
+	local PolarEffects = Create("Frame", MainFrame, {
+		Size = UDim2.new(1, 0, 1, 0),
+		BackgroundTransparency = 1,
+		ClipsDescendants = true,
+		ZIndex = 4,
+		Visible = (redzlib.Save.Theme == "Polar Ice"),
+		Name = "PolarEffects"
+	})
+	Make("Corner", PolarEffects)
+	
+	Create("TextLabel", PolarEffects, {
+		Text = "✦",
+		Font = Enum.Font.GothamBold,
+		TextSize = 13,
+		TextColor3 = Color3.fromRGB(225, 248, 255),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(1, -75, 0, 7),
+		Name = "Sparkle1"
+	})
+	
+	Create("TextLabel", PolarEffects, {
+		Text = "✦",
+		Font = Enum.Font.GothamBold,
+		TextSize = 9,
+		TextColor3 = Color3.fromRGB(180, 230, 255),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 115, 0, 10),
+		Name = "Sparkle2"
 	})
 	
 	local Components = Create("Folder", MainFrame, {
@@ -2201,7 +2356,106 @@ function redzlib:MakeWindow(Configs)
 		else
 			MainFrame.Visible = not MainFrame.Visible
 		end
+		if MainFrame.Visible and redzlib.Save.Theme == "Polar Ice" then
+			pcall(function()
+				local s = MainFrame:FindFirstChildOfClass("UIStroke")
+				if s then
+					s.Color = Color3.fromRGB(255, 255, 255)
+					s.Thickness = 2.4
+					CreateTween({s, "Thickness", 1.5, 0.32})
+					CreateTween({s, "Color", Color3.fromRGB(130, 205, 255), 0.32})
+				end
+			end)
+		end
 	end
+	
+	local function TriggerPolarIceClickEffect(Button)
+		pcall(function()
+			local parentGui = Button and Button.Parent
+			if not parentGui then return end
+			
+			local centerPos = Button.Position
+			local centerOffset = UDim2.new(
+				centerPos.X.Scale,
+				centerPos.X.Offset + Button.Size.X.Offset / 2,
+				centerPos.Y.Scale,
+				centerPos.Y.Offset + Button.Size.Y.Offset / 2
+			)
+			
+			-- 1. Anillo de expansión de hielo (Frost Shockwave)
+			local ring = Instance.new("Frame")
+			ring.Name = "FrostShockwave"
+			ring.AnchorPoint = Vector2.new(0.5, 0.5)
+			ring.Position = centerOffset
+			ring.Size = UDim2.fromOffset(46, 46)
+			ring.BackgroundTransparency = 1
+			ring.ZIndex = 15
+			ring.Parent = parentGui
+			
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(1, 0)
+			corner.Parent = ring
+			
+			local stroke = Instance.new("UIStroke")
+			stroke.Thickness = 2.5
+			stroke.Color = Color3.fromRGB(205, 242, 255)
+			stroke.Transparency = 0.05
+			stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+			stroke.Parent = ring
+			
+			CreateTween({ring, "Size", UDim2.fromOffset(92, 92), 0.35})
+			CreateTween({stroke, "Transparency", 1, 0.35})
+			CreateTween({stroke, "Thickness", 0.5, 0.35})
+			
+			-- 2. Cuatro micro-cristales de hielo diagonales (✦)
+			local angles = {45, 135, 225, 315}
+			for _, ang in ipairs(angles) do
+				local rad = math.rad(ang)
+				local dist = 32
+				local dx = math.cos(rad) * dist
+				local dy = math.sin(rad) * dist
+				
+				local glint = Instance.new("TextLabel")
+				glint.Name = "FrostGlint"
+				glint.Text = "✦"
+				glint.Font = Enum.Font.GothamBold
+				glint.TextSize = 13
+				glint.TextColor3 = Color3.fromRGB(225, 248, 255)
+				glint.BackgroundTransparency = 1
+				glint.AnchorPoint = Vector2.new(0.5, 0.5)
+				glint.Position = centerOffset
+				glint.ZIndex = 16
+				glint.Parent = parentGui
+				
+				local targetPos = UDim2.new(centerOffset.X.Scale, centerOffset.X.Offset + dx, centerOffset.Y.Scale, centerOffset.Y.Offset + dy)
+				CreateTween({glint, "Position", targetPos, 0.32})
+				CreateTween({glint, "TextTransparency", 1, 0.32})
+				CreateTween({glint, "TextSize", 5, 0.32})
+				
+				task.delay(0.35, function()
+					pcall(function() glint:Destroy() end)
+				end)
+			end
+			
+			-- 3. Destello de cristal blanco en el borde del botón
+			local btnStroke = Button:FindFirstChildOfClass("UIStroke")
+			if btnStroke then
+				btnStroke.Color = Color3.fromRGB(255, 255, 255)
+				btnStroke.Thickness = 3.2
+				CreateTween({btnStroke, "Thickness", 2, 0.3})
+				task.delay(0.15, function()
+					pcall(function()
+						CreateTween({btnStroke, "Color", Color3.fromRGB(130, 205, 255), 0.25})
+					end)
+				end)
+			end
+			
+			task.delay(0.38, function()
+				pcall(function() ring:Destroy() end)
+			end)
+		end)
+	end
+
 	function Window:CreateFloatingButton(Configs)
 		Configs = Configs or {}
 		local existing = ScreenGui:FindFirstChild("PolarFloatingButton")
@@ -2299,6 +2553,9 @@ function redzlib:MakeWindow(Configs)
 						CreateTween({Button, "Size", UDim2.fromOffset(50, 50), 0.08})
 						
 						if totalDelta < 8 then
+							if redzlib.Save.Theme == "Polar Ice" then
+								TriggerPolarIceClickEffect(Button)
+							end
 							Window:Minimize()
 						end
 					end
