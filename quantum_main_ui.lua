@@ -4,9 +4,15 @@
     Quantum Onyx — Main Script UI (Exact 1:1 Pixel-Perfect Recreation)
     ========================================================================
     Extracted directly from live memory dump (5,809 instances):
+      - Scale: LibraryUIScale at 1.15 (115% scaling for authentic full sizing & crisp fonts)
       - Main Window: 510x330 px, AnchorPoint (0.5, 0.5), #0A0A0A (Trans 0.05), Corner 10px, Borderless
       - Floating Toggle Icon: 60x60 px Circle at {0.016, 0}, {0.219, 0} (Asset: rbxassetid://87383580130479)
       - Typography: 100% GothamBold for titles, controls, badges, headers, tabs; Gotham for descriptions
+      - Detailed Purple/Violet Outlines (UIStroke):
+        * Config. & Credits pill buttons: Color #A064F0, Thickness 1.0, Transparency 0.32, Round join
+        * Number Badges (180, 22, 400): Color #C084FC, Thickness 1.0, Transparency 0.32, Round join
+        * Dropdown Badges (Pirates): Color #C084FC, Thickness 1.0, Transparency 0.32, Round join
+        * Slider Tracks: Color #8C5ADC, Thickness 1.0, Transparency 0.50
       - Header Bar: TitleHub ("Quantum Onyx Project", GothamBold 13px), SubtitleHub (Gotham 11px),
         "Config." (81151604784579) and "Credits" (83474083071373) pill buttons with
         left vertical neon gradient accent strips, Minimize (92966930061759) and Close (79324227570635).
@@ -45,7 +51,9 @@ local Theme = {
     Accent = Color3.fromRGB(192, 132, 252),        -- #C084FC (Primary Violet Bloom)
     AccentGlow = Color3.fromRGB(160, 100, 255),    -- #A064FF
     AccentDeep = Color3.fromRGB(110, 55, 190),     -- #6E37BE
-    AccentStroke = Color3.fromRGB(140, 90, 220),   -- #8C5ADC
+    AccentStroke = Color3.fromRGB(160, 100, 240),   -- #A064F0 (Vivid Purple Outline)
+    BadgeStroke = Color3.fromRGB(192, 132, 252),    -- #C084FC (Bright Badge Outline)
+    TrackStroke = Color3.fromRGB(140, 90, 220),    -- #8C5ADC
     
     SwitchOff = Color3.fromRGB(15, 15, 15),        -- #0F0F0F
     SwitchOn = Color3.fromRGB(15, 15, 15),         -- #0F0F0F
@@ -124,6 +132,13 @@ function QuantumOnyxUI.new(customTitle, customSub)
     screenGui.IgnoreGuiInset = true
     screenGui.DisplayOrder = 999999
     self.ScreenGui = screenGui
+
+    -- Authentic LibraryUIScale (1.15 for authentic comfortable 15% larger size and crisp fonts)
+    local uiScale = Instance.new("UIScale")
+    uiScale.Name = "LibraryUIScale"
+    uiScale.Scale = 1.15
+    uiScale.Parent = screenGui
+    self.UIScale = uiScale
 
     -- 2. Floating Toggle Button (60x60 Circle at {0.016, 0}, {0.219, 0})
     local floatFrame = Instance.new("Frame")
@@ -284,7 +299,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local ms = Instance.new("UIStroke")
         ms.Color = Theme.AccentStroke
         ms.Thickness = 1.0
-        ms.Transparency = 0.60
+        ms.Transparency = 0.35
+        ms.LineJoinMode = Enum.LineJoinMode.Round
+        ms.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         ms.Parent = modal
 
         -- Top gradient background header
@@ -392,7 +409,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local mcs = Instance.new("UIStroke")
         mcs.Color = Theme.AccentStroke
         mcs.Thickness = 1.0
-        mcs.Transparency = 0.65
+        mcs.Transparency = 0.35
+        mcs.LineJoinMode = Enum.LineJoinMode.Round
+        mcs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         mcs.Parent = mClose
 
         local function open()
@@ -447,7 +466,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local tbs = Instance.new("UIStroke")
         tbs.Color = Theme.AccentStroke
         tbs.Thickness = 1
-        tbs.Transparency = 0.70
+        tbs.Transparency = 0.35
+        tbs.LineJoinMode = Enum.LineJoinMode.Round
+        tbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         tbs.Parent = themeBox
 
         -- 2. BG Image Fade Slider Box
@@ -464,7 +485,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local fbs = Instance.new("UIStroke")
         fbs.Color = Theme.AccentStroke
         fbs.Thickness = 1
-        fbs.Transparency = 0.70
+        fbs.Transparency = 0.35
+        fbs.LineJoinMode = Enum.LineJoinMode.Round
+        fbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         fbs.Parent = fadeBox
 
         local flbl = Instance.new("TextLabel")
@@ -502,6 +525,14 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local ftc = Instance.new("UICorner")
         ftc.CornerRadius = UDim.new(1, 0)
         ftc.Parent = fTrack
+        local fts = Instance.new("UIStroke")
+        fts.Color = Theme.TrackStroke
+        fts.Thickness = 1
+        fts.Transparency = 0.50
+        fts.LineJoinMode = Enum.LineJoinMode.Round
+        fts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        fts.Parent = fTrack
+
         local fFill = Instance.new("Frame")
         fFill.Size = UDim2.new(0.88, 0, 1, 0)
         fFill.BackgroundColor3 = Theme.AccentGlow
@@ -556,7 +587,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
         local gbs = Instance.new("UIStroke")
         gbs.Color = Theme.AccentStroke
         gbs.Thickness = 1
-        gbs.Transparency = 0.42
+        gbs.Transparency = 0.35
+        gbs.LineJoinMode = Enum.LineJoinMode.Round
+        gbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         gbs.Parent = gothamBtn
     end
 
@@ -595,7 +628,9 @@ function QuantumOnyxUI.new(customTitle, customSub)
             local cs = Instance.new("UIStroke")
             cs.Color = member.color
             cs.Thickness = 1
-            cs.Transparency = 0.70
+            cs.Transparency = 0.50
+            cs.LineJoinMode = Enum.LineJoinMode.Round
+            cs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             cs.Parent = card
 
             -- Avatar Badge
@@ -656,7 +691,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
         end
     end
 
-    -- Header Button Builder (Config. & Credits with left neon strip)
+    -- Header Button Builder (Config. & Credits with authentic glowing purple border)
     local function createHeaderPillButton(name, text, iconId, xOffset, onClick)
         local btn = Instance.new("TextButton")
         btn.Name = name
@@ -674,10 +709,13 @@ function QuantumOnyxUI.new(customTitle, customSub)
         bc.CornerRadius = UDim.new(0, 6)
         bc.Parent = btn
 
+        -- Authentic Purple Border (visible and fine)
         local bs = Instance.new("UIStroke")
-        bs.Color = Color3.fromRGB(160, 100, 240)
+        bs.Color = Theme.AccentStroke
         bs.Thickness = 1.0
-        bs.Transparency = 0.72
+        bs.Transparency = 0.32
+        bs.LineJoinMode = Enum.LineJoinMode.Round
+        bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         bs.Parent = btn
 
         -- Left Vertical Neon Gradient Strip
@@ -789,6 +827,14 @@ function QuantumOnyxUI.new(customTitle, customSub)
     local sc = Instance.new("UICorner")
     sc.CornerRadius = UDim.new(0, 6)
     sc.Parent = searchBar
+
+    local ss = Instance.new("UIStroke")
+    ss.Color = Theme.AccentStroke
+    ss.Thickness = 1.0
+    ss.Transparency = 0.55
+    ss.LineJoinMode = Enum.LineJoinMode.Round
+    ss.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    ss.Parent = searchBar
 
     local searchIcon = Instance.new("ImageLabel")
     searchIcon.Position = UDim2.new(0, 6, 0.5, -6)
@@ -1114,9 +1160,11 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     cc.Parent = card
 
     local cs = Instance.new("UIStroke")
-    cs.Color = Theme.AccentDeep
+    cs.Color = Theme.AccentStroke
     cs.Thickness = 1.0
-    cs.Transparency = 0.88
+    cs.Transparency = 0.55
+    cs.LineJoinMode = Enum.LineJoinMode.Round
+    cs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     cs.Parent = card
 
     local cPad = Instance.new("UIPadding")
@@ -1167,7 +1215,7 @@ function QuantumOnyxUI:AddSelectorCard(innerParent, labelText, valueText, callba
     return card
 end
 
--- Dropdown Selector Control (Pill Badge & Chevron Icon 95968409641902)
+-- Dropdown Selector Control (Pill Badge with Fine Violet Outline & Chevron Icon 95968409641902)
 function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOption, callback)
     callback = callback or function(opt) end
     local selected = defaultOption or (options[1] or "Select...")
@@ -1204,7 +1252,7 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     tcConstraint.MinTextSize = 8
     tcConstraint.Parent = tLabel
 
-    -- Option Pill Badge (#0C0C12, stroke #C084FC)
+    -- Option Pill Badge (#0C0C12, fine authentic violet stroke #C084FC)
     local pillBadge = Instance.new("Frame")
     pillBadge.Position = UDim2.new(1, -90, 0.5, -11)
     pillBadge.Size = UDim2.new(0, 68, 0, 22)
@@ -1218,10 +1266,13 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     pbc.CornerRadius = UDim.new(0, 5)
     pbc.Parent = pillBadge
 
+    -- Fine detailed violet border (crisp and visible)
     local pbs = Instance.new("UIStroke")
-    pbs.Color = Theme.Accent
+    pbs.Color = Theme.BadgeStroke
     pbs.Thickness = 1.0
-    pbs.Transparency = 0.75
+    pbs.Transparency = 0.32
+    pbs.LineJoinMode = Enum.LineJoinMode.Round
+    pbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     pbs.Parent = pillBadge
 
     local valLabel = Instance.new("TextLabel")
@@ -1272,7 +1323,9 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     local ms = Instance.new("UIStroke")
     ms.Color = Theme.AccentStroke
     ms.Thickness = 1.0
-    ms.Transparency = 0.60
+    ms.Transparency = 0.35
+    ms.LineJoinMode = Enum.LineJoinMode.Round
+    ms.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     ms.Parent = modal
 
     local mHeader = Instance.new("Frame")
@@ -1448,9 +1501,11 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     cc.Parent = capsule
 
     local cs = Instance.new("UIStroke")
-    cs.Color = Color3.fromRGB(100, 100, 100)
-    cs.Thickness = 2.0
-    cs.Transparency = 0.80
+    cs.Color = Color3.fromRGB(100, 100, 120)
+    cs.Thickness = 1.2
+    cs.Transparency = 0.55
+    cs.LineJoinMode = Enum.LineJoinMode.Round
+    cs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     cs.Parent = capsule
 
     -- Knob ImageLabel (asset 12266946128) with 90-degree 5-color cyber gradient
@@ -1487,7 +1542,7 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     return btn
 end
 
--- Slider Control (Authentic Track + Lavender Fill Gradient + White Knob with Inner Violet Dot)
+-- Slider Control (Authentic Track + Lavender Fill Gradient + Number Badge with Detailed Purple Stroke)
 function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, defaultVal, callback)
     callback = callback or function(v) end
     local currentVal = defaultVal or minVal
@@ -1520,6 +1575,7 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     title.Parent = frame
 
     -- Value Badge TextBox ({0, 46}, {0, 20} at {1, -56}, {0, 6}, GothamBold 12px, #C084FC)
+    -- With AUTHENTIC VIVID VIOLET OUTLINE
     local valBox = Instance.new("TextBox")
     valBox.Position = UDim2.new(1, -56, 0, 6)
     valBox.Size = UDim2.new(0, 46, 0, 20)
@@ -1534,10 +1590,14 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     local vbc = Instance.new("UICorner")
     vbc.CornerRadius = UDim.new(0, 5)
     vbc.Parent = valBox
+    
+    -- Fine detailed violet border (crisp and visible)
     local vbs = Instance.new("UIStroke")
-    vbs.Color = Theme.AccentStroke
+    vbs.Color = Theme.BadgeStroke
     vbs.Thickness = 1.0
-    vbs.Transparency = 0.72
+    vbs.Transparency = 0.32
+    vbs.LineJoinMode = Enum.LineJoinMode.Round
+    vbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     vbs.Parent = valBox
     valBox.Parent = frame
 
@@ -1553,9 +1613,11 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     tc.CornerRadius = UDim.new(1, 0)
     tc.Parent = track
     local ts = Instance.new("UIStroke")
-    ts.Color = Theme.AccentStroke
+    ts.Color = Theme.TrackStroke
     ts.Thickness = 1.0
-    ts.Transparency = 0.81
+    ts.Transparency = 0.50
+    ts.LineJoinMode = Enum.LineJoinMode.Round
+    ts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     ts.Parent = track
     track.Parent = frame
 
@@ -1590,6 +1652,8 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     ths.Color = Theme.Accent
     ths.Thickness = 1.5
     ths.Transparency = 0.30
+    ths.LineJoinMode = Enum.LineJoinMode.Round
+    ths.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     ths.Parent = thumb
     thumb.Parent = track
 
@@ -1667,6 +1731,14 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
     local bc = Instance.new("UICorner")
     bc.CornerRadius = UDim.new(0, 6)
     bc.Parent = btn
+
+    local bs = Instance.new("UIStroke")
+    bs.Color = Theme.AccentStroke
+    bs.Thickness = 1.0
+    bs.Transparency = 0.55
+    bs.LineJoinMode = Enum.LineJoinMode.Round
+    bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    bs.Parent = btn
 
     local lbl = Instance.new("TextLabel")
     lbl.Position = UDim2.new(0, 12, 0, 0)
