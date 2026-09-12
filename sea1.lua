@@ -931,4 +931,16 @@ if TabShop then
     })
 end
 
+-- Asegurar que todos los contenedores inicien en la parte superior (0, 0)
+pcall(function()
+    local rz = (gethui and gethui()) or game:GetService("CoreGui"):FindFirstChild("redz Library V5")
+    if rz then
+        for _, c in ipairs(rz:GetDescendants()) do
+            if c:IsA("ScrollingFrame") and string.find(c.Name, "Container") then
+                c.CanvasPosition = Vector2.new(0, 0)
+            end
+        end
+    end
+end)
+
 print("[Polar Hub] ✅ Sea 1 cargado e inicializado al 100% con éxito.")

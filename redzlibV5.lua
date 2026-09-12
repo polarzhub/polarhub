@@ -1858,6 +1858,7 @@ function redzlib:MakeWindow(Configs)
 			end
 			Container.Parent = Containers
 			Container.Size = UDim2.new(1, 0, 1, 150)
+			pcall(function() Container.CanvasPosition = Vector2.new(0, 0) end)
 			table.foreach(redzlib.Tabs, function(_,Tab)
 				if Tab.Cont ~= Container then
 					Tab.func:Disable()
