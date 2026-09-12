@@ -56,7 +56,7 @@ if not success or not redzlib then
 end
 
 local Window = redzlib:MakeWindow({
-    Name = "❄️ POLAR HUB",
+    Name = "POLAR HUB",
     SubTitle = "by polar",
     SaveFolder = "PolarHubConfig.json"
 })
