@@ -3,6 +3,14 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+while not Player do
+	task.wait(0.1)
+	Player = Players.LocalPlayer
+end
+local PlayerMouse = Player:GetMouse()
+
 local CoreGui = (function()
 	if gethui then
 		local success, res = pcall(gethui)
@@ -18,9 +26,6 @@ local CoreGui = (function()
 	end
 	return Player:WaitForChild("PlayerGui")
 end)()
-local Players = game:GetService("Players")
-local Player = Players.LocalPlayer
-local PlayerMouse = Player:GetMouse()
 
 local redzlib = {
 	Themes = {
