@@ -593,7 +593,7 @@ task.spawn(function()
     end
 end)
 
--- ==================== TAB STATUS: RADAR Y TEMPORIZADOR DE JEFES ====================
+-- ==================== TAB STATUS: RADAR Y TEMPORIZADORES OFICIALES DEL JUEGO ====================
 local BossNamesList = {}
 for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
@@ -610,7 +610,135 @@ for _, b in ipairs(Polar.Data.Bosses) do
     end
 end
 
--- Escucha pasiva de eventos de enemigos en tiempo real (0% LAG, evento nativo)
+-- Normalizador de nombres para emparejar jefes con los Respawn Markers del juego
+local function NormalizeBossName(str)
+    if not str then return "" end
+    local s = str:lower()
+    s = s:gsub("^the%s+", "")
+    s = s:gsub("%s+respawn%s+marker$", "")
+    s = s:gsub("%s+marker$", "")
+    s = s:gsub("[%s%p%c]", "")
+    return s
+end
+
+-- Busca el marcador 3D oficial del juego en Workspace._WorldOrigin
+local function GetOfficialBossMarker(bossName)
+    local origin = workspace:FindFirstChild("_WorldOrigin")
+    if not origin then return nil end
+    
+    local targetNorm = NormalizeBossName(bossName)
+    if #targetNorm == 0 then return nil end
+    
+    local aliases = {targetNorm}
+    if targetNorm:find("saberexpert") or targetNorm:find("shanks") then
+        aliases = {"saberexpert", "shanks"}
+    elseif targetNorm:find("gorillaking") then
+        aliases = {"gorillaking", "thegorillaking"}
+    elseif targetNorm:find("thesaw") or targetNorm:find("saw") then
+        aliases = {"thesaw", "saw"}
+    elseif targetNorm:find("greybeard") or targetNorm:find("whitebeard") then
+        aliases = {"greybeard", "whitebeard"}
+    elseif targetNorm:find("chiefwarden") then
+        aliases = {"chiefwarden"}
+    elseif targetNorm:find("warden") then
+        aliases = {"warden"}
+    end
+
+    for _, child in ipairs(origin:GetChildren()) do
+        if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+            local cNorm = NormalizeBossName(child.Name)
+            local match = false
+            for _, alias in ipairs(aliases) do
+                if cNorm == alias or cNorm:find(alias, 1, true) or alias:find(cNorm, 1, true) then
+                    match = true
+                    break
+                end
+            end
+            
+            local timerGui = child:FindFirstChild("RespawnTimer")
+            local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
+            local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
+            local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or ""
+            local internalNorm = NormalizeBossName(internalName)
+            
+            if not match and internalNorm ~= "" then
+                for _, alias in ipairs(aliases) do
+                    if internalNorm == alias or internalNorm:find(alias, 1, true) or alias:find(internalNorm, 1, true) then
+                        match = true
+                        break
+                    end
+                end
+            end
+            
+            if match then
+                local rawTimer = timerLabel and timerLabel.Text or nil
+                local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
+                return {
+                    part = child,
+                    name = internalName ~= "" and internalName or child.Name:gsub(" Respawn Marker", ""),
+                    timerText = cleanTimer,
+                    position = child.Position
+                }
+            end
+        end
+    end
+    return nil
+end
+
+-- Obtiene todos los marcadores visuales activos actualmente en el servidor
+local function GetAllActiveMarkers()
+    local origin = workspace:FindFirstChild("_WorldOrigin")
+    if not origin then return {} end
+    local list = {}
+    for _, child in ipairs(origin:GetChildren()) do
+        if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+            local timerGui = child:FindFirstChild("RespawnTimer")
+            local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
+            local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
+            local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or child.Name:gsub(" Respawn Marker", "")
+            local rawTimer = timerLabel and timerLabel.Text or nil
+            local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
+            table.insert(list, {
+                name = internalName,
+                timer = cleanTimer,
+                part = child
+            })
+        end
+    end
+    return list
+end
+
+-- Escucha reactiva de eventos en _WorldOrigin para sincronización instantánea (0% LAG)
+local originFolder = workspace:FindFirstChild("_WorldOrigin")
+if originFolder then
+    originFolder.ChildAdded:Connect(function(child)
+        if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+            local name = child.Name:gsub(" Respawn Marker", "")
+            for _, b in ipairs(Polar.Data.Bosses) do
+                if NormalizeBossName(b.name) == NormalizeBossName(name) then
+                    BossTracker[b.name].status = "DEAD"
+                    BossTracker[b.name].deadAt = os.time()
+                    break
+                end
+            end
+        end
+    end)
+    
+    originFolder.ChildRemoved:Connect(function(child)
+        if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+            local name = child.Name:gsub(" Respawn Marker", "")
+            for _, b in ipairs(Polar.Data.Bosses) do
+                if NormalizeBossName(b.name) == NormalizeBossName(name) then
+                    BossTracker[b.name].status = "ALIVE"
+                    BossTracker[b.name].aliveAt = os.time()
+                    break
+                end
+            end
+        end
+    end)
+end
+
+-- Escucha pasiva de eventos de enemigos en tiempo real
 local enemiesFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
 if enemiesFolder then
     enemiesFolder.ChildAdded:Connect(function(child)
@@ -649,7 +777,7 @@ local function GetBossStatusCard(bossName)
     local liveBoss = nil
     if enemies then
         for _, e in ipairs(enemies:GetChildren()) do
-            if string.find(e.Name:lower(), bData.name:lower()) then
+            if string.find(e.Name:lower(), bData.name:lower()) or (bData.name == "Gorilla King" and e.Name:lower():find("gorilla")) or (bData.name == "Saber Expert" and e.Name:lower():find("saber")) then
                 local hum = e:FindFirstChild("Humanoid")
                 if hum and hum.Health > 0 then
                     liveBoss = e
@@ -665,7 +793,7 @@ local function GetBossStatusCard(bossName)
     local lines = {
         string.format("👑 Jefe: %s  |  Nivel: %d", bData.name, bData.lvl),
         string.format("🏝️ Ubicación: Isla %s", bData.island),
-        string.format("⏱️ Cooldown Respawn: ~%d minutos (%d seg)", cdMins, bData.cd)
+        string.format("⏱️ Cooldown Respawn Base: ~%d minutos (%d seg)", cdMins, bData.cd)
     }
     
     if liveBoss then
@@ -676,26 +804,33 @@ local function GetBossStatusCard(bossName)
         local maxHp = hum and math.floor(hum.MaxHealth) or 1
         local pct = math.floor((hp / math.max(1, maxHp)) * 100)
         table.insert(lines, string.format("📍 Estado: 🟢 ¡VIVO EN EL MAPA! (Salud: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
-        table.insert(lines, "⏳ Temporizador: ¡En el campo de batalla listo para combatir!")
-    elseif trk.deadAt then
-        trk.status = "DEAD"
-        local elapsed = os.time() - trk.deadAt
-        local remaining = math.max(0, bData.cd - elapsed)
-        local elapsedM = math.floor(elapsed / 60)
-        local elapsedS = elapsed % 60
-        local remainM = math.floor(remaining / 60)
-        local remainS = remaining % 60
-        
-        table.insert(lines, string.format("📍 Estado: 🔴 MUERTO (Murió hace: %02dm %02ds)", elapsedM, elapsedS))
-        if remaining > 0 then
-            table.insert(lines, string.format("⏳ Reaparición estimada: ~%02dm %02ds restantes", remainM, remainS))
-        else
-            table.insert(lines, "⏳ Reaparición estimada: ¡Cooldown cumplido! Reapareciendo en cualquier momento.")
-        end
+        table.insert(lines, "⏳ Temporizador: ¡En combate! El contador oficial desaparece mientras está con vida.")
     else
-        table.insert(lines, "📍 Estado: ⚪ NO DETECTADO ACTUALMENTE")
-        table.insert(lines, "⏳ Estimado: Depende del último asesinato en el servidor.")
-        table.insert(lines, "💡 Presiona 'Actualizar' al acercarte a su isla para re-escanear.")
+        -- Búsqueda del marcador visual oficial en Workspace._WorldOrigin (Sincronización 100% Exacta)
+        local marker = GetOfficialBossMarker(bData.name)
+        if marker then
+            trk.status = "DEAD"
+            table.insert(lines, "📍 Estado: 🔴 DERROTADO (EN COOLDOWN)")
+            table.insert(lines, string.format("⏱️ Contador Oficial del Juego: %s", marker.timerText))
+            table.insert(lines, string.format("⏳ Reaparición en: %s (Sincronizado con marcador 3D)", marker.timerText))
+            table.insert(lines, "📌 Marcador activo: " .. marker.name)
+        elseif trk.deadAt then
+            trk.status = "DEAD"
+            local elapsed = os.time() - trk.deadAt
+            local remaining = math.max(0, bData.cd - elapsed)
+            local remainM = math.floor(remaining / 60)
+            local remainS = remaining % 60
+            table.insert(lines, "📍 Estado: 🔴 DERROTADO (Marcador finalizado)")
+            if remaining > 0 then
+                table.insert(lines, string.format("⏳ Reaparición estimada: ~%02dm %02ds restantes", remainM, remainS))
+            else
+                table.insert(lines, "⏳ Reaparición: ¡Listo para aparecer! Reapareciendo en cualquier momento.")
+            end
+        else
+            table.insert(lines, "📍 Estado: ⚪ NO DETECTADO / SIN MARCADOR ACTIVO")
+            table.insert(lines, "⏳ Contador Oficial: No hay marcador visual (el cooldown ya concluyó o espera proximidad).")
+            table.insert(lines, "💡 Presiona 'Teleport' para volar a su isla y verificar su aparición.")
+        end
     end
     
     return table.concat(lines, "\n")
@@ -724,13 +859,13 @@ TabStatus:AddDropdown({
 
 TabStatus:AddButton({
     Name = "🔄 Actualizar Estado del Jefe (Manual)",
-    Desc = "Escaneo instantáneo y ligero de presencia y temporizador sin causar lag.",
+    Desc = "Escanea el marcador visual 3D oficial del juego y sincroniza el contador sin lag.",
     Callback = function()
         if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
             LabelSelectedBossInfo:SetTitle("📋 Ficha Técnica: " .. tostring(SelectedStatusBoss))
         end
         UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
-        Notify("Polar Hub", "Ficha técnica de " .. tostring(SelectedStatusBoss) .. " actualizada.", 2)
+        Notify("Polar Hub", "Ficha técnica de " .. tostring(SelectedStatusBoss) .. " sincronizada.", 2)
     end
 })
 
@@ -763,6 +898,7 @@ TabStatus:AddSection("⚡ Radar de Jefes de Raid (Auto 5s)")
 local LabelTheSaw = TabStatus:AddParagraph({ Title = "The Saw (Nvl 100) - Middle Town", Text = "Calculando..." })
 local LabelGreybeard = TabStatus:AddParagraph({ Title = "Greybeard (Nvl 750) - Marine Fortress", Text = "Calculando..." })
 local LabelSaberRadar = TabStatus:AddParagraph({ Title = "Saber Expert (Shanks) - Jungle", Text = "Calculando..." })
+local LabelActiveMarkers = TabStatus:AddParagraph({ Title = "📡 Contadores Visuales Activos (Marcadores 3D)", Text = "Escaneando marcadores del servidor..." })
 local LabelNextRaid = TabStatus:AddParagraph({ Title = "Próximo Jefe Especial (Raid Hint)", Text = "Calculando..." })
 
 task.spawn(function()
@@ -772,35 +908,69 @@ task.spawn(function()
             local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
             local serverUptime = workspace.DistributedGameTime or 0
             
-            -- Countdown estimado para The Saw (cada 75 min = 4500s)
-            local sawInterval = 4500
-            local nextSawSecs = math.floor(sawInterval - (serverUptime % sawInterval))
-            local sawMin = math.floor(nextSawSecs / 60)
-            local sawSec = nextSawSecs % 60
-            
-            local sawAlive = enemies and enemies:FindFirstChild("The Saw")
+            -- THE SAW (Sincronizado con marcador oficial del juego)
+            local sawMarker = GetOfficialBossMarker("The Saw")
+            local sawAlive = enemies and (enemies:FindFirstChild("The Saw") or enemies:FindFirstChild("Saw"))
             if sawAlive then
-                UpdatePara(LabelTheSaw, "🟢 ¡SPAWNEADO EN MIDDLE TOWN! (¡Ve a matarlo antes de 15 min!)")
+                UpdatePara(LabelTheSaw, "🟢 ¡SPAWNEADO EN MIDDLE TOWN! (¡En combate ahora mismo!)")
+            elseif sawMarker then
+                UpdatePara(LabelTheSaw, string.format("🔴 DERROTADO (⏱️ Contador Oficial: %s)", sawMarker.timerText))
             else
+                local sawInterval = 4500
+                local nextSawSecs = math.floor(sawInterval - (serverUptime % sawInterval))
+                local sawMin = math.floor(nextSawSecs / 60)
+                local sawSec = nextSawSecs % 60
                 UpdatePara(LabelTheSaw, string.format("🔴 NO SPAWNEADO (Próximo ciclo estimado en: ~%02dm %02ds)", sawMin, sawSec))
             end
             
-            -- Countdown estimado para Greybeard (cada 6 horas = 21600s)
-            local greyInterval = 21600
-            local nextGreySecs = math.floor(greyInterval - (serverUptime % greyInterval))
-            local greyH = math.floor(nextGreySecs / 3600)
-            local greyMin = math.floor((nextGreySecs % 3600) / 60)
-            
-            local greyAlive = enemies and enemies:FindFirstChild("Greybeard")
+            -- GREYBEARD (Sincronizado con marcador oficial del juego)
+            local greyMarker = GetOfficialBossMarker("Greybeard")
+            local greyAlive = enemies and (enemies:FindFirstChild("Greybeard") or enemies:FindFirstChild("Whitebeard"))
             if greyAlive then
-                UpdatePara(LabelGreybeard, "🟢 ¡SPAWNEADO EN MARINE FORTRESS! (¡Raid activa!)")
+                UpdatePara(LabelGreybeard, "🟢 ¡SPAWNEADO EN MARINE FORTRESS! (¡Raid activa ahora mismo!)")
+            elseif greyMarker then
+                UpdatePara(LabelGreybeard, string.format("🔴 DERROTADO (⏱️ Contador Oficial: %s)", greyMarker.timerText))
             else
+                local greyInterval = 21600
+                local nextGreySecs = math.floor(greyInterval - (serverUptime % greyInterval))
+                local greyH = math.floor(nextGreySecs / 3600)
+                local greyMin = math.floor((nextGreySecs % 3600) / 60)
                 UpdatePara(LabelGreybeard, string.format("🔴 NO SPAWNEADO (Próximo ciclo estimado en: ~%02dh %02dm)", greyH, greyMin))
             end
             
-            -- Saber Expert (Shanks)
-            local shanksAlive = enemies and enemies:FindFirstChild("Saber Expert")
-            UpdatePara(LabelSaberRadar, shanksAlive and "🟢 ¡SPAWNEADO EN LA BÓVEDA DE JUNGLE!" or "🔴 NO DISPONIBLE / EN COOLDOWN (~30m)")
+            -- SABER EXPERT (SHANKS)
+            local saberMarker = GetOfficialBossMarker("Saber Expert")
+            local shanksAlive = nil
+            if enemies then
+                for _, e in ipairs(enemies:GetChildren()) do
+                    if e.Name:lower():find("saber") or e.Name:lower():find("shanks") then
+                        local hum = e:FindFirstChild("Humanoid")
+                        if hum and hum.Health > 0 then shanksAlive = e break end
+                    end
+                end
+            end
+            if shanksAlive then
+                local hum = shanksAlive:FindFirstChild("Humanoid")
+                local hp = hum and math.floor(hum.Health) or 0
+                local maxHp = hum and math.floor(hum.MaxHealth) or 11000
+                UpdatePara(LabelSaberRadar, string.format("🟢 ¡SPAWNEADO EN JUNGLE! (Salud: %d/%d)", hp, maxHp))
+            elseif saberMarker then
+                UpdatePara(LabelSaberRadar, string.format("🔴 DERROTADO (⏱️ Contador Oficial: %s)", saberMarker.timerText))
+            else
+                UpdatePara(LabelSaberRadar, "🔴 NO DISPONIBLE / EN COOLDOWN (~30m)")
+            end
+            
+            -- LISTA DE TODOS LOS MARCADORES VISUALES ACTIVOS EN EL SERVIDOR
+            local allMarkers = GetAllActiveMarkers()
+            if #allMarkers > 0 then
+                local mTexts = {}
+                for _, m in ipairs(allMarkers) do
+                    table.insert(mTexts, string.format("• %s: %s", m.name, m.timer))
+                end
+                UpdatePara(LabelActiveMarkers, table.concat(mTexts, "\n"))
+            else
+                UpdatePara(LabelActiveMarkers, "⚪ No hay contadores de jefes activos en este momento.")
+            end
             
             -- Raid Hint
             if RequestNextRaidHint then
