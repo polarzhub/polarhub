@@ -50,10 +50,13 @@ local function DetectSea()
     return 1 -- Por defecto Sea 1
 end
 
+-- Anti-Cache dinámico para asegurar siempre la versión más reciente
+local cacheBuster = "?t=" .. tostring(os.time())
+
 -- Cargar Core Base primero
 print("[Polar Hub] 🚀 Cargando motor principal...")
 local success, result = pcall(function()
-    loadstring(game:HttpGet(baseURL .. "core.lua"))()
+    loadstring(game:HttpGet(baseURL .. "core.lua" .. cacheBuster))()
 end)
 
 if not success then
@@ -67,14 +70,14 @@ print("[Polar Hub] 🌊 Mar detectado con éxito: Sea " .. tostring(detectedSea)
 
 local seaFile = "sea" .. tostring(detectedSea) .. ".lua"
 local seaSuccess, seaResult = pcall(function()
-    loadstring(game:HttpGet(baseURL .. seaFile))()
+    loadstring(game:HttpGet(baseURL .. seaFile .. cacheBuster))()
 end)
 
 if not seaSuccess then
     warn("[Polar Hub] ⚠️ Advertencia cargando " .. seaFile .. ":")
     warn(seaResult)
     if detectedSea == 1 then
-        pcall(function() loadstring(game:HttpGet(baseURL .. "sea1.lua"))() end)
+        pcall(function() loadstring(game:HttpGet(baseURL .. "sea1.lua" .. cacheBuster))() end)
     end
 else
     print("[Polar Hub] ❄️ " .. seaFile .. " integrado e inicializado con éxito.")
