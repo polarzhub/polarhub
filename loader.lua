@@ -29,8 +29,23 @@ pcall(function()
     end
 end)
 
--- IMPORTANTE: Cambia esta URL base por la de tu repositorio de GitHub real
-local baseURL = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+-- Obtener URL base dinámica usando el commit SHA más reciente para evitar 100% el caché CDN de GitHub
+local function GetLatestBaseURL()
+    local defaultURL = "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+    local s, res = pcall(function()
+        return game:HttpGet("https://api.github.com/repos/polarzhub/polarhub/commits/main")
+    end)
+    if s and res then
+        local data = nil
+        pcall(function() data = game:GetService("HttpService"):JSONDecode(res) end)
+        if data and data.sha then
+            return "https://raw.githubusercontent.com/polarzhub/polarhub/" .. data.sha .. "/"
+        end
+    end
+    return defaultURL
+end
+
+local baseURL = GetLatestBaseURL()
 
 -- Detectar juego
 local PlaceId = game.PlaceId

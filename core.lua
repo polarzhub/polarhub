@@ -25,15 +25,29 @@ pcall(function()
 end)
 
 -- ==================== REDZ UI LIBRARY ====================
-local cacheBuster = "?t=" .. tostring(os.time())
+local function GetLatestCommitSHA()
+    local s, res = pcall(function()
+        return game:HttpGet("https://api.github.com/repos/polarzhub/polarhub/commits/main")
+    end)
+    if s and res then
+        local data = nil
+        pcall(function() data = game:GetService("HttpService"):JSONDecode(res) end)
+        if data and data.sha then
+            return data.sha
+        end
+    end
+    return "refs/heads/main"
+end
+
+local sha = GetLatestCommitSHA()
 local success, redzlib = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua" .. cacheBuster))()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/" .. sha .. "/redzlibV5.lua"))()
 end)
 
 if not success or not redzlib then
-    warn("Error: No se pudo cargar RedzLib V5 desde refs/heads/main, intentando ruta alterna...")
+    warn("Error: No se pudo cargar RedzLib V5 desde SHA, intentando ruta directa...")
     success, redzlib = pcall(function()
-        return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/main/redzlibV5.lua" .. cacheBuster))()
+        return loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/redzlibV5.lua?t=" .. tostring(os.time())))()
     end)
     if not success or not redzlib then
         warn("Error crítico: No se pudo cargar RedzLib V5.")
