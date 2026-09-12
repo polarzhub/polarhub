@@ -1042,28 +1042,10 @@ function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
     return nil
 end
 
--- Bypass Global de Distancia Blindado (Protegido contra excepciones de Capability Plugin)
-local bypassHookInstalled = false
+-- Bypass Global de Distancia no requiere hook metamethod (la teleportación física lo cubre al 100%)
 local function InstallGlobalBypass()
-    if bypassHookInstalled then return end
-    pcall(function()
-        if not hookmetamethod or not newcclosure or not checkcaller then return end
-        local oldNamecall
-        oldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-            if checkcaller() then
-                return oldNamecall(self, ...)
-            end
-            local okMethod, method = pcall(getnamecallmethod)
-            if okMethod and method == "DistanceFromCharacter" then
-                return 0
-            end
-            return oldNamecall(self, ...)
-        end))
-        bypassHookInstalled = true
-        print("[Polar Hub] ✅ Bypass Global de Distancia activo.")
-    end)
+    -- Sin hooks metamethod para máxima estabilidad en todos los ejecutores
 end
-pcall(InstallGlobalBypass)
 
 local function BuyItem(action, arg1, arg2, npcName)
     InstallGlobalBypass()
@@ -2560,161 +2542,12 @@ local COMBAT_REMOTE_NAMES = {
 }
 local COMBAT_KEYWORDS = {"hit", "attack", "damage", "shoot", "skill", "combat", "projectile", "gun"}
 
--- ============ HOOKS DE PROTECCIÓN PROFUNDA (ANTI-CHEAT BYPASS) ============
--- Intercepta intentos del Anti-Cheat local de borrarnos la GUI o patearnos
-pcall(function()
-    if not hookmetamethod or not newcclosure or not checkcaller then return end
-    local OldNewIndex
-    OldNewIndex = hookmetamethod(game, "__newindex", newcclosure(function(self, key, value)
-        if not checkcaller() then
-            local okName, name = pcall(function() return self.Name end)
-            if okName and (name == "PlayerGui" or self == LocalPlayer) and key == "Parent" and value == nil then
-                return -- Anular el borrado silencioso
-            end
-        end
-        return OldNewIndex(self, key, value)
-    end))
-end)
-
--- ============ HOOK __namecall (con checkcaller) ============
--- Intercepta FireServer para combate y bloquea Destroy/Kick del Anti-Cheat
-pcall(function()
-    if not hookmetamethod or not newcclosure or not checkcaller then return end
-    local OldNamecall
-    OldNamecall = hookmetamethod(game, "__namecall", newcclosure(function(self, ...)
-        local okMethod, method = pcall(getnamecallmethod)
-        if not okMethod or not method then return OldNamecall(self, ...) end
-        
-        -- BLOQUEADOR DE CASTIGOS (Anti-Cheat Bypass):
-        if not checkcaller() then
-            if method == "Destroy" or method == "ClearAllChildren" or method == "Remove" then
-                local okName, name = pcall(function() return self.Name end)
-                if okName and (name == "PlayerGui" or self == LocalPlayer) then
-                    return -- Anular la ejecución (Bloqueado)
-                end
-            elseif method == "Kick" or method == "kick" then
-                if self == LocalPlayer then
-                    return -- Anular el Kick
-                end
-            end
-        end
-
-        -- Si no está activo el combate, pasar directo
-        if not CombatModeEnabled or not SilentAimEnabled then
-            return OldNamecall(self, ...)
-        end
-        
-        -- checkcaller: si somos nosotros los que llamamos, no interceptar (anti-recursión)
-        if checkcaller and checkcaller() then
-            return OldNamecall(self, ...)
-        end
-        
-        local method = getnamecallmethod()
-        if method ~= "FireServer" and method ~= "InvokeServer" then
-            return OldNamecall(self, ...)
-        end
-        
-        if typeof(self) ~= "Instance" then
-            return OldNamecall(self, ...)
-        end
-        
-        -- Seguro: con checkcaller, podemos usar :IsA() sin recursión
-        if not self:IsA("RemoteEvent") and not self:IsA("RemoteFunction") then
-            return OldNamecall(self, ...)
-        end
-        
-        -- Verificar si es remoto de combate (Optimizado Anti-Lag)
-        local remoteName = self.Name
-        local isCombat = COMBAT_REMOTE_NAMES[remoteName]
-        if isCombat == nil then
-            local lower = string.lower(remoteName)
-            for _, kw in ipairs(COMBAT_KEYWORDS) do
-                if string.find(lower, kw) then isCombat = true break end
-            end
-            if not isCombat and self.Parent then
-                local pn = self.Parent.Name
-                if pn == "Net" or pn == "Remotes" then isCombat = true end
-            end
-            COMBAT_REMOTE_NAMES[remoteName] = isCombat or false
-        end
-        
-        if not isCombat then
-            return OldNamecall(self, ...)
-        end
-        
-        -- Redirigir al target
-        if SelectedTarget and SelectedTarget.Parent and SelectedTarget.Character then
-            local targetHrp = SelectedTarget.Character:FindFirstChild("HumanoidRootPart")
-            if targetHrp then
-                local args = {...}
-                for i, v in pairs(args) do
-                    if typeof(v) == "CFrame" then args[i] = targetHrp.CFrame
-                    elseif typeof(v) == "Vector3" then args[i] = targetHrp.Position end
-                end
-                return OldNamecall(self, unpack(args))
-            end
-        end
-        
-        return OldNamecall(self, ...)
-    end))
-end)
-
--- ============ HOOK __index (con checkcaller + newcclosure) ============
--- Intercepta Mouse.Hit / Mouse.Target para que armas apunten al objetivo
--- checkcaller() rompe la recursión: nuestro código pasa directo, el juego se intercepta
-pcall(function()
-    local OldIndex
-    OldIndex = hookmetamethod(game, "__index", newcclosure(function(self, key)
-        -- ANTI-RECURSIÓN PRINCIPAL: Si nuestro propio script está leyendo propiedades, NO interceptar
-        -- checkcaller() = true cuando NUESTRO código llama → pasa al original sin procesar
-        -- checkcaller() = false cuando el JUEGO llama → aplicamos la redirección
-        if not checkcaller or checkcaller() then
-            return OldIndex(self, key)
-        end
-        
-        -- Si no está activo, pasar directo (0 CPU)
-        if not CombatModeEnabled or not SilentAimEnabled then
-            return OldIndex(self, key)
-        end
-        
-        -- Solo nos interesan Hit y Target del Mouse
-        if key ~= "Hit" and key ~= "Target" then
-            return OldIndex(self, key)
-        end
-        
-        -- Verificar que tenemos un objetivo válido
-        if not SelectedTarget or not SelectedTarget.Parent then
-            return OldIndex(self, key)
-        end
-        
-        -- Verificar que self es el Mouse del jugador (comparación segura)
-        local isOurMouse = false
-        pcall(function()
-            isOurMouse = (self == LocalPlayer:GetMouse())
-        end)
-        if not isOurMouse then
-            return OldIndex(self, key)
-        end
-        
-        -- Obtener HRP del target
-        local targetHrp = nil
-        pcall(function()
-            targetHrp = SelectedTarget.Character.HumanoidRootPart
-        end)
-        if not targetHrp then
-            return OldIndex(self, key)
-        end
-        
-        -- Redirigir Mouse.Hit y Mouse.Target
-        if key == "Hit" then
-            return targetHrp.CFrame
-        elseif key == "Target" then
-            return targetHrp
-        end
-        
-        return OldIndex(self, key)
-    end))
-end)
+-- ============ SISTEMA DE COMBATE NATIVO (100% LIBRE DE EXCEPCIONES DE CAPABILITY) ============
+-- Los sistemas de Aimbot, Hitbox y FastAttack operan de forma nativa directa,
+-- garantizando estabilidad total sin hooks metamethod invasivos en DataModel.
+local function InitCombatHooks()
+    -- Seguro: sin ganchos globales que corrompan el DataModel
+end
 
 -- ===== TAB MISC =====
 TabMisc:AddSection("Personalización de la Interfaz")
