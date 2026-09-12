@@ -29,6 +29,126 @@ end)()
 
 local redzlib = {
 	Themes = {
+		["Polar Ice"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(6, 14, 28)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(10, 22, 42)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(6, 14, 28))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(8, 18, 34),
+			["Color Stroke"] = Color3.fromRGB(25, 65, 115),
+			["Color Theme"] = Color3.fromRGB(0, 215, 255),
+			["Color Text"] = Color3.fromRGB(250, 253, 255),
+			["Color Dark Text"] = Color3.fromRGB(160, 210, 250)
+		},
+		["Frostbite"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(10, 16, 32)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(18, 30, 54)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(10, 16, 32))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(13, 22, 40),
+			["Color Stroke"] = Color3.fromRGB(50, 95, 155),
+			["Color Theme"] = Color3.fromRGB(140, 230, 255),
+			["Color Text"] = Color3.fromRGB(255, 255, 255),
+			["Color Dark Text"] = Color3.fromRGB(185, 220, 250)
+		},
+		["Blizzard"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(14, 18, 28)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(24, 32, 46)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(14, 18, 28))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(16, 22, 34),
+			["Color Stroke"] = Color3.fromRGB(65, 90, 125),
+			["Color Theme"] = Color3.fromRGB(215, 240, 255),
+			["Color Text"] = Color3.fromRGB(255, 255, 255),
+			["Color Dark Text"] = Color3.fromRGB(190, 210, 232)
+		},
+		["Glacier Blue"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(4, 12, 24)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(8, 22, 40)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(4, 12, 24))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(6, 16, 32),
+			["Color Stroke"] = Color3.fromRGB(20, 55, 98),
+			["Color Theme"] = Color3.fromRGB(0, 165, 255),
+			["Color Text"] = Color3.fromRGB(245, 250, 255),
+			["Color Dark Text"] = Color3.fromRGB(145, 195, 240)
+		},
+		["Arctic Aurora"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(5, 16, 22)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(9, 28, 34)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(5, 16, 22))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(7, 21, 28),
+			["Color Stroke"] = Color3.fromRGB(22, 70, 80),
+			["Color Theme"] = Color3.fromRGB(0, 255, 185),
+			["Color Text"] = Color3.fromRGB(245, 255, 250),
+			["Color Dark Text"] = Color3.fromRGB(150, 225, 205)
+		},
+		["Cyberpunk Neon"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(14, 10, 22)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(24, 14, 34)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(14, 10, 22))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(18, 12, 28),
+			["Color Stroke"] = Color3.fromRGB(70, 30, 95),
+			["Color Theme"] = Color3.fromRGB(255, 45, 140),
+			["Color Text"] = Color3.fromRGB(255, 250, 255),
+			["Color Dark Text"] = Color3.fromRGB(215, 165, 212)
+		},
+		["Crimson Blood"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(18, 8, 10)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(32, 10, 15)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(18, 8, 10))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(22, 10, 13),
+			["Color Stroke"] = Color3.fromRGB(75, 22, 28),
+			["Color Theme"] = Color3.fromRGB(255, 45, 60),
+			["Color Text"] = Color3.fromRGB(255, 245, 245),
+			["Color Dark Text"] = Color3.fromRGB(218, 160, 165)
+		},
+		["Emerald Abyss"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(6, 18, 12)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(12, 32, 18)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(6, 18, 12))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(8, 22, 15),
+			["Color Stroke"] = Color3.fromRGB(25, 72, 44),
+			["Color Theme"] = Color3.fromRGB(0, 235, 120),
+			["Color Text"] = Color3.fromRGB(245, 255, 248),
+			["Color Dark Text"] = Color3.fromRGB(160, 220, 185)
+		},
+		["Sunset Gold"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(20, 14, 8)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(34, 22, 10)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(20, 14, 8))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(24, 17, 11),
+			["Color Stroke"] = Color3.fromRGB(78, 55, 25),
+			["Color Theme"] = Color3.fromRGB(255, 185, 35),
+			["Color Text"] = Color3.fromRGB(255, 250, 240),
+			["Color Dark Text"] = Color3.fromRGB(220, 195, 150)
+		},
+		["Midnight Violet"] = {
+			["Color Hub 1"] = ColorSequence.new({
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(16, 12, 28)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(28, 18, 44)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(16, 12, 28))
+			}),
+			["Color Hub 2"] = Color3.fromRGB(20, 14, 34),
+			["Color Stroke"] = Color3.fromRGB(68, 40, 100),
+			["Color Theme"] = Color3.fromRGB(180, 80, 255),
+			["Color Text"] = Color3.fromRGB(250, 245, 255),
+			["Color Dark Text"] = Color3.fromRGB(198, 170, 228)
+		},
 		Darker = {
 			["Color Hub 1"] = ColorSequence.new({
 				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 0, 0)),
@@ -37,7 +157,7 @@ local redzlib = {
 			}),
 			["Color Hub 2"] = Color3.fromRGB(0, 0, 0),
 			["Color Stroke"] = Color3.fromRGB(10, 10, 10),
-			["Color Theme"] = Color3.fromRGB(880, 0, 0),
+			["Color Theme"] = Color3.fromRGB(255, 0, 0),
 			["Color Text"] = Color3.fromRGB(243, 243, 243),
 			["Color Dark Text"] = Color3.fromRGB(180, 180, 180)
 		},
@@ -72,7 +192,7 @@ local redzlib = {
 	Save = {
 		UISize = {550, 380},
 		TabSize = 160,
-		Theme = "Darker"
+		Theme = "Polar Ice"
 	},
 	Settings = {},
 	Connection = {},
@@ -1636,16 +1756,14 @@ function redzlib:MakeWindow(Configs)
 	local Minimized, SaveSize, WaitClick
 	local Window, FirstTab = {}, false
 	function Window:CloseBtn()
-		local Dialog = Window:Dialog({
-			Title = "FECHAR?",
-			Text = "QUEM FECHAR O HUB É GAY!!",
-			Options = {
-				{"SOU GAY", function()
-					ScreenGui:Destroy()
-				end},
-				{"NÃO SOU GAY"}
-			}
-		})
+		MainFrame.Visible = false
+		if Minimized then
+			MainFrame.Size = SaveSize or UDim2.fromOffset(unpack(redzlib.Save.UISize))
+			ControlSize1.Visible = true
+			ControlSize2.Visible = true
+			Minimized = false
+			MinimizeButton.Image = "rbxassetid://10734896206"
+		end
 	end
 	function Window:MinimizeBtn()
 		if WaitClick then return end
@@ -1653,7 +1771,7 @@ function redzlib:MakeWindow(Configs)
 		
 		if Minimized then
 			MinimizeButton.Image = "rbxassetid://10734896206"
-			CreateTween({MainFrame, "Size", SaveSize, 5.00, true})
+			CreateTween({MainFrame, "Size", SaveSize, 0.15, true})
 			ControlSize1.Visible = true
 			ControlSize2.Visible = true
 			Minimized = false
@@ -1662,42 +1780,132 @@ function redzlib:MakeWindow(Configs)
 			SaveSize = MainFrame.Size
 			ControlSize1.Visible = false
 			ControlSize2.Visible = false
-			CreateTween({MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 5.00, true})
+			CreateTween({MainFrame, "Size", UDim2.fromOffset(MainFrame.Size.X.Offset, 28), 0.15, true})
 			Minimized = true
 		end
 		
 		WaitClick = false
 	end
 	function Window:Minimize()
-		MainFrame.Visible = not MainFrame.Visible
+		if Minimized then
+			MainFrame.Size = SaveSize or UDim2.fromOffset(unpack(redzlib.Save.UISize))
+			ControlSize1.Visible = true
+			ControlSize2.Visible = true
+			Minimized = false
+			MinimizeButton.Image = "rbxassetid://10734896206"
+			MainFrame.Visible = true
+		else
+			MainFrame.Visible = not MainFrame.Visible
+		end
+	end
+	function Window:CreateFloatingButton(Configs)
+		Configs = Configs or {}
+		local existing = ScreenGui:FindFirstChild("PolarFloatingButton")
+		if existing then return existing end
+		
+		local Button = InsertTheme(Create("ImageButton", ScreenGui, {
+			Size = UDim2.fromOffset(50, 50),
+			Position = Configs.Position or UDim2.new(0, 20, 0.45, 0),
+			BackgroundColor3 = Theme["Color Hub 2"],
+			BackgroundTransparency = 0.1,
+			AutoButtonColor = false,
+			Active = true,
+			Name = "PolarFloatingButton"
+		}), "Frame")
+		
+		Make("Corner", Button, UDim.new(0, 14))
+		local Stroke = InsertTheme(Make("Stroke", Button, {
+			Color = Theme["Color Theme"],
+			Thickness = 2,
+			Transparency = 0.1
+		}), "Theme")
+		
+		local IconImage = Create("ImageLabel", Button, {
+			Size = UDim2.new(1, -6, 1, -6),
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			BackgroundTransparency = 1,
+			ScaleType = Enum.ScaleType.Fit,
+			Name = "PolarLogo"
+		})
+		Make("Corner", IconImage, UDim.new(0, 10))
+		
+		task.spawn(function()
+			local asset = nil
+			local fileName = "polarhub_icon.png"
+			local s, exists = pcall(function() return isfile and isfile(fileName) end)
+			if not s or not exists then
+				pcall(function()
+					if writefile and game.HttpGet then
+						local data = game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polarhub_icon.png")
+						if data and #data > 0 then
+							writefile(fileName, data)
+						end
+					end
+				end)
+			end
+			pcall(function()
+				if getcustomasset then
+					asset = getcustomasset(fileName)
+				elseif getsynasset then
+					asset = getsynasset(fileName)
+				end
+			end)
+			if asset then
+				IconImage.Image = asset
+			else
+				IconImage.Image = "rbxassetid://10723346959"
+			end
+		end)
+		
+		local dragging = false
+		local dragStart = nil
+		local startPos = nil
+		local totalDelta = 0
+		
+		Button.InputBegan:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+				dragging = true
+				dragStart = input.Position
+				startPos = Button.Position
+				totalDelta = 0
+				
+				CreateTween({Button, "Size", UDim2.fromOffset(45, 45), 0.08})
+				
+				local connEnded, connChanged
+				connChanged = UserInputService.InputChanged:Connect(function(moveInput)
+					if moveInput.UserInputType == Enum.UserInputType.MouseMovement or moveInput.UserInputType == Enum.UserInputType.Touch then
+						local delta = moveInput.Position - dragStart
+						totalDelta = delta.Magnitude
+						Button.Position = UDim2.new(
+							startPos.X.Scale,
+							startPos.X.Offset + delta.X,
+							startPos.Y.Scale,
+							startPos.Y.Offset + delta.Y
+						)
+					end
+				end)
+				
+				connEnded = input.Changed:Connect(function()
+					if input.UserInputState == Enum.UserInputState.End then
+						dragging = false
+						if connChanged then connChanged:Disconnect() end
+						if connEnded then connEnded:Disconnect() end
+						
+						CreateTween({Button, "Size", UDim2.fromOffset(50, 50), 0.08})
+						
+						if totalDelta < 8 then
+							Window:Minimize()
+						end
+					end
+				end)
+			end
+		end)
+		
+		return Button
 	end
 	function Window:AddMinimizeButton(Configs)
-		local Button = MakeDrag(Create("ImageButton", ScreenGui, {
-			Size = UDim2.fromOffset(35, 35),
-			Position = UDim2.fromScale(0.15, 0.15),
-			BackgroundTransparency = 1,
-			BackgroundColor3 = Theme["Color Hub 2"],
-			AutoButtonColor = false
-		}))
-		
-		local Stroke, Corner
-		if Configs.Corner then
-			Corner = Make("Corner", Button)
-			SetProps(Corner, Configs.Corner)
-		end
-		if Configs.Stroke then
-			Stroke = Make("Stroke", Button)
-			SetProps(Stroke, Configs.Corner)
-		end
-		
-		SetProps(Button, Configs.Button)
-		Button.Activated:Connect(Window.Minimize)
-		
-		return {
-			Stroke = Stroke,
-			Corner = Corner,
-			Button = Button
-		}
+		return Window:CreateFloatingButton(Configs)
 	end
 	function Window:Set(Val1, Val2)
 		if type(Val1) == "string" and type(Val2) == "string" then
@@ -2754,6 +2962,9 @@ function redzlib:MakeWindow(Configs)
 		return Tab
 	end
 	
+	pcall(function()
+		Window:CreateFloatingButton()
+	end)
 	CloseButton.Activated:Connect(Window.CloseBtn)
 	MinimizeButton.Activated:Connect(Window.MinimizeBtn)
 	return Window

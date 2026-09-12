@@ -61,7 +61,8 @@ local Window = redzlib:MakeWindow({
  SaveFolder = "PolarHubConfig.json"
 })
 pcall(function()
- redzlib:SetScale(650) -- Escala por defecto "Grande" optimizada
+	redzlib:SetScale(650) -- Escala por defecto "Grande" optimizada
+	redzlib:SetTheme("Polar Ice") -- Tema oficial Polar Hub por defecto
 end)
 
 -- CREACIÓN INMEDIATA DE PESTAÑAS (Garantiza que la UI NUNCA quede en negro)
@@ -2888,23 +2889,39 @@ TabMisc:AddSection("Personalización de la Interfaz")
 
 local themesList = {}
 pcall(function()
- for themeName, _ in pairs(redzlib.Themes) do
- table.insert(themesList, themeName)
- end
+	for themeName, _ in pairs(redzlib.Themes) do
+		table.insert(themesList, themeName)
+	end
 end)
 if #themesList == 0 then
- themesList = {"Darker", "Dark", "Purple"}
+	themesList = {"Polar Ice", "Frostbite", "Blizzard", "Glacier Blue", "Arctic Aurora", "Cyberpunk Neon", "Crimson Blood", "Emerald Abyss", "Sunset Gold", "Midnight Violet", "Darker", "Dark", "Purple"}
 end
 table.sort(themesList)
 
 TabMisc:AddDropdown({
- Name = "Tema Visual",
- Description = "Cambia el color de acento de la interfaz en tiempo real.",
- Options = themesList,
- Default = "Darker",
- Callback = function(selected)
- pcall(function() redzlib:SetTheme(selected) end)
- end
+	Name = "Tema Visual",
+	Description = "Cambia el diseño y paleta de colores de la interfaz.",
+	Options = themesList,
+	Default = "Polar Ice",
+	Callback = function(selected)
+		pcall(function() redzlib:SetTheme(selected) end)
+	end
+})
+
+TabMisc:AddButton({
+	Name = "Recentrar Icono Flotante",
+	Desc = "Devuelve el botón flotante a su posición por defecto en pantalla.",
+	Callback = function()
+		pcall(function()
+			local rz = (gethui and gethui()) or game:GetService("CoreGui"):FindFirstChild("redz Library V5") or LocalPlayer:FindFirstChild("PlayerGui"):FindFirstChild("redz Library V5")
+			if rz then
+				local btn = rz:FindFirstChild("PolarFloatingButton", true)
+				if btn then
+					btn.Position = UDim2.new(0, 20, 0.45, 0)
+				end
+			end
+		end)
+	end
 })
 
 TabMisc:AddDropdown({
