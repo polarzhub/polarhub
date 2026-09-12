@@ -79,6 +79,12 @@ local LavenderGradient = ColorSequence.new({
     ColorSequenceKeypoint.new(1.00, Color3.fromRGB(216, 180, 254))
 })
 
+-- Authentic Tab Underline Gradient (#A064FF -> #5A28B4)
+local UnderlineGradient = ColorSequence.new({
+    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(160, 100, 255)),
+    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(90, 40, 180))
+})
+
 function QuantumOnyxUI.new(customTitle, customSub)
     local self = setmetatable({}, QuantumOnyxUI)
     
@@ -125,10 +131,10 @@ function QuantumOnyxUI.new(customTitle, customSub)
     screenGui.DisplayOrder = 999999
     self.ScreenGui = screenGui
 
-    -- 2. Floating Toggle Button (60x60 Circle at {0, 31}, {0, 112})
+    -- 2. Floating Toggle Button (60x60 Circle at {0, 19}, {0, 126})
     local floatFrame = Instance.new("Frame")
     floatFrame.Name = "FloatToggle"
-    floatFrame.Position = UDim2.new(0, 31, 0, 112)
+    floatFrame.Position = UDim2.new(0, 19, 0, 126)
     floatFrame.Size = UDim2.new(0, 60, 0, 60)
     floatFrame.BackgroundTransparency = 1
     floatFrame.ZIndex = 500
@@ -141,8 +147,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     local floatBtn = Instance.new("ImageButton")
     floatBtn.Name = "ToggleLogo"
     floatBtn.Size = UDim2.new(1, 0, 1, 0)
-    floatBtn.BackgroundColor3 = Color3.fromRGB(15, 12, 24)
-    floatBtn.BackgroundTransparency = 0.15
+    floatBtn.BackgroundTransparency = 1
     floatBtn.Image = "rbxassetid://87383580130479"
     floatBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     floatBtn.ZIndex = 501
@@ -152,13 +157,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
     floatBtnCorner.CornerRadius = UDim.new(1, 0)
     floatBtnCorner.Parent = floatBtn
 
-    local floatStroke = Instance.new("UIStroke")
-    floatStroke.Color = Theme.Accent
-    floatStroke.Thickness = 1.5
-    floatStroke.Transparency = 0.25
-    floatStroke.Parent = floatBtn
-
-    -- 3. Main Window Frame (510x330)
+    -- 3. Main Window Frame (510x330, sleek borderless #0A0A0A trans 0.05, corner 10px)
     local mainFrame = Instance.new("Frame")
     mainFrame.Name = "MainWindow"
     mainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -175,13 +174,6 @@ function QuantumOnyxUI.new(customTitle, customSub)
     local mainCorner = Instance.new("UICorner")
     mainCorner.CornerRadius = UDim.new(0, 10)
     mainCorner.Parent = mainFrame
-
-    local mainStroke = Instance.new("UIStroke")
-    mainStroke.Color = Theme.Accent
-    mainStroke.Thickness = 1.5
-    mainStroke.Transparency = 0.35
-    mainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    mainStroke.Parent = mainFrame
 
     -- Toggle visibility animation via Floating Button
     local isVisible = true
@@ -478,7 +470,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
         return btn
     end
 
-    local settingsBtn = createHeaderPillButton("SettingsBtn", "Config.", "rbxassetid://81151604784579", -153)
+    local settingsBtn = createHeaderPillButton("SettingsBtn", "Settings", "rbxassetid://81151604784579", -153)
     local creditsBtn = createHeaderPillButton("CreditsBtn", "Credits", "rbxassetid://83474083071373", -62)
 
     -- Minimize Button
@@ -641,13 +633,17 @@ function QuantumOnyxUI.new(customTitle, customSub)
         btn.Name = "TabBtn_" .. def.name
         btn.Size = UDim2.new(0, def.width, 0, 24)
         btn.BackgroundTransparency = 1
-        btn.Text = "      " .. def.name
+        btn.Text = def.name
         btn.Font = Enum.Font.FredokaOne
         btn.TextSize = 14
         btn.TextColor3 = isDefaultActive and Theme.TextWhite or Theme.TextTabOff
-        btn.TextXAlignment = Enum.TextXAlignment.Center
+        btn.TextXAlignment = Enum.TextXAlignment.Right
         btn.ZIndex = 207
         btn.Parent = tabScroll
+
+        local btnPad = Instance.new("UIPadding")
+        btnPad.PaddingRight = UDim.new(0, 4)
+        btnPad.Parent = btn
 
         local tabIcon = Instance.new("ImageLabel")
         tabIcon.Position = UDim2.new(0, 5, 0.5, 0)
@@ -662,9 +658,10 @@ function QuantumOnyxUI.new(customTitle, customSub)
         -- Active Indicator (Glowing Violet Underline)
         local underline = Instance.new("Frame")
         underline.Name = "Tab_Underline"
-        underline.AnchorPoint = Vector2.new(0.5, 1)
+        underline.AnchorPoint = Vector2.new(0.5, 0)
         underline.Position = UDim2.new(0.5, 0, 1, 1)
-        underline.Size = isDefaultActive and UDim2.new(0.5, 0, 0, 3) or UDim2.new(0, 0, 0, 3)
+        underline.Size = UDim2.new(0.5, 0, 0, 3)
+        underline.Visible = isDefaultActive
         underline.BackgroundColor3 = Theme.AccentDeep
         underline.BorderSizePixel = 0
         underline.ZIndex = 209
@@ -673,7 +670,8 @@ function QuantumOnyxUI.new(customTitle, customSub)
         uc.CornerRadius = UDim.new(1, 0)
         uc.Parent = underline
         local ug = Instance.new("UIGradient")
-        ug.Color = LavenderGradient
+        ug.Color = UnderlineGradient
+        ug.Rotation = 0
         ug.Parent = underline
 
         -- Container View for this Tab
@@ -685,38 +683,47 @@ function QuantumOnyxUI.new(customTitle, customSub)
         tabView.ZIndex = 206
         tabView.Parent = contentFrame
 
-        -- Dual Columns: Col1 ({0, 240}, {0, 255}) and Col2 ({0, 240}, {0, 255})
+        local tvLayout = Instance.new("UIListLayout")
+        tvLayout.FillDirection = Enum.FillDirection.Horizontal
+        tvLayout.Padding = UDim.new(0, 19)
+        tvLayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+        tvLayout.SortOrder = Enum.SortOrder.LayoutOrder
+        tvLayout.Parent = tabView
+
+        -- Dual Columns: Col1 ({0, 240}, {0, 260}) and Col2 ({0, 240}, {0, 260})
         local col1 = Instance.new("ScrollingFrame")
         col1.Name = "SectionScroll1"
         col1.Position = UDim2.new(0, 0, 0, 0)
-        col1.Size = UDim2.new(0, 240, 1, 0)
+        col1.Size = UDim2.new(0, 240, 0, 260)
         col1.BackgroundTransparency = 1
-        col1.ScrollBarThickness = 3
-        col1.ScrollBarImageColor3 = Theme.AccentDeep
+        col1.ScrollBarThickness = 0
         col1.CanvasSize = UDim2.new(0, 0, 0, 0)
         col1.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        col1.ClipsDescendants = true
         col1.ZIndex = 207
         col1.Parent = tabView
 
         local l1 = Instance.new("UIListLayout")
-        l1.Padding = UDim.new(0, 8)
+        l1.Padding = UDim.new(0, 7)
+        l1.HorizontalAlignment = Enum.HorizontalAlignment.Center
         l1.SortOrder = Enum.SortOrder.LayoutOrder
         l1.Parent = col1
 
         local col2 = Instance.new("ScrollingFrame")
         col2.Name = "SectionScroll2"
-        col2.Position = UDim2.new(0, 250, 0, 0)
-        col2.Size = UDim2.new(0, 240, 1, 0)
+        col2.Position = UDim2.new(0, 0, 0, 0)
+        col2.Size = UDim2.new(0, 240, 0, 260)
         col2.BackgroundTransparency = 1
-        col2.ScrollBarThickness = 3
-        col2.ScrollBarImageColor3 = Theme.AccentDeep
+        col2.ScrollBarThickness = 0
         col2.CanvasSize = UDim2.new(0, 0, 0, 0)
         col2.AutomaticCanvasSize = Enum.AutomaticSize.Y
+        col2.ClipsDescendants = true
         col2.ZIndex = 207
         col2.Parent = tabView
 
         local l2 = Instance.new("UIListLayout")
-        l2.Padding = UDim.new(0, 8)
+        l2.Padding = UDim.new(0, 7)
+        l2.HorizontalAlignment = Enum.HorizontalAlignment.Center
         l2.SortOrder = Enum.SortOrder.LayoutOrder
         l2.Parent = col2
 
@@ -734,9 +741,7 @@ function QuantumOnyxUI.new(customTitle, customSub)
                 local isActive = (name == def.name)
                 tabData.View.Visible = isActive
                 tabData.Btn.TextColor3 = isActive and Theme.TextWhite or Theme.TextTabOff
-                TweenService:Create(tabData.Underline, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-                    Size = isActive and UDim2.new(0.5, 0, 0, 3) or UDim2.new(0, 0, 0, 3)
-                }):Play()
+                tabData.Underline.Visible = isActive
             end
         end)
     end
@@ -1066,12 +1071,12 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     if descText then
         local dLabel = Instance.new("TextLabel")
         dLabel.Name = "DescLabel"
-        dLabel.Position = UDim2.new(0, 10, 0, 21)
-        dLabel.Size = UDim2.new(1, -66, 0, 18)
+        dLabel.Position = UDim2.new(0, 10, 0, 22)
+        dLabel.Size = UDim2.new(1, -60, 0, 14)
         dLabel.BackgroundTransparency = 1
         dLabel.Text = descText
         dLabel.Font = Enum.Font.Gotham
-        dLabel.TextSize = 9
+        dLabel.TextSize = 11
         dLabel.TextColor3 = Theme.TextDesc
         dLabel.TextXAlignment = Enum.TextXAlignment.Left
         dLabel.TextWrapped = true
@@ -1101,9 +1106,10 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
     -- Knob ImageLabel (asset 12266946128) with 90-degree 5-color cyber gradient
     local knob = Instance.new("ImageLabel")
     knob.AnchorPoint = Vector2.new(0, 0.5)
-    knob.Position = isToggled and UDim2.new(0, 19, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+    knob.Position = isToggled and UDim2.new(0, 20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
     knob.Size = UDim2.new(0, 14, 0, 14)
     knob.BackgroundTransparency = 1
+    knob.ImageTransparency = isToggled and 0.0 or 0.5
     knob.Image = "http://www.roblox.com/asset/?id=12266946128"
     knob.ImageColor3 = Color3.fromRGB(255, 255, 255)
     knob.ZIndex = 212
@@ -1116,11 +1122,12 @@ function QuantumOnyxUI:AddToggle(innerParent, labelText, descText, defaultVal, c
 
     btn.MouseButton1Click:Connect(function()
         isToggled = not isToggled
-        local targetPos = isToggled and UDim2.new(0, 19, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+        local targetPos = isToggled and UDim2.new(0, 20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
         local targetTextCol = isToggled and Color3.fromRGB(230, 230, 230) or Theme.TextMuted
 
         TweenService:Create(knob, TweenInfo.new(0.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Position = targetPos
+            Position = targetPos,
+            ImageTransparency = isToggled and 0.0 or 0.5
         }):Play()
         tLabel.TextColor3 = targetTextCol
 
@@ -1156,7 +1163,7 @@ function QuantumOnyxUI:AddSlider(innerParent, labelText, minVal, maxVal, default
     title.BackgroundTransparency = 1
     title.Text = labelText
     title.Font = Enum.Font.GothamBold
-    title.TextSize = 11
+    title.TextSize = 13
     title.TextColor3 = Theme.TextLight
     title.TextXAlignment = Enum.TextXAlignment.Left
     title.ZIndex = 211
@@ -1325,12 +1332,13 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
 
     local arrow = Instance.new("TextLabel")
     arrow.Name = "Arrow"
-    arrow.Position = UDim2.new(1, -16, 0.5, -7)
+    arrow.AnchorPoint = Vector2.new(1, 0.5)
+    arrow.Position = UDim2.new(1, -12, 0.5, 0)
     arrow.Size = UDim2.new(0, 14, 0, 14)
     arrow.BackgroundTransparency = 1
     arrow.Text = "›"
     arrow.Font = Enum.Font.GothamBold
-    arrow.TextSize = 14
+    arrow.TextSize = 12
     arrow.TextColor3 = Theme.Accent
     arrow.ZIndex = 211
     arrow.Parent = btn
@@ -1340,45 +1348,93 @@ function QuantumOnyxUI:AddButton(innerParent, labelText, callback)
 end
 
 -- ============================================================================
--- POPULATE HOME & SUB FARM TABS MATCHING USER'S IN-GAME SCREENSHOTS EXACTLY
+-- POPULATE HOME & SUB FARM TABS MATCHING ORIGINAL QUANTUM ONYX EXACTLY
 -- ============================================================================
 
 local app = QuantumOnyxUI.new()
 
--- 1. HOME TAB (Active in User Screenshot)
+-- 1. HOME TAB (Exact memory replica)
 local homeTab = app.TabFrames["Home"]
 
--- Left Column: Main Farm
+-- Col1, Section 1: Magnet Event
+local secMagnet = app:CreateSectionCard(homeTab.Col1, "Magnet Event")
+app:AddToggle(secMagnet, "Auto Farm Magnet Tokens", nil, false)
+app:AddToggle(secMagnet, "Auto Roll Magnet Gacha", nil, false)
+app:AddButton(secMagnet, "Open Magnet Gacha GUI", function() print("[MAGNET] Opened Gacha GUI") end)
+app:AddToggle(secMagnet, "Auto Complete Secret Quests", nil, false)
+app:AddSelectorCard(secMagnet, "Secret Quests: 2/12 (16%)", "Completed: 2 | Remaining: 10")
+app:AddDropdown(secMagnet, "Finished Secret Quests", {"Windmill Maintenance", "Bandit Cleanup", "Pirate Bounty"}, "Windmill Maintenance")
+app:AddButton(secMagnet, "Refresh Secret Quests Tracker", function() print("[MAGNET] Refreshed Tracker") end)
+
+-- Col1, Section 2: Main Farm
 local secMainFarm = app:CreateSectionCard(homeTab.Col1, "Main Farm")
 app:AddSelectorCard(secMainFarm, "Debug Functions", "None")
-app:AddDropdown(secMainFarm, "Weapon", {"Melee", "Sword", "Gun", "Blox Fruit"}, "Melee")
-app:AddDropdown(secMainFarm, "Farm Method", {"Quest", "No Quest", "Nearest Mob"}, "Quest")
-app:AddDropdown(secMainFarm, "Quest Farm Mode", {"Double Quest", "Single Quest", "Boss Quest"}, "Double Quest")
-app:AddSlider(secMainFarm, "Nearest (Distance)", 500, 3000, 1500)
 app:AddToggle(secMainFarm, "Auto Farm", nil, false)
+app:AddToggle(secMainFarm, "Take Quest", "Accept Quest for Bones/Cakes", false)
+app:AddToggle(secMainFarm, "Auto Bones", nil, false)
+app:AddToggle(secMainFarm, "Enable Mastery", nil, false)
+app:AddToggle(secMainFarm, "Auto Random Surprise", nil, false)
+app:AddToggle(secMainFarm, "Auto Pray", nil, false)
+app:AddToggle(secMainFarm, "Auto Try Luck", nil, false)
+app:AddToggle(secMainFarm, "Auto Katakuri", nil, false)
+app:AddToggle(secMainFarm, "Ignore Katakuri", nil, false)
+app:AddToggle(secMainFarm, "Auto Dough King", nil, false)
+app:AddToggle(secMainFarm, "Ignore Farm Dough King Item", nil, false)
+app:AddDropdown(secMainFarm, "Select Material", {"Bones", "Demonic Soul", "Ectoplasm", "Scrap Metal"}, "Bones")
+app:AddToggle(secMainFarm, "Auto Farm Material", nil, false)
 
--- Right Column: Farm Settings
+-- Col1, Section 3: Boss Farm
+local secBoss = app:CreateSectionCard(homeTab.Col1, "Boss Farm")
+app:AddDropdown(secBoss, "Select Boss", {"Gorilla King", "Bobby", "The Saw", "Yeti", "Mob Leader", "Vice Admiral", "Saber Expert"}, "Gorilla King")
+app:AddToggle(secBoss, "Auto Farm Boss", nil, false)
+app:AddToggle(secBoss, "Auto Kill All Bosses", nil, false)
+app:AddToggle(secBoss, "Get Boss Quest", nil, false)
+
+-- Col2, Section 1: Farm Settings
 local secFarmSettings = app:CreateSectionCard(homeTab.Col2, "Farm Settings")
-app:AddSlider(secFarmSettings, "Tweening Speed", 100, 350, 180)
+app:AddDropdown(secFarmSettings, "Select Team", {"Pirates", "Marines"}, "Pirates")
 app:AddToggle(secFarmSettings, "Bypass TP", "Instantly teleports between distant islands (>3500 studs) via spawn point reset", false)
+app:AddSlider(secFarmSettings, "Tweening Speed", 100, 350, 180)
 app:AddSlider(secFarmSettings, "Farm Distance", 10, 60, 22)
 app:AddSlider(secFarmSettings, "Bring Radius", 100, 600, 400)
+app:AddToggle(secFarmSettings, "Start Bring", nil, true)
+app:AddToggle(secFarmSettings, "Fast Attack", nil, true)
+app:AddToggle(secFarmSettings, "Quantum Attack", nil, true)
+app:AddToggle(secFarmSettings, "Auto Attack Gun", nil, false)
+app:AddToggle(secFarmSettings, "Remove Fast Attack Animation", nil, false)
+app:AddToggle(secFarmSettings, "attack mobs", nil, true)
+app:AddToggle(secFarmSettings, "attack players", nil, false)
+app:AddToggle(secFarmSettings, "Auto Activate Observation Haki", nil, false)
+app:AddToggle(secFarmSettings, "Auto Set Spawn Point", nil, false)
+app:AddToggle(secFarmSettings, "Debounce Quests", nil, false)
+app:AddToggle(secFarmSettings, "Bypass Get Quest", nil, false)
+app:AddToggle(secFarmSettings, "Auto Load Script on Load", nil, false)
+app:AddToggle(secFarmSettings, "Disable Damage Counter", nil, false)
+app:AddToggle(secFarmSettings, "Disable Notifications", nil, false)
+app:AddToggle(secFarmSettings, "Walk in Water", nil, false)
+app:AddToggle(secFarmSettings, "Auto Hop when 30mins", nil, false)
+app:AddToggle(secFarmSettings, "Auto Hop When Admin Joined", nil, true)
+app:AddToggle(secFarmSettings, "Anti Afk", nil, true)
+app:AddToggle(secFarmSettings, "Remove Effects", nil, false)
+
+-- Col2, Section 2: Skills Settings
+local secSkills = app:CreateSectionCard(homeTab.Col2, "Skills Settings")
+app:AddDropdown(secSkills, "Gun Skills", {"Z", "X", "C", "V"}, "Z")
+app:AddToggle(secSkills, "Auto Use Skills", nil, false)
+app:AddSlider(secSkills, "Gun Skill Delay (ms)", 0, 1000, 250)
 
 -- 2. SUB FARM TAB
 local subTab = app.TabFrames["Sub Farm"]
-
--- Left Column: Materials & Mastery
 local secMat = app:CreateSectionCard(subTab.Col1, "Materials & Mastery")
 app:AddDropdown(secMat, "Select Material", {"Ectoplasm", "Scrap Metal", "Magma Ore", "Dragon Scale", "Fish Tail"}, "Ectoplasm")
 app:AddToggle(secMat, "Auto Farm Material", nil, false)
 app:AddDropdown(secMat, "Mastery Weapon", {"Sword", "Gun", "Blox Fruit", "Melee"}, "Sword")
 app:AddToggle(secMat, "Auto Farm Mastery", "Farms low health mobs to level weapons", false)
 
--- Right Column: Boss Hunting
-local secBoss = app:CreateSectionCard(subTab.Col2, "Boss Hunting")
-app:AddDropdown(secBoss, "Select Boss", {"Gorilla King", "Bobby", "The Saw", "Yeti", "Mob Leader", "Vice Admiral", "Saber Expert"}, "Gorilla King")
-app:AddToggle(secBoss, "Auto Farm Boss", nil, false)
-app:AddToggle(secBoss, "Auto Hop When Killed", "Server hops when target boss is dead", false)
+local secSubBoss = app:CreateSectionCard(subTab.Col2, "Boss Hunting")
+app:AddDropdown(secSubBoss, "Select Boss", {"Gorilla King", "Bobby", "The Saw", "Yeti", "Mob Leader", "Vice Admiral", "Saber Expert"}, "Gorilla King")
+app:AddToggle(secSubBoss, "Auto Farm Boss", nil, false)
+app:AddToggle(secSubBoss, "Auto Hop When Killed", "Server hops when target boss is dead", false)
 
 -- 3. SEA EVENT TAB
 local seaTab = app.TabFrames["Sea Event"]
