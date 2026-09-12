@@ -41,17 +41,17 @@ local redzlib = {
 			["Color Text"] = Color3.fromRGB(250, 253, 255),
 			["Color Dark Text"] = Color3.fromRGB(160, 210, 250)
 		},
-		["Frostbite"] = {
+		["Liquid Glass"] = {
 			["Color Hub 1"] = ColorSequence.new({
-				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(10, 16, 32)),
-				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(18, 30, 54)),
-				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(10, 16, 32))
+				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(18, 24, 38)),
+				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(28, 38, 56)),
+				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(18, 24, 38))
 			}),
-			["Color Hub 2"] = Color3.fromRGB(13, 22, 40),
-			["Color Stroke"] = Color3.fromRGB(50, 95, 155),
-			["Color Theme"] = Color3.fromRGB(140, 230, 255),
+			["Color Hub 2"] = Color3.fromRGB(24, 32, 48),
+			["Color Stroke"] = Color3.fromRGB(200, 225, 255),
+			["Color Theme"] = Color3.fromRGB(255, 255, 255),
 			["Color Text"] = Color3.fromRGB(255, 255, 255),
-			["Color Dark Text"] = Color3.fromRGB(185, 220, 250)
+			["Color Dark Text"] = Color3.fromRGB(220, 235, 255)
 		},
 		["Blizzard"] = {
 			["Color Hub 1"] = ColorSequence.new({
@@ -64,18 +64,6 @@ local redzlib = {
 			["Color Theme"] = Color3.fromRGB(215, 240, 255),
 			["Color Text"] = Color3.fromRGB(255, 255, 255),
 			["Color Dark Text"] = Color3.fromRGB(190, 210, 232)
-		},
-		["Glacier Blue"] = {
-			["Color Hub 1"] = ColorSequence.new({
-				ColorSequenceKeypoint.new(0.00, Color3.fromRGB(4, 12, 24)),
-				ColorSequenceKeypoint.new(0.50, Color3.fromRGB(8, 22, 40)),
-				ColorSequenceKeypoint.new(1.00, Color3.fromRGB(4, 12, 24))
-			}),
-			["Color Hub 2"] = Color3.fromRGB(6, 16, 32),
-			["Color Stroke"] = Color3.fromRGB(20, 55, 98),
-			["Color Theme"] = Color3.fromRGB(0, 165, 255),
-			["Color Text"] = Color3.fromRGB(245, 250, 255),
-			["Color Dark Text"] = Color3.fromRGB(145, 195, 240)
 		},
 		["Arctic Aurora"] = {
 			["Color Hub 1"] = ColorSequence.new({
@@ -1534,6 +1522,34 @@ function redzlib:GetIcon(index)
 	return firstMatch or index
 end
 
+local glassAnimationThread = nil
+local function StopGlassAnimation()
+	if glassAnimationThread then
+		task.cancel(glassAnimationThread)
+		glassAnimationThread = nil
+	end
+end
+
+local function StartGlassAnimation(gui)
+	StopGlassAnimation()
+	glassAnimationThread = task.spawn(function()
+		local t = 0
+		while true do
+			task.wait(0.04)
+			t = t + 0.04
+			if not gui or not gui.Parent then break end
+			local hub = gui:FindFirstChild("Hub")
+			if hub then
+				local stroke = hub:FindFirstChildOfClass("UIStroke")
+				if stroke then
+					local sVal = (math.sin(t * 2.2) + 1) / 2
+					stroke.Transparency = 0.12 + (sVal * 0.28)
+				end
+			end
+		end
+	end)
+end
+
 function redzlib:SetTheme(NewTheme)
 	if not VerifyTheme(NewTheme) then return end
 	
@@ -1541,24 +1557,100 @@ function redzlib:SetTheme(NewTheme)
 	SaveJson("redz library V5.json", redzlib.Save)
 	Theme = redzlib.Themes[NewTheme]
 	
+	local isGlass = (NewTheme == "Liquid Glass")
+	
 	Connection:FireConnection("ThemeChanged", NewTheme)
-	table.foreach(redzlib.Instances, function(_,Val)
-		if Val.Type == "Gradient" then
-			Val.Instance.Color = Theme["Color Hub 1"]
-		elseif Val.Type == "Frame" then
-			Val.Instance.BackgroundColor3 = Theme["Color Hub 2"]
-		elseif Val.Type == "Stroke" then
-			Val.Instance[GetColor(Val.Instance)] = Theme["Color Stroke"]
-		elseif Val.Type == "Theme" then
-			Val.Instance[GetColor(Val.Instance)] = Theme["Color Theme"]
-		elseif Val.Type == "Text" then
-			Val.Instance[GetColor(Val.Instance)] = Theme["Color Text"]
-		elseif Val.Type == "DarkText" then
-			Val.Instance[GetColor(Val.Instance)] = Theme["Color Dark Text"]
-		elseif Val.Type == "ScrollBar" then
-			Val.Instance[GetColor(Val.Instance)] = Theme["Color Theme"]
+	
+	local liveList = {}
+	for _, Val in ipairs(redzlib.Instances) do
+		local inst = Val.Instance
+		if inst and typeof(inst) == "Instance" and inst.Parent then
+			table.insert(liveList, Val)
+			pcall(function()
+				local t = Val.Type
+				if t == "Gradient" or (t == "Main" and inst:IsA("UIGradient")) then
+					inst.Color = Theme["Color Hub 1"]
+				elseif t == "Frame" or (t == "Main" and (inst:IsA("Frame") or inst:IsA("ImageButton") or inst:IsA("TextButton"))) then
+					inst.BackgroundColor3 = Theme["Color Hub 2"]
+					if isGlass then
+						if inst.Name == "Hub" then
+							CreateTween({inst, "BackgroundTransparency", 0.18, 0.35})
+						elseif inst.Name == "Option" or inst.Name == "TabSelect" or inst.Name == "SectionFrame" then
+							CreateTween({inst, "BackgroundTransparency", 0.30, 0.35})
+						end
+					else
+						if inst.Name == "Hub" then
+							CreateTween({inst, "BackgroundTransparency", 0.03, 0.35})
+						elseif inst.Name == "Option" or inst.Name == "TabSelect" or inst.Name == "SectionFrame" then
+							CreateTween({inst, "BackgroundTransparency", 0, 0.35})
+						end
+					end
+				elseif t == "Stroke" then
+					local prop = GetColor(inst)
+					if prop ~= "" then
+						inst[prop] = Theme["Color Stroke"]
+					end
+					if isGlass and inst:IsA("UIStroke") then
+						inst.Transparency = 0.25
+					elseif inst:IsA("UIStroke") then
+						inst.Transparency = 0
+					end
+				elseif t == "Theme" then
+					local prop = GetColor(inst)
+					if prop ~= "" then
+						inst[prop] = Theme["Color Theme"]
+					end
+				elseif t == "Text" then
+					local prop = GetColor(inst)
+					if prop ~= "" then
+						inst[prop] = Theme["Color Text"]
+					end
+				elseif t == "DarkText" then
+					local prop = GetColor(inst)
+					if prop ~= "" then
+						inst[prop] = Theme["Color Dark Text"]
+					end
+				elseif t == "ScrollBar" then
+					local prop = GetColor(inst)
+					if prop ~= "" then
+						inst[prop] = Theme["Color Theme"]
+					end
+				end
+			end)
+		end
+	end
+	redzlib.Instances = liveList
+	
+	-- Barrido exhaustivo por ScreenGui para sincronizar al 100% todos los controles:
+	pcall(function()
+		if ScreenGui then
+			for _, item in ipairs(ScreenGui:GetDescendants()) do
+				pcall(function()
+					if item.Name == "Toggle" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Theme"]
+					elseif item.Name == "ToggleHolder" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Stroke"]
+					elseif item.Name == "SelectedFrame" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Stroke"]
+					elseif item.Name == "IsSelected" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Theme"]
+					elseif item.Name == "Indicator" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Theme"]
+					elseif item.Name == "SliderBar" and item:IsA("Frame") then
+						item.BackgroundColor3 = Theme["Color Stroke"]
+					elseif item.Parent and item.Parent.Name == "PolarFloatingButton" and item:IsA("UIStroke") then
+						item.Color = Theme["Color Theme"]
+					end
+				end)
+			end
 		end
 	end)
+	
+	if isGlass then
+		StartGlassAnimation(ScreenGui)
+	else
+		StopGlassAnimation()
+	end
 end
 
 function redzlib:SetScale(NewScale)

@@ -2894,7 +2894,7 @@ pcall(function()
 	end
 end)
 if #themesList == 0 then
-	themesList = {"Polar Ice", "Frostbite", "Blizzard", "Glacier Blue", "Arctic Aurora", "Cyberpunk Neon", "Crimson Blood", "Emerald Abyss", "Sunset Gold", "Midnight Violet", "Darker", "Dark", "Purple"}
+	themesList = {"Polar Ice", "Liquid Glass", "Blizzard", "Arctic Aurora", "Cyberpunk Neon", "Crimson Blood", "Emerald Abyss", "Sunset Gold", "Midnight Violet", "Darker", "Dark", "Purple"}
 end
 table.sort(themesList)
 
