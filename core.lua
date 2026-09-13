@@ -80,6 +80,7 @@ local function LoadPolarUILibrary()
 end
 
 local PolarUI = LoadPolarUILibrary()
+getgenv().PolarUI = PolarUI
 
 local Window = PolarUI:MakeWindow({
 	Name = "POLAR HUB",
@@ -241,15 +242,19 @@ end)
 local RegisterHit = nil
 local RegisterAttack = nil
 pcall(function()
- if Net then
- RegisterHit = Net:RemoteEvent("RegisterHit", true)
- RegisterAttack = Net:RemoteEvent("RegisterAttack")
- end
+ 	if Net then
+		RegisterHit = Net:RemoteEvent("RegisterHit", true)
+		RegisterAttack = Net:RemoteEvent("RegisterAttack")
+	end
 end)
+if setidentity then pcall(setidentity, 8) end
+if setthreadidentity then pcall(setthreadidentity, 8) end
 local GlobalModule = nil
 pcall(function()
- GlobalModule = require(ReplicatedStorage:WaitForChild("Global", 5))
+	GlobalModule = require(ReplicatedStorage:WaitForChild("Global", 5))
 end)
+if setidentity then pcall(setidentity, 8) end
+if setthreadidentity then pcall(setthreadidentity, 8) end
 local SendHitsToServer = function(...)
  if GlobalModule and GlobalModule.SendHitsToServer then
  GlobalModule.SendHitsToServer(...)
@@ -2396,6 +2401,8 @@ getgenv().PolarBuyItem = BuyItem
 
 
 -- ===== TAB FARM =====
+if setidentity then pcall(setidentity, 8) end
+if setthreadidentity then pcall(setthreadidentity, 8) end
 TabFarm:AddSection("Combat Settings")
 
 TabFarm:AddDropdown({

@@ -144,9 +144,18 @@ end
 
 -- Notificación visual de carga completada al 100%
 pcall(function()
- game:GetService("StarterGui"):SetCore("SendNotification", {
- Title = "[OK] Polar Hub",
- Text = "¡Cargado al 100%! Todas las funciones listas.",
- Duration = 4
- })
+	local PolarUI = getgenv().PolarUI or (getgenv().Polar and getgenv().Polar.UI)
+	if PolarUI and PolarUI.Notify then
+		PolarUI:Notify({
+			Title = "Polar Hub Fully Loaded",
+			Description = "All Functions, Modules, Dependencies, Successfully loaded.",
+			Duration = 4
+		})
+	else
+		game:GetService("StarterGui"):SetCore("SendNotification", {
+			Title = "[OK] Polar Hub",
+			Text = "¡Cargado al 100%! Todas las funciones listas.",
+			Duration = 4
+		})
+	end
 end)

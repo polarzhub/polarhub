@@ -24,6 +24,12 @@ local UserInputService = game:GetService("UserInputService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+local function ensurePrivileges()
+    if setidentity then pcall(setidentity, 8) end
+    if setthreadidentity then pcall(setthreadidentity, 8) end
+end
+ensurePrivileges()
+
 -- Theme Color Tokens
 local Theme = {
     WindowBase   = Color3.fromRGB(10, 10, 10),      -- #0A0A0A (Trans 0.05)
@@ -357,12 +363,14 @@ local function getNotificationHolder()
 end
 
 function PolarUI:Notify(cfg)
+    ensurePrivileges()
     local title = type(cfg) == "table" and (cfg.Title or "Polar Hub") or tostring(cfg)
     local desc = type(cfg) == "table" and (cfg.Content or cfg.Text or cfg.Description or "") or ""
     local dur = type(cfg) == "table" and (cfg.Duration or 4) or 4
     if dur < 1 then dur = 3 end
 
     task.spawn(function()
+        ensurePrivileges()
         local holder = getNotificationHolder()
         if not holder then return end
 
@@ -532,6 +540,7 @@ end
 -- MAIN WINDOW CREATION (Window Object)
 -- ============================================================================
 function PolarUI:MakeWindow(config)
+    ensurePrivileges()
     config = config or {}
     local customTitle = config.Name or config.Title or "POLAR HUB"
     local customSub = config.SubTitle or '<font color="#00E5FF">Blox Fruits</font> • <font color="#C084FC">v.Powerhouse</font> • <font color="#FFD700">Official</font>'
@@ -1497,6 +1506,7 @@ end
 -- TAB CREATION (MakeTab)
 -- ============================================================================
 function PolarUI:MakeTab(tabConfig)
+    ensurePrivileges()
     local tabTitle = type(tabConfig) == "table" and (tabConfig.Title or tabConfig.Name or tabConfig[1]) or tostring(tabConfig)
     local meta = TabMeta[tabTitle] or {}
     local tabIconId = (type(tabConfig) == "table" and tabConfig.Icon and (string.find(tostring(tabConfig.Icon), "rbxassetid") and tabConfig.Icon)) or meta.icon or "rbxassetid://88050097561287"
@@ -1649,6 +1659,7 @@ end
 -- SECTION BUILDER (AddSection)
 -- ============================================================================
 function PolarUI:AddSection(sectionConfig)
+    ensurePrivileges()
     local titleText = type(sectionConfig) == "table" and (sectionConfig.Title or sectionConfig.Name or sectionConfig[1]) or tostring(sectionConfig)
     
     self.SectionCount = (self.SectionCount or 0) + 1
@@ -1763,6 +1774,7 @@ end
 -- TOGGLE CONTROL (AddToggle)
 -- ============================================================================
 function PolarUI:AddToggle(cfg, def, cb, overrideParent)
+    ensurePrivileges()
     local name, desc, defaultVal, callback
     if type(cfg) == "table" then
         name = cfg.Name or cfg.Title or cfg[1]
@@ -1910,6 +1922,7 @@ end
 -- SLIDER CONTROL (AddSlider)
 -- ============================================================================
 function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
+    ensurePrivileges()
     local name, minVal, maxVal, defaultVal, callback
     if type(cfg) == "table" then
         name = cfg.Name or cfg.Title or cfg[1] or "Slider"
@@ -2145,6 +2158,7 @@ end
 -- DROPDOWN CONTROL (AddDropdown)
 -- ============================================================================
 function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
+    ensurePrivileges()
     local name, options, defaultOption, callback
     if type(cfg) == "table" then
         name = cfg.Name or cfg.Title or cfg[1]
@@ -2403,6 +2417,7 @@ end
 -- ACTION BUTTON CONTROL (AddButton)
 -- ============================================================================
 function PolarUI:AddButton(cfg, cb, overrideParent)
+    ensurePrivileges()
     local name, callback
     if type(cfg) == "table" then
         name = cfg.Name or cfg.Title or cfg[1]
@@ -2495,6 +2510,7 @@ end
 -- PARAGRAPH / TELEMETRY CARD (AddParagraph)
 -- ============================================================================
 function PolarUI:AddParagraph(cfg, textArg, overrideParent)
+    ensurePrivileges()
     local titleText, descText
     if type(cfg) == "table" then
         titleText = cfg.Title or cfg.Name or cfg[1] or "Info"
@@ -2607,6 +2623,7 @@ end
 -- TEXTBOX INPUT CONTROL (AddTextBox)
 -- ============================================================================
 function PolarUI:AddTextBox(cfg, ph, def, cb, overrideParent)
+    ensurePrivileges()
     local name, placeholder, defaultVal, callback
     if type(cfg) == "table" then
         name = cfg.Name or cfg.Title or cfg[1]

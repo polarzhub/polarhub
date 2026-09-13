@@ -37,14 +37,23 @@ local function SafeBuy(action, arg1, arg2, npcName)
 end
 
 local function Notify(title, text, duration)
- pcall(function()
- game:GetService("StarterGui"):SetCore("SendNotification", {
- Title = title or "Polar Hub",
- Text = text or "",
- Duration = duration or 4
- })
- end)
- print("[Polar Hub] " .. tostring(text))
+	pcall(function()
+		local PolarUI = getgenv().PolarUI or (getgenv().Polar and getgenv().Polar.UI)
+		if PolarUI and PolarUI.Notify then
+			PolarUI:Notify({
+				Title = title or "Polar Hub",
+				Description = text or "",
+				Duration = duration or 4
+			})
+		else
+			game:GetService("StarterGui"):SetCore("SendNotification", {
+				Title = title or "Polar Hub",
+				Text = text or "",
+				Duration = duration or 4
+			})
+		end
+	end)
+	print("[Polar Hub] " .. tostring(text))
 end
 
 local function UpdatePara(para, newDesc)
