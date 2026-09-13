@@ -294,16 +294,237 @@ function PolarUI:SetTheme(themeName)
     -- Intentionally preserved for Onyx visual consistency
 end
 
+-- ============================================================================
+-- GLOBAL EXPOSURE & SEARCH REGISTRY
+-- ============================================================================
+_G.PolarUI = PolarUI
+if getgenv then getgenv().PolarUI = PolarUI end
+
+PolarUI.SearchRegistry = {}
+
+function PolarUI:RegisterSearchItem(name, instance)
+    if not instance then return end
+    table.insert(PolarUI.SearchRegistry, {
+        Name = tostring(name or ""),
+        Instance = instance
+    })
+end
+
+-- ============================================================================
+-- TOAST NOTIFICATION SYSTEM (Exact Quantum Onyx Native Architecture)
+-- Extracted directly from live memory of Onyx via Real MCP inspection
+-- ============================================================================
+local notifGui = nil
+local function getNotificationHolder()
+    local parentGui = nil
+    if gethui then pcall(function() parentGui = gethui() end) end
+    if not parentGui then
+        parentGui = game:GetService("CoreGui"):FindFirstChild("RobloxGui") or game:GetService("CoreGui") or (LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui"))
+    end
+
+    if not notifGui or not notifGui.Parent then
+        notifGui = Instance.new("ScreenGui")
+        notifGui.Name = "PolarHub_Notifications"
+        notifGui.ResetOnSpawn = false
+        notifGui.DisplayOrder = 999999
+        notifGui.IgnoreGuiInset = false
+        notifGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+        if syn and syn.protect_gui then pcall(syn.protect_gui, notifGui) end
+        notifGui.Parent = parentGui
+    end
+
+    local holder = notifGui:FindFirstChild("STX_Notification")
+    if not holder then
+        holder = Instance.new("Frame")
+        holder.Name = "STX_Notification"
+        holder.AnchorPoint = Vector2.new(1, 0)
+        holder.Position = UDim2.new(1, -10, 0, 10)
+        holder.Size = UDim2.new(1, -20, 1, -52)
+        holder.BackgroundTransparency = 1
+        holder.BorderSizePixel = 0
+        holder.ZIndex = 999
+        holder.Parent = notifGui
+
+        local layout = Instance.new("UIListLayout")
+        layout.Name = "STX_NotificationUIListLayout"
+        layout.SortOrder = Enum.SortOrder.LayoutOrder
+        layout.VerticalAlignment = Enum.VerticalAlignment.Top
+        layout.HorizontalAlignment = Enum.HorizontalAlignment.Right
+        layout.Padding = UDim.new(0, 6)
+        layout.Parent = holder
+    end
+    return holder
+end
+
 function PolarUI:Notify(cfg)
     local title = type(cfg) == "table" and (cfg.Title or "Polar Hub") or tostring(cfg)
-    local text = type(cfg) == "table" and (cfg.Content or cfg.Text or cfg.Description or "") or ""
+    local desc = type(cfg) == "table" and (cfg.Content or cfg.Text or cfg.Description or "") or ""
     local dur = type(cfg) == "table" and (cfg.Duration or 4) or 4
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = dur
+    if dur < 1 then dur = 3 end
+
+    task.spawn(function()
+        local holder = getNotificationHolder()
+        if not holder then return end
+
+        -- Dynamic text height calculation matching Onyx
+        local textService = game:GetService("TextService")
+        local textHeight = 16
+        if desc and #desc > 0 then
+            local bounds = textService:GetTextSize(desc, 12, Enum.Font.Gotham, Vector2.new(184, 1000))
+            textHeight = bounds.Y
+        else
+            textHeight = 0
+        end
+
+        local cardHeight = 22 + textHeight + 18
+        if cardHeight < 46 then cardHeight = 46 end
+
+        -- Outer Frame: exact 206px width, anchor (1, 0)
+        local card = Instance.new("Frame")
+        card.Name = "Frame"
+        card.AnchorPoint = Vector2.new(1, 0)
+        card.Position = UDim2.new(1, -10, 0, 10)
+        card.Size = UDim2.new(0, 206, 0, cardHeight)
+        card.BackgroundTransparency = 1
+        card.BorderSizePixel = 0
+        card.ZIndex = 1000
+
+        -- Inner Frame: dark matte background Color3.fromRGB(25, 25, 25), ClipsDescendants = true
+        local inner = Instance.new("Frame")
+        inner.Name = "Frame"
+        inner.AnchorPoint = Vector2.new(0, 0)
+        inner.Position = UDim2.new(0, 0, 0, 0)
+        inner.Size = UDim2.new(1, 0, 1, 0)
+        inner.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        inner.BackgroundTransparency = 0
+        inner.BorderSizePixel = 0
+        inner.ClipsDescendants = true
+        inner.ZIndex = 1001
+        inner.Parent = card
+
+        local innerCorner = Instance.new("UICorner")
+        innerCorner.CornerRadius = UDim.new(0, 13)
+        innerCorner.Parent = inner
+
+        -- Title Label: exact Enum.Font.FredokaOne 12px Color3.fromRGB(220, 220, 220)
+        local titleLbl = Instance.new("TextLabel")
+        titleLbl.Name = "TextLabel"
+        titleLbl.Position = UDim2.new(0, 8, 0, 2)
+        titleLbl.Size = UDim2.new(1, -16, 0, 18)
+        titleLbl.BackgroundTransparency = 1
+        titleLbl.Text = title
+        titleLbl.Font = Enum.Font.FredokaOne
+        titleLbl.TextSize = 12
+        titleLbl.TextColor3 = Color3.fromRGB(220, 220, 220)
+        titleLbl.TextXAlignment = Enum.TextXAlignment.Left
+        titleLbl.TextYAlignment = Enum.TextYAlignment.Center
+        titleLbl.ZIndex = 1002
+        titleLbl.Parent = inner
+
+        -- Time Remaining Label: Gotham 11px Color3.fromRGB(180, 180, 180) on top right
+        local timeLbl = Instance.new("TextLabel")
+        timeLbl.Name = "TextLabel"
+        timeLbl.AnchorPoint = Vector2.new(1, 0)
+        timeLbl.Position = UDim2.new(1, -8, 0, 2)
+        timeLbl.Size = UDim2.new(0, 40, 0, 18)
+        timeLbl.BackgroundTransparency = 1
+        timeLbl.Text = "(" .. tostring(math.floor(dur)) .. "s)"
+        timeLbl.Font = Enum.Font.Gotham
+        timeLbl.TextSize = 11
+        timeLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+        timeLbl.TextXAlignment = Enum.TextXAlignment.Right
+        timeLbl.TextYAlignment = Enum.TextYAlignment.Center
+        timeLbl.ZIndex = 1002
+        timeLbl.Parent = inner
+
+        -- Description Label: Gotham 12px Color3.fromRGB(180, 180, 180) wrapped
+        local descLbl = Instance.new("TextLabel")
+        descLbl.Name = "TextLabel"
+        descLbl.Position = UDim2.new(0, 8, 0, 22)
+        descLbl.Size = UDim2.new(0, 184, 0, textHeight)
+        descLbl.BackgroundTransparency = 1
+        descLbl.Text = desc
+        descLbl.Font = Enum.Font.Gotham
+        descLbl.TextSize = 12
+        descLbl.TextColor3 = Color3.fromRGB(180, 180, 180)
+        descLbl.TextWrapped = true
+        descLbl.TextXAlignment = Enum.TextXAlignment.Left
+        descLbl.TextYAlignment = Enum.TextYAlignment.Top
+        descLbl.ZIndex = 1002
+        descLbl.Parent = inner
+
+        -- ProgressBarBackground: Color3.fromRGB(40, 40, 40), height 4px, position {0, 8}, {1, -10}
+        local pTrack = Instance.new("Frame")
+        pTrack.Name = "ProgressBarBackground"
+        pTrack.Position = UDim2.new(0, 8, 1, -10)
+        pTrack.Size = UDim2.new(1, -16, 0, 4)
+        pTrack.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        pTrack.BorderSizePixel = 0
+        pTrack.ZIndex = 1002
+        pTrack.Parent = inner
+
+        local ptc = Instance.new("UICorner")
+        ptc.CornerRadius = UDim.new(1, 0)
+        ptc.Parent = pTrack
+
+        -- ProgressBarFill with exact 5-point gradient extracted from live memory
+        local pFill = Instance.new("Frame")
+        pFill.Name = "ProgressBarFill"
+        pFill.Position = UDim2.new(0, 0, 0, 0)
+        pFill.Size = UDim2.new(1, 0, 1, 0)
+        pFill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        pFill.BorderSizePixel = 0
+        pFill.ZIndex = 1003
+        pFill.Parent = pTrack
+
+        local pfc = Instance.new("UICorner")
+        pfc.CornerRadius = UDim.new(1, 0)
+        pfc.Parent = pFill
+
+        local pfg = Instance.new("UIGradient")
+        pfg.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0.00, Color3.fromRGB(60, 20, 90)),
+            ColorSequenceKeypoint.new(0.25, Color3.fromRGB(90, 40, 130)),
+            ColorSequenceKeypoint.new(0.50, Color3.fromRGB(60, 60, 160)),
+            ColorSequenceKeypoint.new(0.75, Color3.fromRGB(40, 100, 190)),
+            ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 140, 200))
         })
+        pfg.Parent = pFill
+
+        card.Parent = holder
+
+        -- Slide-in animation from right
+        card.Position = UDim2.new(1, 50, 0, 10)
+        TweenService:Create(card, TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Position = UDim2.new(1, -10, 0, 10)
+        }):Play()
+
+        -- Progress bar shrinking animation matching duration
+        local shrinkTween = TweenService:Create(pFill, TweenInfo.new(dur, Enum.EasingStyle.Linear), {
+            Size = UDim2.new(0, 0, 1, 0)
+        })
+        shrinkTween:Play()
+
+        -- Timer countdown loop updating every second
+        local remaining = dur
+        task.spawn(function()
+            while remaining > 0 and card and card.Parent do
+                timeLbl.Text = "(" .. tostring(math.ceil(remaining)) .. "s)"
+                task.wait(1)
+                remaining = remaining - 1
+            end
+        end)
+
+        task.wait(dur)
+
+        -- Exit animation: slide back to the right and fade out smoothly
+        local fadeOut = TweenService:Create(card, TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 50, 0, 10)
+        })
+        fadeOut:Play()
+        fadeOut.Completed:Connect(function()
+            card:Destroy()
+        end)
     end)
 end
 
@@ -316,6 +537,7 @@ function PolarUI:MakeWindow(config)
     local customSub = config.SubTitle or '<font color="#00E5FF">Blox Fruits</font> • <font color="#C084FC">v.Powerhouse</font> • <font color="#FFD700">Official</font>'
     
     local selfWindow = setmetatable({}, { __index = PolarUI })
+    selfWindow.RegisteredControls = {}
     table.insert(PolarUI.ActiveWindows, selfWindow)
     
     -- Target Parent
@@ -1081,26 +1303,20 @@ function PolarUI:MakeWindow(config)
     tabBar.ZIndex = 205
     tabBar.Parent = mainFrame
 
-    -- SearchBarFrame at {0, 8}, {0, 1}, Size {0, 126}, {0, 22}
+    -- SearchBarFrame at {0, 8}, {0, 1}, Size {0, 126}, {0, 22} (Exact extracted Onyx specification)
     local searchBar = Instance.new("Frame")
     searchBar.Name = "SearchBarFrame"
     searchBar.Position = UDim2.new(0, 8, 0, 1)
     searchBar.Size = UDim2.new(0, 126, 0, 22)
-    searchBar.BackgroundColor3 = Theme.SearchBase
+    searchBar.BackgroundColor3 = Color3.fromRGB(22, 17, 34)
     searchBar.BackgroundTransparency = 0.40
     searchBar.BorderSizePixel = 0
     searchBar.ZIndex = 206
     searchBar.Parent = tabBar
 
-    local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(0, 6); sc.Parent = searchBar
-
-    local ss = Instance.new("UIStroke")
-    ss.Color = Theme.AccentStroke
-    ss.Thickness = 1.0
-    ss.Transparency = 0.55
-    ss.LineJoinMode = Enum.LineJoinMode.Round
-    ss.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    ss.Parent = searchBar
+    local sc = Instance.new("UICorner")
+    sc.CornerRadius = UDim.new(0, 6)
+    sc.Parent = searchBar
 
     local searchIcon = Instance.new("ImageLabel")
     searchIcon.Position = UDim2.new(0, 6, 0.5, -6)
@@ -1113,22 +1329,26 @@ function PolarUI:MakeWindow(config)
     searchIcon.Parent = searchBar
 
     local searchBox = Instance.new("TextBox")
+    searchBox.Name = "SearchBox"
     searchBox.Position = UDim2.new(0, 21, 0, 0)
     searchBox.Size = UDim2.new(1, -36, 1, 0)
     searchBox.BackgroundTransparency = 1
     searchBox.BorderSizePixel = 0
     searchBox.Text = ""
     searchBox.PlaceholderText = "Search..."
-    searchBox.PlaceholderColor3 = Color3.fromRGB(175, 145, 215)
+    searchBox.PlaceholderColor3 = Color3.fromRGB(135, 120, 165)
     searchBox.Font = Enum.Font.Gotham
     searchBox.TextSize = 10
     searchBox.TextColor3 = Color3.fromRGB(235, 230, 250)
     searchBox.TextXAlignment = Enum.TextXAlignment.Left
+    searchBox.TextYAlignment = Enum.TextYAlignment.Center
     searchBox.ClearTextOnFocus = false
     searchBox.ZIndex = 207
     searchBox.Parent = searchBar
 
+    -- Clear button (hidden by default, only visible when query text exists)
     local searchClear = Instance.new("TextButton")
+    searchClear.Name = "SearchClear"
     searchClear.Position = UDim2.new(1, -3, 0.5, 0)
     searchClear.AnchorPoint = Vector2.new(1, 0.5)
     searchClear.Size = UDim2.new(0, 14, 0, 14)
@@ -1138,23 +1358,74 @@ function PolarUI:MakeWindow(config)
     searchClear.Font = Enum.Font.GothamBold
     searchClear.TextSize = 12
     searchClear.TextColor3 = Color3.fromRGB(175, 145, 215)
+    searchClear.Visible = false
     searchClear.ZIndex = 207
     searchClear.Parent = searchBar
-    searchClear.MouseButton1Click:Connect(function() searchBox.Text = "" end)
 
+    -- Floating counter badge (hidden by default, only appears to show matching results count, disappears when search is cleared)
     local searchCount = Instance.new("TextLabel")
+    searchCount.Name = "SearchCount"
+    searchCount.AnchorPoint = Vector2.new(1, 0)
     searchCount.Position = UDim2.new(1, -2, 0, -6)
-    searchCount.Size = UDim2.new(0, 22, 0, 14)
-    searchCount.BackgroundColor3 = Theme.AccentDeep
+    searchCount.Size = UDim2.new(0, 22, 0, 13)
+    searchCount.BackgroundColor3 = Color3.fromRGB(110, 60, 190)
     searchCount.BackgroundTransparency = 0.20
     searchCount.BorderSizePixel = 0
     searchCount.Text = "0"
     searchCount.Font = Enum.Font.GothamBold
     searchCount.TextSize = 9
     searchCount.TextColor3 = Color3.fromRGB(240, 225, 255)
+    searchCount.Visible = false
     searchCount.ZIndex = 208
     searchCount.Parent = searchBar
     local scc = Instance.new("UICorner"); scc.CornerRadius = UDim.new(1, 0); scc.Parent = searchCount
+
+    -- Live Search Filtering
+    searchBox:GetPropertyChangedSignal("Text"):Connect(function()
+        local raw = searchBox.Text
+        local query = raw:lower():gsub("^%s*(.-)%s*$", "%1")
+        if query == "" then
+            searchClear.Visible = false
+            searchCount.Visible = false
+            searchCount.Text = "0"
+            searchCount.Size = UDim2.new(0, 22, 0, 13)
+            for _, item in ipairs(PolarUI.SearchRegistry) do
+                if item.Instance and item.Instance.Parent then
+                    item.Instance.Visible = true
+                end
+            end
+        else
+            searchClear.Visible = true
+            local matches = 0
+            for _, item in ipairs(PolarUI.SearchRegistry) do
+                if item.Instance and item.Instance.Parent then
+                    local found = item.Name:lower():find(query, 1, true) ~= nil
+                    item.Instance.Visible = found
+                    if found then
+                        matches = matches + 1
+                    end
+                end
+            end
+            if matches > 0 then
+                searchCount.Text = tostring(matches)
+                local w = 22
+                if matches >= 100 then
+                    w = 34
+                elseif matches >= 10 then
+                    w = 28
+                end
+                searchCount.Size = UDim2.new(0, w, 0, 13)
+                searchCount.Visible = true
+            else
+                searchCount.Visible = false
+                searchCount.Text = "0"
+            end
+        end
+    end)
+
+    searchClear.MouseButton1Click:Connect(function()
+        searchBox.Text = ""
+    end)
 
     -- Horizontal Scrollable Tab Strip ({0, 140}, {0, -3}, Size {1, -148}, {0, 30})
     local tabScroll = Instance.new("ScrollingFrame")
@@ -1621,6 +1892,7 @@ function PolarUI:AddToggle(cfg, def, cb, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = name, Desc = desc, Instance = btn })
     end
+    PolarUI:RegisterSearchItem(name, btn)
 
     local toggleObj = {
         Instance = btn,
@@ -1850,6 +2122,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = name, Instance = frame })
     end
+    PolarUI:RegisterSearchItem(name, frame)
 
     local sliderObj = {
         Instance = frame,
@@ -2098,6 +2371,7 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = name, Instance = frame })
     end
+    PolarUI:RegisterSearchItem(name, frame)
 
     local dropdownObj = {
         Instance = frame,
@@ -2204,6 +2478,7 @@ function PolarUI:AddButton(cfg, cb, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = name, Instance = btn })
     end
+    PolarUI:RegisterSearchItem(name, btn)
 
     local buttonObj = {
         Instance = btn,
@@ -2300,6 +2575,7 @@ function PolarUI:AddParagraph(cfg, textArg, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = titleText, Desc = descText, Instance = card })
     end
+    PolarUI:RegisterSearchItem(titleText, card)
 
     local paraObj = {
         Instance = card,
@@ -2412,6 +2688,7 @@ function PolarUI:AddTextBox(cfg, ph, def, cb, overrideParent)
     if self.Window and self.Window.RegisteredControls then
         table.insert(self.Window.RegisteredControls, { Name = name, Instance = frame })
     end
+    PolarUI:RegisterSearchItem(name, frame)
 
     local textBoxObj = {
         Instance = frame,

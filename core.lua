@@ -3237,6 +3237,24 @@ end)
 
 print("[OK] Polar Hub cargado exitosamente.")
 
+-- Authentic Status Toast Notifications (matching Quantum Onyx status alerts)
+pcall(function()
+    if PolarUI and PolarUI.Notify then
+        PolarUI:Notify({
+            Title = "Polar Hub Fully Loaded",
+            Description = "All Functions, Modules, Dependencies, Successfully loaded.",
+            Duration = 3
+        })
+        task.delay(0.3, function()
+            PolarUI:Notify({
+                Title = "Polar Hub (INFO)",
+                Description = "Polar Hub Script is 100% Free and Keyless",
+                Duration = 4
+            })
+        end)
+    end
+end)
+
 SendDiscordNotification("[OK] Script Cargado", "El script de Polar Hub ha sido ejecutado con éxito.", {
  {name = "Usuario (Roblox)", value = "`" .. tostring(LocalPlayer.Name) .. "`", inline = true},
  {name = "Nivel", value = LocalPlayer:FindFirstChild("Data") and LocalPlayer.Data:FindFirstChild("Level") and tostring(LocalPlayer.Data.Level.Value) or "N/A", inline = true},
