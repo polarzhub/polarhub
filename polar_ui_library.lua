@@ -536,6 +536,33 @@ function PolarUI:Notify(cfg)
     end)
 end
 
+-- Helper to load authentic Polar Hub logo dynamically from disk or GitHub
+local function getPolarLogo()
+    if getcustomasset then
+        local candidateFiles = {"polar_logo.png", "polarhub_icon.png"}
+        if isfile then
+            for _, filename in ipairs(candidateFiles) do
+                local okCheck, exists = pcall(isfile, filename)
+                if okCheck and exists then
+                    local okAsset, asset = pcall(getcustomasset, filename)
+                    if okAsset and asset then return asset end
+                end
+            end
+        end
+        if writefile then
+            local okFetch, content = pcall(function()
+                return game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_logo.png")
+            end)
+            if okFetch and content and #content > 500 then
+                pcall(writefile, "polar_logo.png", content)
+                local okAsset, asset = pcall(getcustomasset, "polar_logo.png")
+                if okAsset and asset then return asset end
+            end
+        end
+    end
+    return "rbxassetid://87383580130479"
+end
+
 -- ============================================================================
 -- MAIN WINDOW CREATION (Window Object)
 -- ============================================================================
@@ -588,13 +615,14 @@ function PolarUI:MakeWindow(config)
     uiScale.Parent = screenGui
     selfWindow.UIScale = uiScale
 
-    -- 2. Floating Toggle Button (60x60 Circle at {0.016, 0}, {0.219, 0})
+    -- 2. Floating Toggle Button (60x60 Circle at {0.016, 0}, {0.219, 0}, Smooth Draggable)
     local floatFrame = Instance.new("Frame")
     floatFrame.Name = "FloatToggle"
     floatFrame.Position = UDim2.new(0.016, 0, 0.219, 0)
     floatFrame.Size = UDim2.new(0, 60, 0, 60)
     floatFrame.BackgroundTransparency = 1
     floatFrame.BorderSizePixel = 0
+    floatFrame.Active = true
     floatFrame.ZIndex = 500
     floatFrame.Parent = screenGui
 
@@ -602,19 +630,75 @@ function PolarUI:MakeWindow(config)
     floatCorner.CornerRadius = UDim.new(1, 0)
     floatCorner.Parent = floatFrame
 
+    local floatStroke = Instance.new("UIStroke")
+    floatStroke.Color = Color3.fromRGB(160, 100, 240)
+    floatStroke.Thickness = 1.5
+    floatStroke.Transparency = 0.25
+    floatStroke.Parent = floatFrame
+
     local floatBtn = Instance.new("ImageButton")
     floatBtn.Name = "ToggleLogo"
     floatBtn.Size = UDim2.new(1, 0, 1, 0)
     floatBtn.BackgroundTransparency = 1
     floatBtn.BorderSizePixel = 0
-    floatBtn.Image = "rbxassetid://87383580130479"
+    floatBtn.Image = getPolarLogo()
     floatBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     floatBtn.ZIndex = 501
+    floatBtn.Active = true
     floatBtn.Parent = floatFrame
 
     local floatBtnCorner = Instance.new("UICorner")
     floatBtnCorner.CornerRadius = UDim.new(1, 0)
     floatBtnCorner.Parent = floatBtn
+
+    -- Draggable Floating Toggle Logic
+    local floatDragging = false
+    local floatDragStart, floatStartPos, floatDragInput
+    local floatMoved = false
+
+    floatBtn.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            floatDragging = true
+            floatMoved = false
+            floatDragStart = input.Position
+            floatStartPos = floatFrame.Position
+
+            local endConn
+            endConn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    floatDragging = false
+                    if endConn then endConn:Disconnect() end
+                end
+            end)
+        end
+    end)
+
+    floatBtn.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            floatDragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == floatDragInput and floatDragging and floatDragStart and floatStartPos then
+            local delta = input.Position - floatDragStart
+            if delta.Magnitude > 4 then
+                floatMoved = true
+            end
+            floatFrame.Position = UDim2.new(
+                floatStartPos.X.Scale,
+                floatStartPos.X.Offset + delta.X,
+                floatStartPos.Y.Scale,
+                floatStartPos.Y.Offset + delta.Y
+            )
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            floatDragging = false
+        end
+    end)
 
     -- 3. Main Window Frame (510x330, sleek borderless #0A0A0A trans 0.05, corner 10px)
     local mainFrame = Instance.new("Frame")
@@ -634,9 +718,13 @@ function PolarUI:MakeWindow(config)
     mainCorner.CornerRadius = UDim.new(0, 10)
     mainCorner.Parent = mainFrame
 
-    -- Toggle visibility animation
+    -- Toggle visibility animation (fires on click, not drag)
     local isVisible = true
     floatBtn.MouseButton1Click:Connect(function()
+        if floatMoved then
+            floatMoved = false
+            return
+        end
         isVisible = not isVisible
         if isVisible then
             mainFrame.Visible = true
