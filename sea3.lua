@@ -492,6 +492,12 @@ task.spawn(function()
             task.spawn(function()
                 while getgenv().PolarAutoBonesEnabled do
                     pcall(function()
+                        -- Si PolarMastery esta activo y gestionando huesos, ceder el control del combate
+                        local pm = getgenv().PolarMastery
+                        if pm and pm.AutoBones then
+                            task.wait(0.5)
+                            return
+                        end
                         local char = LocalPlayer.Character
                         local hrp = char and char:FindFirstChild("HumanoidRootPart")
                         local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -609,10 +615,13 @@ task.spawn(function()
                                         if oHrp and oHum and oHum.Health > 0 and (oHrp.Position - tHrp.Position).Magnitude <= 300 then
                                             if brought < 4 then
                                                 brought = brought + 1
-                                                oHrp.CFrame = tHrp.CFrame
+                                                for _, p in ipairs(other:GetDescendants()) do
+                                                    if p:IsA("BasePart") then p.CanCollide = false end
+                                                end
+                                                local angle = brought * (2 * math.pi / 4)
+                                                oHrp.CFrame = tHrp.CFrame * CFrame.new(math.cos(angle) * 2.5, 0, math.sin(angle) * 2.5)
                                                 oHrp.AssemblyLinearVelocity = Vector3.zero
                                                 oHum.WalkSpeed = 0
-                                                oHum.PlatformStand = true
                                             end
                                         end
                                     end
@@ -829,3 +838,42 @@ if TabStatus then
 end
 
 print("✅ Sea 3 optimizado de forma extrema, perfecto y totalmente funcional sin errores.")
+
+
+-- ==================== 5. AUTO TYRANT OF THE SKIES ====================
+task.spawn(function()
+    while true do
+        task.wait(0.5)
+        if getgenv().PolarAutoTyrant then
+            pcall(function()
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                local hum = char and char:FindFirstChildOfClass("Humanoid")
+                if not hrp or not hum or hum.Health <= 0 then return end
+                
+                local enemies = workspace:FindFirstChild("Enemies")
+                local chars = workspace:FindFirstChild("Characters")
+                local tyrant = (enemies and enemies:FindFirstChild("Tyrant of the Skies")) or (chars and chars:FindFirstChild("Tyrant of the Skies"))
+                
+                if tyrant and tyrant:FindFirstChild("HumanoidRootPart") and tyrant:FindFirstChildOfClass("Humanoid") and tyrant.Humanoid.Health > 0 then
+                    local tRoot = tyrant.HumanoidRootPart
+                    local hoverCF = tRoot.CFrame * CFrame.new(0, 13, 0)
+                    local dist = (hrp.Position - hoverCF.Position).Magnitude
+                    if dist > 20 then
+                        if Polar.Teleport then Polar.Teleport:To(hoverCF) end
+                    else
+                        hrp.CFrame = hoverCF
+                    end
+                    EquipWeaponLocal()
+                    getgenv().PolarFastAttackEnabled = true
+                else
+                    -- Check for Tiki Outpost Sky temple / urns to break
+                    local templeCF = CFrame.new(-16450, 120, 450)
+                    if (hrp.Position - templeCF.Position).Magnitude > 300 then
+                        if Polar.Teleport then Polar.Teleport:To(templeCF) end
+                    end
+                end
+            end)
+        end
+    end
+end)

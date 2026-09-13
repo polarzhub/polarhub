@@ -70,7 +70,7 @@ local function DetectSea()
  return 1
  elseif map:FindFirstChild("Kingdom of Rose") or map:FindFirstChild("Green Zone") or map:FindFirstChild("Graveyard") or workspace:FindFirstChild("Factory") then
  return 2
- elseif map:FindFirstChild("Port Town") or map:FindFirstChild("Turtle") or map:FindFirstChild("Sea Castle") or map:FindFirstChild("Floating Turtle") then
+ elseif map:FindFirstChild("Port Town") or map:FindFirstChild("Turtle") or map:FindFirstChild("Sea Castle") or map:FindFirstChild("Floating Turtle") or map:FindFirstChild("Haunted Castle") or map:FindFirstChild("Tiki Outpost") or map:FindFirstChild("Sea of Treats") or map:FindFirstChild("Submerged Island") then
  return 3
  end
  end
