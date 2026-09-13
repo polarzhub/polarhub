@@ -105,7 +105,8 @@ PolarMastery.GunKeys = {"Z", "X"}
 -- Mechanics & Hover Lock (ALWAYS ABOVE MOBS AT 11.5 STUDS - SAFE FROM ALL DAMAGE)
 PolarMastery.BringMonster = true
 PolarMastery.BringRadius = 250
-PolarMastery.HoverHeight = 11.5
+PolarMastery.HoverHeight = 8.5
+PolarMastery.FastAttackDelay = 0.10
 PolarMastery.PosMethod = "Above"
 
 -- Boss Farm
@@ -335,20 +336,61 @@ end
 -- ==============================================================================
 -- UNIVERSAL M1 ATTACK (NATIVE COMBAT CONTROLLER + FRUIT M1 + SERVER SYNC)
 -- ==============================================================================
+local atkMeleeCached = nil
+pcall(function()
+    if filtergc then
+        atkMeleeCached = filtergc("function", {Name = "attackMelee"}, true)
+    end
+end)
+
 function PolarMastery:PerformM1(targetMob, targetRoot)
     if not targetMob or not targetRoot then return end
     local now = os.clock()
-    if (now - (self.LastM1Time or 0)) < 0.16 then return end
+    local delay = self.FastAttackDelay or 0.10
+    if (now - (self.LastM1Time or 0)) < delay then return end
     self.LastM1Time = now
 
     local char = LocalPlayer.Character
     if not char then return end
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
 
     local tool = self:GetEquippedTool()
     if not tool then return end
 
-    -- Silent aim target
+    -- 1. Silent aim target (never touches user camera)
     self:SetAimTarget(targetRoot)
+
+    -- 2. Bypass Blox Fruits internal client tap cooldown and animation debounce
+    if GlobalModule then
+        GlobalModule.tapCooldown = 0
+    end
+    if atkMeleeCached then
+        pcall(debug.setupvalue, atkMeleeCached, 2, false)
+    end
+
+    -- 3. Target Hit Part: Prioritize Head or UpperTorso (strictly required by CombatUtil u124 table)
+    local hitPart = targetMob:FindFirstChild("Head") or targetMob:FindFirstChild("UpperTorso") or targetRoot
+
+    -- 4. Build Multi-Target AoE Hit List (all nearby clustered mobs take full damage simultaneously!)
+    local hits = { {targetMob, hitPart} }
+    local enemies = workspace:FindFirstChild("Enemies")
+    if enemies then
+        local maxAoE = 6
+        for _, otherMob in ipairs(enemies:GetChildren()) do
+            if otherMob ~= targetMob and otherMob:IsA("Model") and #hits < maxAoE then
+                local oHum = otherMob:FindFirstChildOfClass("Humanoid")
+                local oRoot = otherMob:FindFirstChild("HumanoidRootPart")
+                if oHum and oHum.Health > 0 and oRoot then
+                    local d = (oRoot.Position - hrp.Position).Magnitude
+                    if d <= 45 then
+                        local oPart = otherMob:FindFirstChild("Head") or otherMob:FindFirstChild("UpperTorso") or oRoot
+                        table.insert(hits, {otherMob, oPart})
+                    end
+                end
+            end
+        end
+    end
 
     local isFruit = tool.ToolTip == "Blox Fruit" or tool:GetAttribute("WeaponType") == "Demon Fruit"
 
@@ -364,13 +406,8 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
                 GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, u15, Enum.KeyCode.G)
             end
             tool:Activate()
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.zero)
-            task.wait(0.01)
-            VirtualUser:Button1Up(Vector2.zero)
         end)
     else
-        -- Native CombatController attack for Melee / Sword (2500+ damage)
         pcall(function()
             if CombatController and CombatController.Attack then
                 CombatController:Attack(tool)
@@ -378,18 +415,19 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
         end)
         pcall(function()
             tool:Activate()
-            VirtualUser:CaptureController()
-            VirtualUser:Button1Down(Vector2.zero)
-            task.wait(0.01)
-            VirtualUser:Button1Up(Vector2.zero)
         end)
     end
 
-    -- Server Damage Synchronization
+    -- 5. Force Server Attack Registration & Hit Confirmation (Bypasses all client restrictions)
     pcall(function()
         self.AttackCombo = ((self.AttackCombo or 1) % 4) + 1
-        if RegisterAttack then RegisterAttack:FireServer(0.18, self.AttackCombo) end
-        SendHitsToServer(targetRoot, {{targetMob, targetRoot}})
+        if RegisterAttack then
+            RegisterAttack:FireServer(delay, self.AttackCombo)
+        end
+        SendHitsToServer(hitPart, hits)
+        if RegisterHit then
+            RegisterHit:FireServer(hitPart, hits)
+        end
     end)
 end
 
@@ -873,7 +911,7 @@ end
 -- Fast combat loop
 task.spawn(function()
     while true do
-        task.wait(0.1)
+        task.wait(PolarMastery.FastAttackDelay or 0.10)
         local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
         if isActive then
             pcall(runMasteryCombatStep)

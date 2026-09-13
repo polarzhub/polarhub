@@ -2718,6 +2718,32 @@ SecMainFarm:AddSlider({
 	end
 })
 
+Polar.Registry:BindSlider(SecMainFarm, {
+	Name = "Fast Attack Delay",
+	Min = 0.05,
+	Max = 0.25,
+	Default = (PolarMastery and PolarMastery.FastAttackDelay) or 0.10,
+	Step = 0.01,
+	Decimals = 2,
+	Suffix = "s",
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.FastAttackDelay = Value end
+	end
+}, "PolarMastery.FastAttackDelay")
+
+Polar.Registry:BindSlider(SecMainFarm, {
+	Name = "Hover Height",
+	Min = 4.0,
+	Max = 15.0,
+	Default = (PolarMastery and PolarMastery.HoverHeight) or 8.5,
+	Step = 0.5,
+	Decimals = 1,
+	Suffix = " studs",
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.HoverHeight = Value end
+	end
+}, "PolarMastery.HoverHeight")
+
 Polar.Registry:BindToggle(SecMainFarm, {
 	Name = "Auto Farm",
 	Default = false,
