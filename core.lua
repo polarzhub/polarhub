@@ -93,7 +93,8 @@ pcall(function()
 end)
 
 -- CREACIÓN INMEDIATA DE PESTAÑAS (Garantiza que la UI NUNCA quede en negro)
-local TabFarm = Window:MakeTab({ Title = "Farm", Icon = "swords" })
+local TabHome = Window:MakeTab({ Title = "Home", Icon = "rbxassetid://130439434919073" })
+local TabFarm = TabHome
 local TabStats = Window:MakeTab({ Title = "Stats", Icon = "user" })
 local TabStatus = Window:MakeTab({ Title = "Status", Icon = "activity" })
 local TabShop = Window:MakeTab({ Title = "Shop", Icon = "shopping-cart" })
@@ -106,6 +107,7 @@ local TabMisc = Window:MakeTab({ Title = "Misc", Icon = "settings" })
 local Polar = getgenv().Polar or {}
 getgenv().Polar = Polar
 Polar.Window = Window
+Polar.TabHome = TabHome
 Polar.TabFarm = TabFarm
 Polar.TabStats = TabStats
 Polar.TabStatus = TabStatus
@@ -2400,67 +2402,306 @@ getgenv().PolarBuyItem = BuyItem
 
 
 
--- ===== TAB FARM =====
+-- ===== TAB HOME / FARM (ADVANCED AUTO MASTERY & ONYX SYSTEM) =====
 if setidentity then pcall(setidentity, 8) end
 if setthreadidentity then pcall(setthreadidentity, 8) end
-TabFarm:AddSection("Combat Settings")
 
-TabFarm:AddDropdown({
-	Name = "Farm Tool",
-	Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
-	Default = "Melee",
+-- Cargar motor de Auto Mastery
+local PolarMastery = getgenv().PolarMastery
+if not PolarMastery then
+	pcall(function()
+		if isfile and isfile("polar_mastery.lua") then
+			PolarMastery = loadstring(readfile("polar_mastery.lua"))()
+		end
+	end)
+end
+if not PolarMastery then
+	pcall(function()
+		PolarMastery = loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_mastery.lua?t=" .. tostring(os.time())))()
+	end)
+end
+if not PolarMastery then
+	PolarMastery = getgenv().PolarMastery or {}
+end
+
+-- ==================== COLUMNA 1: MAIN FARM & AUTO BONES ====================
+local SecMainFarm = TabHome:AddSection("Main Farm")
+
+SecMainFarm:AddDropdown({
+	Name = "Farm Method",
+	Options = {"Quest", "Nearest"},
+	Default = PolarMastery.FarmMethod or "Quest",
 	Callback = function(Value)
-		SelectedWeaponType = Value
+		if PolarMastery then PolarMastery.FarmMethod = Value end
 	end
 })
 
-TabFarm:AddToggle({
-	Name = "Smart Mastery",
-	Desc = "Finishes mob with secondary weapon",
+SecMainFarm:AddDropdown({
+	Name = "Quest Farm Mode",
+	Options = {"Double Quest", "Normal"},
+	Default = PolarMastery.QuestFarmMode or "Double Quest",
 	Callback = function(Value)
-		AutoMasteryEnabled = Value
+		if PolarMastery then PolarMastery.QuestFarmMode = Value end
 	end
 })
 
-TabFarm:AddDropdown({
-	Name = "Mastery Weapon",
-	Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
-	Default = "Sword",
+SecMainFarm:AddSlider({
+	Name = "Nearest (Distance)",
+	Min = 100,
+	Max = 3000,
+	Default = PolarMastery.NearestDistance or 1500,
 	Callback = function(Value)
-		AutoMasteryItem = Value
+		if PolarMastery then PolarMastery.NearestDistance = Value end
 	end
 })
 
-TabFarm:AddToggle({
-	Name = "Auto Skills",
-	Desc = "Cast skills while farming",
-	Callback = function(Value)
-		AutoSkillsEnabled = Value
-	end
-})
-
-TabFarm:AddSection("Auto Farm")
-
-TabFarm:AddToggle({
-	Name = "Auto Farm Level",
+SecMainFarm:AddToggle({
+	Name = "Auto Farm",
+	Default = false,
 	Callback = function(Value)
 		AutoFarmEnabled = Value
 		getgenv().PolarFastAttackEnabled = Value
+		if PolarMastery then PolarMastery.AutoFarm = Value end
 	end
 })
 
-TabFarm:AddToggle({
-	Name = "Auto Chest",
+SecMainFarm:AddToggle({
+	Name = "Take Quest",
+	Desc = "Accept Quest for Bones/Cakes",
+	Default = true,
 	Callback = function(Value)
-		AutoChestEnabled = Value
+		if PolarMastery then PolarMastery.TakeQuest = Value end
 	end
 })
 
-TabFarm:AddToggle({
-	Name = "Farm Nearest",
+SecMainFarm:AddToggle({
+	Name = "Auto Bones",
+	Default = false,
 	Callback = function(Value)
-		AutoFarmNearestEnabled = Value
+		if PolarMastery then PolarMastery.AutoBones = Value end
 		getgenv().PolarFastAttackEnabled = Value
+	end
+})
+
+SecMainFarm:AddToggle({
+	Name = "Enable Mastery",
+	Default = true,
+	Callback = function(Value)
+		AutoMasteryEnabled = Value
+		if PolarMastery then PolarMastery.EnableMastery = Value end
+	end
+})
+
+SecMainFarm:AddSlider({
+	Name = "Health Mob%",
+	Min = 5,
+	Max = 90,
+	Default = PolarMastery.HealthMobThreshold or 25,
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.HealthMobThreshold = Value end
+	end
+})
+
+SecMainFarm:AddDropdown({
+	Name = "Primary Weapon",
+	Options = {"Melee", "Sword", "Gun"},
+	Default = PolarMastery.PrimaryWeapon or "Melee",
+	Callback = function(Value)
+		SelectedWeaponType = Value
+		if PolarMastery then PolarMastery.PrimaryWeapon = Value end
+	end
+})
+
+SecMainFarm:AddDropdown({
+	Name = "Mastery Target",
+	Options = {"Blox Fruit", "Sword", "Gun"},
+	Default = PolarMastery.MasteryTarget or "Blox Fruit",
+	Callback = function(Value)
+		AutoMasteryItem = Value
+		if PolarMastery then PolarMastery.MasteryTarget = Value end
+	end
+})
+
+-- ==================== COLUMNA 2: SKILLS SETTINGS ====================
+local SecSkills = TabHome:AddSection("Skills Settings")
+
+SecSkills:AddSlider({
+	Name = "Z Hold Time (ms)",
+	Min = 0,
+	Max = 5000,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.Z and PolarMastery.HoldTimes.Z * 1000) or 900,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.HoldTimes then
+			PolarMastery.HoldTimes.Z = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "X Hold Time (ms)",
+	Min = 0,
+	Max = 5000,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.X and PolarMastery.HoldTimes.X * 1000) or 3800,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.HoldTimes then
+			PolarMastery.HoldTimes.X = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "C Hold Time (ms)",
+	Min = 0,
+	Max = 5000,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.C and PolarMastery.HoldTimes.C * 1000) or 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.HoldTimes then
+			PolarMastery.HoldTimes.C = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "V Hold Time (ms)",
+	Min = 0,
+	Max = 5000,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.V and PolarMastery.HoldTimes.V * 1000) or 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.HoldTimes then
+			PolarMastery.HoldTimes.V = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "Blox Fruit Skill Delay (ms)",
+	Min = 0,
+	Max = 1000,
+	Default = 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.SkillDelays then
+			PolarMastery.SkillDelays.BloxFruit = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "Melee Skill Delay (ms)",
+	Min = 0,
+	Max = 1000,
+	Default = 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.SkillDelays then
+			PolarMastery.SkillDelays.Melee = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "Sword Skill Delay (ms)",
+	Min = 0,
+	Max = 1000,
+	Default = 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.SkillDelays then
+			PolarMastery.SkillDelays.Sword = Value / 1000
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "Gun Skill Delay (ms)",
+	Min = 0,
+	Max = 1000,
+	Default = 0,
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.SkillDelays then
+			PolarMastery.SkillDelays.Gun = Value / 1000
+		end
+	end
+})
+
+-- ==================== COLUMNA 1: BOSS FARM ====================
+local SecBossFarm = TabHome:AddSection("Boss Farm")
+
+local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Cake Prince", "Dough King", "Soul Reaper"}
+SecBossFarm:AddDropdown({
+	Name = "Select Boss",
+	Options = bossList,
+	Default = PolarMastery.SelectedBoss or "Stone",
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.SelectedBoss = Value end
+	end
+})
+
+SecBossFarm:AddToggle({
+	Name = "Auto Farm Boss",
+	Default = false,
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.AutoFarmBoss = Value end
+		getgenv().PolarFastAttackEnabled = Value
+	end
+})
+
+SecBossFarm:AddToggle({
+	Name = "Auto Kill All Bosses",
+	Default = false,
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.AutoKillAllBosses = Value end
+	end
+})
+
+SecBossFarm:AddToggle({
+	Name = "Get Boss Quest",
+	Desc = "Automatically takes the boss quest before attacking",
+	Default = true,
+	Callback = function(Value)
+		if PolarMastery then PolarMastery.GetBossQuest = Value end
+	end
+})
+
+-- ==================== COLUMNA 2: SPECIAL EVENTS & TYRANT ====================
+local SecSpecialFarm = TabHome:AddSection("Tyrant & Special Farm")
+
+SecSpecialFarm:AddToggle({
+	Name = "Auto Summon Kill Tyrant Of The Skies",
+	Desc = "turn on auto skill or gun shooting for destroying vases",
+	Default = false,
+	Callback = function(Value)
+		getgenv().PolarAutoTyrant = Value
+	end
+})
+
+SecSpecialFarm:AddToggle({
+	Name = "Auto Dough King",
+	Default = false,
+	Callback = function(Value)
+		getgenv().PolarAutoDoughKing = Value
+	end
+})
+
+SecSpecialFarm:AddToggle({
+	Name = "Ignore Farm Dough King Item",
+	Desc = "only focus on boss and will not try to get chalice",
+	Default = false,
+	Callback = function(Value)
+		getgenv().PolarIgnoreDoughKingItem = Value
+	end
+})
+
+SecSpecialFarm:AddToggle({
+	Name = "Auto Katakuri",
+	Default = false,
+	Callback = function(Value)
+		getgenv().PolarAutoKatakuri = Value
+	end
+})
+
+SecSpecialFarm:AddToggle({
+	Name = "Auto Try Luck",
+	Default = false,
+	Callback = function(Value)
+		getgenv().PolarAutoTryLuck = Value
 	end
 })
 

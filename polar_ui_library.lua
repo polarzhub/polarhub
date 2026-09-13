@@ -176,6 +176,7 @@ local UnderlineGradient = Theme.UnderlineGradient
 
 -- Global Icon and Tab Width Map
 local TabMeta = {
+    ["Home"]         = { icon = "rbxassetid://130439434919073", width = 74 },
     ["Farm"]         = { icon = "rbxassetid://88050097561287",  width = 68 },
     ["Quest Farm"]   = { icon = "rbxassetid://88173691221304",  width = 105 },
     ["Stats"]        = { icon = "rbxassetid://83474083071373",  width = 68 },
