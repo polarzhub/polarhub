@@ -2313,6 +2313,31 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     maxVal = tonumber(maxVal) or 100
     defaultVal = tonumber(defaultVal) or minVal
 
+    local step = 1
+    local decimals = 0
+    local suffix = ""
+    if type(cfg) == "table" then
+        if cfg.Step ~= nil or cfg.Increment ~= nil then
+            step = tonumber(cfg.Step or cfg.Increment) or 1
+        elseif maxVal <= 10 and maxVal > 0 and (minVal < 10 or minVal == 0) then
+            step = 0.1
+        end
+        if cfg.Decimals ~= nil or cfg.Precision ~= nil then
+            decimals = tonumber(cfg.Decimals or cfg.Precision) or 0
+        elseif step < 1 then
+            decimals = 1
+        end
+        suffix = tostring(cfg.Suffix or "")
+    end
+
+    local function formatVal(val)
+        if decimals > 0 then
+            return string.format("%." .. decimals .. "f", val) .. suffix
+        else
+            return tostring(math.floor(val + 0.5)) .. suffix
+        end
+    end
+
     local innerParent = resolveParent(self, overrideParent)
     local currentVal = defaultVal
     local ord = (innerParent:GetAttribute("Order") or 1) + 1
@@ -2344,14 +2369,14 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     title.Parent = frame
     PolarUI:RegisterTranslatable(title, name, (type(cfg) == "table" and (cfg.ES or cfg.Spanish)))
 
-    -- Number Badge TextBox ({0, 46}, {0, 20} with #C084FC outline)
+    -- Number Badge TextBox ({0, 54}, {0, 20} with #C084FC outline)
     local valBox = Instance.new("TextBox")
     valBox.AnchorPoint = Vector2.new(1, 0)
     valBox.Position = UDim2.new(1, -10, 0, 7)
-    valBox.Size = UDim2.new(0, 46, 0, 20)
+    valBox.Size = UDim2.new(0, 54, 0, 20)
     valBox.BackgroundColor3 = Theme.PillBadge
     valBox.BorderSizePixel = 0
-    valBox.Text = tostring(currentVal)
+    valBox.Text = formatVal(currentVal)
     valBox.Font = Enum.Font.GothamBold
     valBox.TextSize = 12
     valBox.TextColor3 = Theme.Accent
@@ -2447,9 +2472,19 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     local sliding = false
     local function update(input)
         local p = math.clamp((input.Position.X - track.AbsolutePosition.X) / math.max(1, track.AbsoluteSize.X), 0, 1)
-        local val = math.floor(minVal + (maxVal - minVal) * p + 0.5)
+        local raw = minVal + (maxVal - minVal) * p
+        local val
+        if step and step > 0 then
+            val = math.floor(raw / step + 0.5) * step
+        else
+            val = math.floor(raw + 0.5)
+        end
+        val = math.clamp(val, minVal, maxVal)
+        if decimals > 0 then
+            val = tonumber(string.format("%." .. decimals .. "f", val)) or val
+        end
         currentVal = val
-        valBox.Text = tostring(val)
+        valBox.Text = formatVal(val)
         fill.Size = UDim2.new(p, 0, 1, 0)
         thumb.Position = UDim2.new(p, 0, 0.5, 0)
         callback(val)
@@ -2485,17 +2520,24 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     end)
 
     valBox.FocusLost:Connect(function()
-        local num = tonumber(valBox.Text)
+        local clean = string.gsub(valBox.Text, "[^%d%.%-]", "")
+        local num = tonumber(clean)
         if num then
+            if step and step > 0 then
+                num = math.floor(num / step + 0.5) * step
+            end
             num = math.clamp(num, minVal, maxVal)
+            if decimals > 0 then
+                num = tonumber(string.format("%." .. decimals .. "f", num)) or num
+            end
             currentVal = num
-            valBox.Text = tostring(num)
+            valBox.Text = formatVal(num)
             local p = math.clamp((num - minVal) / math.max(1, maxVal - minVal), 0, 1)
             fill.Size = UDim2.new(p, 0, 1, 0)
             thumb.Position = UDim2.new(p, 0, 0.5, 0)
             callback(num)
         else
-            valBox.Text = tostring(currentVal)
+            valBox.Text = formatVal(currentVal)
         end
     end)
 
@@ -2508,13 +2550,20 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
         Instance = frame,
         Name = name,
         Set = function(_, num)
-            num = math.clamp(tonumber(num) or minVal, minVal, maxVal)
-            currentVal = num
-            valBox.Text = tostring(num)
-            local p = math.clamp((num - minVal) / math.max(1, maxVal - minVal), 0, 1)
+            local n = tonumber(num) or minVal
+            if step and step > 0 then
+                n = math.floor(n / step + 0.5) * step
+            end
+            n = math.clamp(n, minVal, maxVal)
+            if decimals > 0 then
+                n = tonumber(string.format("%." .. decimals .. "f", n)) or n
+            end
+            currentVal = n
+            valBox.Text = formatVal(n)
+            local p = math.clamp((n - minVal) / math.max(1, maxVal - minVal), 0, 1)
             fill.Size = UDim2.new(p, 0, 1, 0)
             thumb.Position = UDim2.new(p, 0, 0.5, 0)
-            callback(num)
+            callback(n)
         end,
         GetValue = function(_) return currentVal end
     }

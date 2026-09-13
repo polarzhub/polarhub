@@ -2504,7 +2504,7 @@ SecMainFarm:AddSlider({
 
 SecMainFarm:AddDropdown({
 	Name = "Primary Weapon",
-	Options = {"Melee", "Sword", "Gun"},
+	Options = {"Melee", "Sword", "Blox Fruit", "Gun"},
 	Default = PolarMastery.PrimaryWeapon or "Melee",
 	Callback = function(Value)
 		SelectedWeaponType = Value
@@ -2514,7 +2514,7 @@ SecMainFarm:AddDropdown({
 
 SecMainFarm:AddDropdown({
 	Name = "Mastery Target",
-	Options = {"Blox Fruit", "Sword", "Gun"},
+	Options = {"Blox Fruit", "Sword", "Gun", "Melee"},
 	Default = PolarMastery.MasteryTarget or "Blox Fruit",
 	Callback = function(Value)
 		AutoMasteryItem = Value
@@ -2526,97 +2526,136 @@ SecMainFarm:AddDropdown({
 local SecSkills = TabHome:AddSection("Skills Settings")
 
 SecSkills:AddSlider({
-	Name = "Z Hold Time (ms)",
-	Min = 0,
-	Max = 5000,
-	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.Z and PolarMastery.HoldTimes.Z * 1000) or 900,
+	Name = "Z Hold Time",
+	Min = 0.0,
+	Max = 5.0,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.Z) or 0.8,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.HoldTimes then
-			PolarMastery.HoldTimes.Z = Value / 1000
+			PolarMastery.HoldTimes.Z = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "X Hold Time (ms)",
-	Min = 0,
-	Max = 5000,
-	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.X and PolarMastery.HoldTimes.X * 1000) or 3800,
+	Name = "X Hold Time",
+	Min = 0.0,
+	Max = 5.0,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.X) or 3.8,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.HoldTimes then
-			PolarMastery.HoldTimes.X = Value / 1000
+			PolarMastery.HoldTimes.X = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "C Hold Time (ms)",
-	Min = 0,
-	Max = 5000,
-	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.C and PolarMastery.HoldTimes.C * 1000) or 0,
+	Name = "C Hold Time",
+	Min = 0.0,
+	Max = 5.0,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.C) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.HoldTimes then
-			PolarMastery.HoldTimes.C = Value / 1000
+			PolarMastery.HoldTimes.C = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "V Hold Time (ms)",
-	Min = 0,
-	Max = 5000,
-	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.V and PolarMastery.HoldTimes.V * 1000) or 0,
+	Name = "V Hold Time",
+	Min = 0.0,
+	Max = 5.0,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.V) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.HoldTimes then
-			PolarMastery.HoldTimes.V = Value / 1000
+			PolarMastery.HoldTimes.V = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "Blox Fruit Skill Delay (ms)",
-	Min = 0,
-	Max = 1000,
-	Default = 0,
+	Name = "F Hold Time",
+	Min = 0.0,
+	Max = 5.0,
+	Default = (PolarMastery.HoldTimes and PolarMastery.HoldTimes.F) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
-		if PolarMastery and PolarMastery.SkillDelays then
-			PolarMastery.SkillDelays.BloxFruit = Value / 1000
+		if PolarMastery and PolarMastery.HoldTimes then
+			PolarMastery.HoldTimes.F = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "Melee Skill Delay (ms)",
-	Min = 0,
-	Max = 1000,
-	Default = 0,
+	Name = "Blox Fruit Skill Delay",
+	Min = 0.0,
+	Max = 2.0,
+	Default = (PolarMastery.SkillDelays and PolarMastery.SkillDelays.BloxFruit) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.SkillDelays then
-			PolarMastery.SkillDelays.Melee = Value / 1000
+			PolarMastery.SkillDelays.BloxFruit = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "Sword Skill Delay (ms)",
-	Min = 0,
-	Max = 1000,
-	Default = 0,
+	Name = "Melee Skill Delay",
+	Min = 0.0,
+	Max = 2.0,
+	Default = (PolarMastery.SkillDelays and PolarMastery.SkillDelays.Melee) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.SkillDelays then
-			PolarMastery.SkillDelays.Sword = Value / 1000
+			PolarMastery.SkillDelays.Melee = Value
 		end
 	end
 })
 
 SecSkills:AddSlider({
-	Name = "Gun Skill Delay (ms)",
-	Min = 0,
-	Max = 1000,
-	Default = 0,
+	Name = "Sword Skill Delay",
+	Min = 0.0,
+	Max = 2.0,
+	Default = (PolarMastery.SkillDelays and PolarMastery.SkillDelays.Sword) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery and PolarMastery.SkillDelays then
-			PolarMastery.SkillDelays.Gun = Value / 1000
+			PolarMastery.SkillDelays.Sword = Value
+		end
+	end
+})
+
+SecSkills:AddSlider({
+	Name = "Gun Skill Delay",
+	Min = 0.0,
+	Max = 2.0,
+	Default = (PolarMastery.SkillDelays and PolarMastery.SkillDelays.Gun) or 0.0,
+	Step = 0.1,
+	Decimals = 1,
+	Suffix = "s",
+	Callback = function(Value)
+		if PolarMastery and PolarMastery.SkillDelays then
+			PolarMastery.SkillDelays.Gun = Value
 		end
 	end
 })
