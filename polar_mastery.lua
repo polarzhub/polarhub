@@ -232,16 +232,23 @@ function PolarMastery:StopAll()
     getgenv().PolarAutoBonesEnabled = false
     getgenv().PolarFastAttackEnabled = false
     
-    -- Safe exit: lift player into air before removing hover to avoid dropping into mob clusters
-    pcall(function()
-        local char = LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.CFrame = root.CFrame * CFrame.new(0, 10, 0)
-            root.AssemblyLinearVelocity = Vector3.zero
-        end
-    end)
-    clearHoverInstances()
+    -- Salida Segura (StopAll):
+    -- Al desactivar el farm, el personaje se eleva en el aire y mantiene una plataforma segura
+    -- por exactamente 5 segundos (no permanente) o evacúa a la zona segura de la isla.
+    local safety = (Polar and Polar.Safety) or (getgenv().Polar and getgenv().Polar.Safety)
+    if safety and type(safety.EvacuateToSafety) == "function" then
+        safety:EvacuateToSafety(5, true)
+    else
+        pcall(function()
+            local char = LocalPlayer.Character
+            local root = char and char:FindFirstChild("HumanoidRootPart")
+            if root then
+                root.CFrame = root.CFrame * CFrame.new(0, 20, 0)
+                root.AssemblyLinearVelocity = Vector3.zero
+            end
+        end)
+        clearHoverInstances()
+    end
     
     local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
     if combat then

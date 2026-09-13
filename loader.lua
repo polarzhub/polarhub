@@ -96,6 +96,12 @@ end
 -- Anti-Cache dinámico para asegurar siempre la versión más reciente
 local cacheBuster = "?t=" .. tostring(os.time())
 
+-- Cargar Motor de Integridad y Diagnosticos V2.0
+print("[Polar Hub] 🛡️ Cargando motor de integridad y diagnosticos...")
+pcall(function()
+    loadstring(game:HttpGet(baseURL .. "polar_integrity.lua" .. cacheBuster))()
+end)
+
 -- Cargar Core Base primero
 print("[Polar Hub] 🚀 Cargando motor principal...")
 local success, result = pcall(function()
