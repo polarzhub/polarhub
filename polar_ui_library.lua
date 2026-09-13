@@ -30,8 +30,15 @@ local function ensurePrivileges()
 end
 ensurePrivileges()
 
--- Theme Color Tokens
-local Theme = {
+-- ============================================================================
+-- THEME DEFINITIONS & RESILIENT ARCHITECTURE
+-- ============================================================================
+-- 1. Default Authentic Onyx Purple Theme (Preserved 1:1, DO NOT ALTER)
+local DefaultTheme = {
+    Name         = "Polar Onyx",
+    DisplayName  = "Polar Onyx [Purple]",
+    LogoFile     = "polar_logo_purple.png",
+    
     WindowBase   = Color3.fromRGB(10, 10, 10),      -- #0A0A0A (Trans 0.05)
     InnerCard    = Color3.fromRGB(25, 25, 25),       -- #191919 (Trans 0.30)
     ControlRow   = Color3.fromRGB(5, 5, 5),         -- #050505 (Trans 0.40)
@@ -54,42 +61,118 @@ local Theme = {
     TextDim      = Color3.fromRGB(210, 210, 220),   -- #D2D2DC
     TextMuted    = Color3.fromRGB(120, 120, 120),   -- #787878
     TextDesc     = Color3.fromRGB(130, 130, 145),   -- #828291
-    TextTabOff   = Color3.fromRGB(130, 120, 155)    -- #82789B
+    TextTabOff   = Color3.fromRGB(130, 120, 155),   -- #82789B
+
+    CyberGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(60, 20, 90)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(90, 40, 130)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(60, 60, 160)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(40, 100, 190)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 140, 200))
+    }),
+    LavenderGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(139, 92, 246)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(216, 180, 254))
+    }),
+    UnderlineGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(160, 100, 255)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(90, 40, 180))
+    })
 }
 
--- 5-Color Cyber Gradient Sequence (#3C145A -> #5A2882 -> #3C3CA0 -> #2864BE -> #1E8CC8)
-local CyberGradient = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(60, 20, 90)),
-    ColorSequenceKeypoint.new(0.25, Color3.fromRGB(90, 40, 130)),
-    ColorSequenceKeypoint.new(0.50, Color3.fromRGB(60, 60, 160)),
-    ColorSequenceKeypoint.new(0.75, Color3.fromRGB(40, 100, 190)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(30, 140, 200))
-})
+-- 2. New Authentic Polar Blue (Arctic Ice) Theme
+local BlueTheme = setmetatable({
+    Name         = "Polar Blue",
+    DisplayName  = "Polar Blue [Arctic]",
+    LogoFile     = "polar_logo_blue.png",
+    
+    WindowBase   = Color3.fromRGB(10, 10, 12),
+    InnerCard    = Color3.fromRGB(18, 24, 34),
+    ControlRow   = Color3.fromRGB(6, 10, 16),
+    PillBadge    = Color3.fromRGB(10, 16, 26),
+    SearchBase   = Color3.fromRGB(14, 22, 38),
+    ModalBase    = Color3.fromRGB(10, 14, 24),
+    
+    Accent       = Color3.fromRGB(0, 229, 255),     -- #00E5FF (Electric Cyan)
+    AccentGlow   = Color3.fromRGB(56, 189, 248),    -- #38BDF8 (Sky Ice)
+    AccentDeep   = Color3.fromRGB(2, 132, 199),     -- #0284C7 (Ocean Blue)
+    AccentStroke = Color3.fromRGB(14, 165, 233),    -- #0EA5E9 (Neon Blue Outline)
+    BadgeStroke  = Color3.fromRGB(0, 229, 255),
+    TrackStroke  = Color3.fromRGB(2, 132, 199),
+    
+    SwitchOff    = Color3.fromRGB(15, 15, 15),
+    SwitchOn     = Color3.fromRGB(15, 15, 15),
+    
+    TextWhite    = Color3.fromRGB(255, 255, 255),
+    TextLight    = Color3.fromRGB(220, 235, 245),
+    TextDim      = Color3.fromRGB(195, 215, 235),
+    TextMuted    = Color3.fromRGB(120, 135, 150),
+    TextDesc     = Color3.fromRGB(130, 150, 175),
+    TextTabOff   = Color3.fromRGB(115, 140, 170),
 
--- Lavender Fill Gradient (#8B5CF6 -> #D8B4FE)
-local LavenderGradient = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(139, 92, 246)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(216, 180, 254))
-})
+    CyberGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(10, 35, 75)),
+        ColorSequenceKeypoint.new(0.25, Color3.fromRGB(14, 65, 130)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(18, 110, 180)),
+        ColorSequenceKeypoint.new(0.75, Color3.fromRGB(2, 160, 220)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(0, 229, 255))
+    }),
+    LavenderGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(2, 132, 199)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(56, 189, 248))
+    }),
+    UnderlineGradient = ColorSequence.new({
+        ColorSequenceKeypoint.new(0.00, Color3.fromRGB(0, 229, 255)),
+        ColorSequenceKeypoint.new(0.50, Color3.fromRGB(120, 220, 255)),
+        ColorSequenceKeypoint.new(1.00, Color3.fromRGB(2, 132, 199))
+    })
+}, { __index = DefaultTheme })
 
--- Authentic Tab Underline Gradient (#A064FF -> #5A28B4)
-local UnderlineGradient = ColorSequence.new({
-    ColorSequenceKeypoint.new(0.00, Color3.fromRGB(160, 100, 255)),
-    ColorSequenceKeypoint.new(1.00, Color3.fromRGB(90, 40, 180))
-})
+-- Active working Theme table (starts with DefaultTheme values)
+local Theme = {}
+for k, v in pairs(DefaultTheme) do
+    Theme[k] = v
+end
+setmetatable(Theme, { __index = DefaultTheme })
 
--- Built-in Theme Registry for backwards compatibility with redzlib calls
+-- Built-in Theme Registry Map with full backwards-compatibility aliases
 PolarUI.Themes = {
-    ["Polar Ice"] = Theme,
-    ["Liquid Glass"] = Theme,
-    ["Blizzard"] = Theme,
-    ["Arctic Aurora"] = Theme,
-    ["Cyberpunk Neon"] = Theme,
-    ["Midnight Violet"] = Theme,
-    ["Darker"] = Theme,
-    ["Dark"] = Theme,
-    ["Purple"] = Theme
+    ["Polar Onyx"] = DefaultTheme,
+    ["Polar Blue"] = BlueTheme,
+    
+    ["Purple"] = DefaultTheme,
+    ["Default"] = DefaultTheme,
+    ["Blue"] = BlueTheme,
+    ["Arctic"] = BlueTheme,
+    ["Polar Ice"] = DefaultTheme,
+    ["Liquid Glass"] = DefaultTheme,
+    ["Blizzard"] = DefaultTheme,
+    ["Arctic Aurora"] = DefaultTheme,
+    ["Cyberpunk Neon"] = DefaultTheme,
+    ["Midnight Violet"] = DefaultTheme,
+    ["Darker"] = DefaultTheme,
+    ["Dark"] = DefaultTheme
 }
+
+PolarUI.CurrentTheme = DefaultTheme
+PolarUI.CurrentThemeName = "Polar Onyx"
+PolarUI.ThemeRegistry = {}
+PolarUI.ThemedElements = {}
+PolarUI.ThemeCallbacks = {}
+
+function PolarUI:RegisterThemedObject(instance, propertyName, themeKey)
+    if not instance then return end
+    table.insert(PolarUI.ThemedElements, {
+        Instance = instance,
+        Property = propertyName,
+        Key = themeKey
+    })
+end
+
+-- Dynamic Gradient references for inline container assignments
+local CyberGradient = Theme.CyberGradient
+local LavenderGradient = Theme.LavenderGradient
+local UnderlineGradient = Theme.UnderlineGradient
 
 -- Global Icon and Tab Width Map
 local TabMeta = {
@@ -130,6 +213,7 @@ PolarUI.Dictionary = {
         ["Close"] = "Cerrar",
         ["Cerrar"] = "Cerrar",
         ["UI Font"] = "Fuente de Interfaz",
+        ["UI Theme"] = "Tema de Interfaz",
         ["BG Image Fade"] = "Opacidad de Fondo",
         ["Language: English [EN]"] = "Idioma: Español [ES]",
         ["Idioma: Español [ES]"] = "Language: English [EN]",
@@ -296,8 +380,125 @@ function PolarUI:SetScale(scaleVal)
     end
 end
 
+-- Helper to load authentic theme logo dynamically with full fallback resilience
+local function getThemeLogo(targetTheme)
+    targetTheme = targetTheme or DefaultTheme
+    local targetFile = targetTheme.LogoFile or DefaultTheme.LogoFile or "polar_logo_purple.png"
+    
+    -- Priority 1: Local file check for target theme logo
+    if getcustomasset and isfile then
+        local okCheck, exists = pcall(isfile, targetFile)
+        if okCheck and exists then
+            local okAsset, asset = pcall(getcustomasset, targetFile)
+            if okAsset and asset then return asset end
+        end
+    end
+    
+    -- Priority 2: Download target theme logo from GitHub repository
+    if writefile and getcustomasset and game and game.HttpGet then
+        local okFetch, content = pcall(function()
+            return game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/" .. targetFile)
+        end)
+        if okFetch and content and #content > 500 then
+            pcall(writefile, targetFile, content)
+            local okAsset, asset = pcall(getcustomasset, targetFile)
+            if okAsset and asset then return asset end
+        end
+    end
+    
+    -- Priority 3: Fallback to DefaultTheme (Purple Logo) if target was not DefaultTheme
+    if targetFile ~= (DefaultTheme.LogoFile or "polar_logo_purple.png") then
+        local defaultFile = DefaultTheme.LogoFile or "polar_logo_purple.png"
+        if getcustomasset and isfile then
+            local okCheck, exists = pcall(isfile, defaultFile)
+            if okCheck and exists then
+                local okAsset, asset = pcall(getcustomasset, defaultFile)
+                if okAsset and asset then return asset end
+            end
+        end
+        if writefile and getcustomasset and game and game.HttpGet then
+            local okFetch, content = pcall(function()
+                return game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/" .. defaultFile)
+            end)
+            if okFetch and content and #content > 500 then
+                pcall(writefile, defaultFile, content)
+                local okAsset, asset = pcall(getcustomasset, defaultFile)
+                if okAsset and asset then return asset end
+            end
+        end
+    end
+    
+    -- Priority 4: Legacy polar_logo.png fallback
+    if getcustomasset and isfile then
+        local okCheck, exists = pcall(isfile, "polar_logo.png")
+        if okCheck and exists then
+            local okAsset, asset = pcall(getcustomasset, "polar_logo.png")
+            if okAsset and asset then return asset end
+        end
+    end
+    
+    -- Priority 5: Fallback to authentic in-engine rbxassetid
+    return "rbxassetid://87383580130479"
+end
+
+local function getPolarLogo()
+    return getThemeLogo(PolarUI.CurrentTheme or DefaultTheme)
+end
+
 function PolarUI:SetTheme(themeName)
-    -- Intentionally preserved for Onyx visual consistency
+    local target = PolarUI.Themes[themeName]
+    if not target then
+        target = DefaultTheme
+    end
+    
+    PolarUI.CurrentTheme = target
+    PolarUI.CurrentThemeName = target.Name or "Polar Onyx"
+    
+    -- Update working Theme table
+    for k, v in pairs(DefaultTheme) do
+        Theme[k] = target[k] or v
+    end
+    
+    -- Update dynamic gradient pointers
+    CyberGradient = Theme.CyberGradient or DefaultTheme.CyberGradient
+    LavenderGradient = Theme.LavenderGradient or DefaultTheme.LavenderGradient
+    UnderlineGradient = Theme.UnderlineGradient or DefaultTheme.UnderlineGradient
+    
+    -- Resolve theme logo
+    local themeLogo = getThemeLogo(target)
+    
+    -- Update all active windows
+    for _, win in ipairs(PolarUI.ActiveWindows) do
+        pcall(function()
+            if win.FloatBtn then
+                win.FloatBtn.Image = themeLogo
+            end
+            if win.FloatStroke then
+                win.FloatStroke.Color = target.AccentStroke or DefaultTheme.AccentStroke
+            end
+        end)
+    end
+    
+    -- Update registered themed instances
+    for i = #PolarUI.ThemedElements, 1, -1 do
+        local item = PolarUI.ThemedElements[i]
+        if item.Instance and item.Instance.Parent then
+            local val = target[item.Key]
+            if val == nil then val = DefaultTheme[item.Key] end
+            if val ~= nil then
+                pcall(function()
+                    item.Instance[item.Property] = val
+                end)
+            end
+        else
+            table.remove(PolarUI.ThemedElements, i)
+        end
+    end
+    
+    -- Execute registered theme callbacks
+    for _, cb in ipairs(PolarUI.ThemeCallbacks or {}) do
+        pcall(cb, target)
+    end
 end
 
 -- ============================================================================
@@ -536,32 +737,8 @@ function PolarUI:Notify(cfg)
     end)
 end
 
--- Helper to load authentic Polar Hub logo dynamically from disk or GitHub
-local function getPolarLogo()
-    if getcustomasset then
-        local candidateFiles = {"polar_logo.png", "polarhub_icon.png"}
-        if isfile then
-            for _, filename in ipairs(candidateFiles) do
-                local okCheck, exists = pcall(isfile, filename)
-                if okCheck and exists then
-                    local okAsset, asset = pcall(getcustomasset, filename)
-                    if okAsset and asset then return asset end
-                end
-            end
-        end
-        if writefile then
-            local okFetch, content = pcall(function()
-                return game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_logo.png")
-            end)
-            if okFetch and content and #content > 500 then
-                pcall(writefile, "polar_logo.png", content)
-                local okAsset, asset = pcall(getcustomasset, "polar_logo.png")
-                if okAsset and asset then return asset end
-            end
-        end
-    end
-    return "rbxassetid://87383580130479"
-end
+-- Note: Theme logo resolution is handled dynamically via getThemeLogo and getPolarLogo
+
 
 -- ============================================================================
 -- MAIN WINDOW CREATION (Window Object)
@@ -631,17 +808,18 @@ function PolarUI:MakeWindow(config)
     floatCorner.Parent = floatFrame
 
     local floatStroke = Instance.new("UIStroke")
-    floatStroke.Color = Color3.fromRGB(160, 100, 240)
+    floatStroke.Color = Theme.AccentStroke
     floatStroke.Thickness = 1.5
     floatStroke.Transparency = 0.25
     floatStroke.Parent = floatFrame
+    PolarUI:RegisterThemedObject(floatStroke, "Color", "AccentStroke")
 
     local floatBtn = Instance.new("ImageButton")
     floatBtn.Name = "ToggleLogo"
     floatBtn.Size = UDim2.new(1, 0, 1, 0)
     floatBtn.BackgroundTransparency = 1
     floatBtn.BorderSizePixel = 0
-    floatBtn.Image = getPolarLogo()
+    floatBtn.Image = getThemeLogo(PolarUI.CurrentTheme or DefaultTheme)
     floatBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
     floatBtn.ZIndex = 501
     floatBtn.Active = true
@@ -650,6 +828,10 @@ function PolarUI:MakeWindow(config)
     local floatBtnCorner = Instance.new("UICorner")
     floatBtnCorner.CornerRadius = UDim.new(1, 0)
     floatBtnCorner.Parent = floatBtn
+
+    selfWindow.FloatFrame = floatFrame
+    selfWindow.FloatBtn = floatBtn
+    selfWindow.FloatStroke = floatStroke
 
     -- Draggable Floating Toggle Logic
     local floatDragging = false
@@ -869,6 +1051,7 @@ function PolarUI:MakeWindow(config)
         ms.LineJoinMode = Enum.LineJoinMode.Round
         ms.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         ms.Parent = modal
+        PolarUI:RegisterThemedObject(ms, "Color", "AccentStroke")
 
         -- Top gradient background header
         local mTop = Instance.new("Frame")
@@ -894,9 +1077,10 @@ function PolarUI:MakeWindow(config)
         mIcon.Size = UDim2.new(0, 20, 0, 20)
         mIcon.BackgroundTransparency = 1
         mIcon.Image = iconId
-        mIcon.ImageColor3 = Color3.fromRGB(190, 140, 255)
+        mIcon.ImageColor3 = Theme.Accent
         mIcon.ZIndex = 2002
         mIcon.Parent = modal
+        PolarUI:RegisterThemedObject(mIcon, "ImageColor3", "Accent")
 
         -- Title (15px GothamBold at {0.5, 0}, {0, 38})
         local mTitle = Instance.new("TextLabel")
@@ -908,24 +1092,27 @@ function PolarUI:MakeWindow(config)
         mTitle.Text = titleText
         mTitle.Font = Enum.Font.GothamBold
         mTitle.TextSize = 15
-        mTitle.TextColor3 = Color3.fromRGB(210, 175, 255)
+        mTitle.TextColor3 = Theme.Accent
         mTitle.TextXAlignment = Enum.TextXAlignment.Center
         mTitle.ZIndex = 2002
         mTitle.Parent = modal
+        PolarUI:RegisterThemedObject(mTitle, "TextColor3", "Accent")
 
         -- Gradient divider line ({0.65, 0}, {0, 1} at {0.5, 0}, {0, 57})
         local mDiv = Instance.new("Frame")
         mDiv.AnchorPoint = Vector2.new(0.5, 0)
         mDiv.Position = UDim2.new(0.5, 0, 0, 57)
         mDiv.Size = UDim2.new(0.65, 0, 0, 1)
-        mDiv.BackgroundColor3 = Color3.fromRGB(160, 100, 255)
+        mDiv.BackgroundColor3 = Theme.AccentStroke
         mDiv.BackgroundTransparency = 0.72
         mDiv.BorderSizePixel = 0
         mDiv.ZIndex = 2002
         mDiv.Parent = modal
+        PolarUI:RegisterThemedObject(mDiv, "BackgroundColor3", "AccentStroke")
         local mdg = Instance.new("UIGradient")
         mdg.Color = UnderlineGradient
         mdg.Parent = mDiv
+        PolarUI:RegisterThemedObject(mdg, "Color", "UnderlineGradient")
 
         local mScroll = Instance.new("ScrollingFrame")
         mScroll.AnchorPoint = Vector2.new(0.5, 0)
@@ -956,10 +1143,11 @@ function PolarUI:MakeWindow(config)
         mClose.Text = "Close"
         mClose.Font = Enum.Font.GothamBold
         mClose.TextSize = 11
-        mClose.TextColor3 = Color3.fromRGB(180, 135, 255)
+        mClose.TextColor3 = Theme.Accent
         mClose.ZIndex = 2003
         mClose.Parent = modal
         PolarUI:RegisterTranslatable(mClose, "Close", "Cerrar")
+        PolarUI:RegisterThemedObject(mClose, "TextColor3", "Accent")
 
         local mcc = Instance.new("UICorner"); mcc.CornerRadius = UDim.new(0, 6); mcc.Parent = mClose
         local mcs = Instance.new("UIStroke")
@@ -969,6 +1157,7 @@ function PolarUI:MakeWindow(config)
         mcs.LineJoinMode = Enum.LineJoinMode.Round
         mcs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         mcs.Parent = mClose
+        PolarUI:RegisterThemedObject(mcs, "Color", "AccentStroke")
 
         local function open()
             modalOverlay.Visible = true
@@ -1175,6 +1364,82 @@ function PolarUI:MakeWindow(config)
         gbs.LineJoinMode = Enum.LineJoinMode.Round
         gbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         gbs.Parent = gothamBtn
+        PolarUI:RegisterThemedObject(gbs, "Color", "AccentStroke")
+
+        -- 5. UI Theme Section Header
+        local themeHdr = Instance.new("TextLabel")
+        themeHdr.Size = UDim2.new(1, 0, 0, 16)
+        themeHdr.BackgroundTransparency = 1
+        themeHdr.Text = "UI Theme"
+        themeHdr.Font = Enum.Font.GothamBold
+        themeHdr.TextSize = 10
+        themeHdr.TextColor3 = Theme.AccentGlow
+        themeHdr.TextXAlignment = Enum.TextXAlignment.Center
+        themeHdr.ZIndex = 2004
+        themeHdr.Parent = configModal.Scroll
+        PolarUI:RegisterTranslatable(themeHdr, "UI Theme", "Tema de Interfaz")
+        PolarUI:RegisterThemedObject(themeHdr, "TextColor3", "AccentGlow")
+
+        -- Dynamic Theme Selectors (extensible architecture)
+        local themeEntries = {
+            { Key = "Polar Onyx", Display = "Polar Onyx [Purple]", Bg = Color3.fromRGB(30, 18, 52), Text = Color3.fromRGB(215, 185, 255), Stroke = Color3.fromRGB(160, 100, 240) },
+            { Key = "Polar Blue", Display = "Polar Blue [Arctic]", Bg = Color3.fromRGB(12, 28, 48), Text = Color3.fromRGB(0, 229, 255), Stroke = Color3.fromRGB(14, 165, 233) }
+        }
+
+        local themeBtnMap = {}
+        local function refreshThemeUI()
+            for _, entry in ipairs(themeEntries) do
+                local uiItem = themeBtnMap[entry.Key]
+                if uiItem then
+                    local isActive = (PolarUI.CurrentThemeName == entry.Key)
+                    if isActive then
+                        uiItem.Btn.Text = "✓ " .. entry.Display
+                        uiItem.Btn.TextColor3 = entry.Text
+                        uiItem.Btn.BackgroundColor3 = entry.Bg
+                        uiItem.Btn.BackgroundTransparency = 0.20
+                        uiItem.Stroke.Color = entry.Stroke
+                        uiItem.Stroke.Transparency = 0.35
+                    else
+                        uiItem.Btn.Text = entry.Display
+                        uiItem.Btn.TextColor3 = Color3.fromRGB(130, 130, 150)
+                        uiItem.Btn.BackgroundColor3 = Color3.fromRGB(16, 12, 24)
+                        uiItem.Btn.BackgroundTransparency = 0.45
+                        uiItem.Stroke.Color = Color3.fromRGB(60, 50, 80)
+                        uiItem.Stroke.Transparency = 0.65
+                    end
+                end
+            end
+        end
+
+        for _, entry in ipairs(themeEntries) do
+            local tBtn = Instance.new("TextButton")
+            tBtn.Name = "ThemeBtn_" .. entry.Key
+            tBtn.Size = UDim2.new(1, 0, 0, 26)
+            tBtn.BorderSizePixel = 0
+            tBtn.Font = Enum.Font.GothamBold
+            tBtn.TextSize = 11
+            tBtn.ZIndex = 2004
+            tBtn.Parent = configModal.Scroll
+
+            local tbc = Instance.new("UICorner")
+            tbc.CornerRadius = UDim.new(0, 5)
+            tbc.Parent = tBtn
+
+            local tbs = Instance.new("UIStroke")
+            tbs.Thickness = 1
+            tbs.LineJoinMode = Enum.LineJoinMode.Round
+            tbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            tbs.Parent = tBtn
+
+            themeBtnMap[entry.Key] = { Btn = tBtn, Stroke = tbs, Entry = entry }
+
+            tBtn.MouseButton1Click:Connect(function()
+                PolarUI:SetTheme(entry.Key)
+            end)
+        end
+
+        table.insert(PolarUI.ThemeCallbacks, refreshThemeUI)
+        refreshThemeUI()
 
         -- Language translator toggle
         local isEnglish = (PolarUI.Language == "EN")
@@ -1301,23 +1566,23 @@ function PolarUI:MakeWindow(config)
         bs.LineJoinMode = Enum.LineJoinMode.Round
         bs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
         bs.Parent = btn
+        PolarUI:RegisterThemedObject(bs, "Color", "AccentStroke")
 
-        -- Left Vertical Neon Gradient Strip (thin 2px, violet gradient - zero blue, zero CyberGradient)
+        -- Left Vertical Neon Gradient Strip
         local strip = Instance.new("Frame")
         strip.Position = UDim2.new(0, 0, 0.5, -7)
         strip.Size = UDim2.new(0, 2, 0, 14)
-        strip.BackgroundColor3 = Color3.fromRGB(160, 100, 240)
+        strip.BackgroundColor3 = Theme.AccentStroke
         strip.BorderSizePixel = 0
         strip.ZIndex = 207
         strip.Parent = btn
+        PolarUI:RegisterThemedObject(strip, "BackgroundColor3", "AccentStroke")
         local sc = Instance.new("UICorner"); sc.CornerRadius = UDim.new(1, 0); sc.Parent = strip
         local sg = Instance.new("UIGradient")
         sg.Rotation = 90
-        sg.Color = ColorSequence.new({
-            ColorSequenceKeypoint.new(0, Color3.fromRGB(210, 160, 255)),
-            ColorSequenceKeypoint.new(1, Color3.fromRGB(120, 60, 220))
-        })
+        sg.Color = LavenderGradient
         sg.Parent = strip
+        PolarUI:RegisterThemedObject(sg, "Color", "LavenderGradient")
 
         -- Icon
         local icon = Instance.new("ImageLabel")
@@ -1326,9 +1591,10 @@ function PolarUI:MakeWindow(config)
         icon.BackgroundTransparency = 1
         icon.BorderSizePixel = 0
         icon.Image = iconId
-        icon.ImageColor3 = Color3.fromRGB(185, 140, 255)
+        icon.ImageColor3 = Theme.Accent
         icon.ZIndex = 207
         icon.Parent = btn
+        PolarUI:RegisterThemedObject(icon, "ImageColor3", "Accent")
 
         -- Label
         local lbl = Instance.new("TextLabel")
@@ -1339,10 +1605,11 @@ function PolarUI:MakeWindow(config)
         lbl.Text = text
         lbl.Font = Enum.Font.GothamBold
         lbl.TextSize = 11
-        lbl.TextColor3 = Color3.fromRGB(195, 155, 255)
+        lbl.TextColor3 = Theme.Accent
         lbl.TextXAlignment = Enum.TextXAlignment.Left
         lbl.ZIndex = 207
         lbl.Parent = btn
+        PolarUI:RegisterThemedObject(lbl, "TextColor3", "Accent")
 
         if onClick then
             btn.MouseButton1Click:Connect(onClick)
@@ -1646,6 +1913,8 @@ function PolarUI:MakeTab(tabConfig)
 
     local uc = Instance.new("UICorner"); uc.CornerRadius = UDim.new(1, 0); uc.Parent = underline
     local ug = Instance.new("UIGradient"); ug.Color = UnderlineGradient; ug.Parent = underline
+    PolarUI:RegisterThemedObject(underline, "BackgroundColor3", "AccentDeep")
+    PolarUI:RegisterThemedObject(ug, "Color", "UnderlineGradient")
 
     -- Container View for this Tab
     local tabView = Instance.new("Frame")
@@ -1818,6 +2087,8 @@ function PolarUI:AddSection(sectionConfig)
         f.ZIndex = 209
         local c = Instance.new("UICorner"); c.CornerRadius = UDim.new(0.5, 0); c.Parent = f
         local g = Instance.new("UIGradient"); g.Rotation = 60; g.Color = CyberGradient; g.Parent = f
+        PolarUI:RegisterThemedObject(f, "BackgroundColor3", "Accent")
+        PolarUI:RegisterThemedObject(g, "Color", "CyberGradient")
         f.Parent = subheader
     end
 
@@ -1970,6 +2241,7 @@ function PolarUI:AddToggle(cfg, def, cb, overrideParent)
     kg.Color = CyberGradient
     kg.Enabled = isToggled
     kg.Parent = knob
+    PolarUI:RegisterThemedObject(kg, "Color", "CyberGradient")
 
     local function setVisualState(toggled)
         isToggled = toggled
@@ -2093,6 +2365,8 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     vbs.Transparency = 0.32
     vbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     vbs.Parent = valBox
+    PolarUI:RegisterThemedObject(valBox, "TextColor3", "Accent")
+    PolarUI:RegisterThemedObject(vbs, "Color", "BadgeStroke")
 
     -- Slider Track ({1, -20}, {0, 10} with #8C5ADC outline)
     local track = Instance.new("Frame")
@@ -2110,6 +2384,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     ts.Transparency = 0.50
     ts.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     ts.Parent = track
+    PolarUI:RegisterThemedObject(ts, "Color", "TrackStroke")
 
     -- Lavender Gradient Fill
     local fill = Instance.new("Frame")
@@ -2120,9 +2395,11 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     fill.ZIndex = 212
     fill.Active = false
     fill.Parent = track
+    PolarUI:RegisterThemedObject(fill, "BackgroundColor3", "Accent")
 
     local filc = Instance.new("UICorner"); filc.CornerRadius = UDim.new(1, 0); filc.Parent = fill
     local filg = Instance.new("UIGradient"); filg.Color = LavenderGradient; filg.Parent = fill
+    PolarUI:RegisterThemedObject(filg, "Color", "LavenderGradient")
 
     -- Thumb Knob (13x13 white circle with 5x5 violet inner dot)
     local thumb = Instance.new("Frame")
@@ -2141,6 +2418,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     ths.Thickness = 1.0
     ths.Transparency = 0.40
     ths.Parent = thumb
+    PolarUI:RegisterThemedObject(ths, "Color", "AccentDeep")
 
     local innerDot = Instance.new("Frame")
     innerDot.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -2310,6 +2588,7 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     pbs.Transparency = 0.32
     pbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     pbs.Parent = pillBadge
+    PolarUI:RegisterThemedObject(pbs, "Color", "BadgeStroke")
 
     local valLabel = Instance.new("TextLabel")
     valLabel.Position = UDim2.new(0, 8, 0, 0)
@@ -2320,10 +2599,11 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     valLabel.Font = Enum.Font.GothamBold
     valLabel.TextSize = 12
     valLabel.TextScaled = true
-    valLabel.TextColor3 = Color3.fromRGB(216, 180, 254)
+    valLabel.TextColor3 = Theme.Accent
     valLabel.TextXAlignment = Enum.TextXAlignment.Left
     valLabel.ZIndex = 212
     valLabel.Parent = pillBadge
+    PolarUI:RegisterThemedObject(valLabel, "TextColor3", "Accent")
 
     local vbcConstraint = Instance.new("UITextSizeConstraint")
     vbcConstraint.MaxTextSize = 12
@@ -2565,6 +2845,7 @@ function PolarUI:AddButton(cfg, cb, overrideParent)
     arrow.TextColor3 = Theme.TrackStroke
     arrow.ZIndex = 211
     arrow.Parent = btn
+    PolarUI:RegisterThemedObject(arrow, "TextColor3", "TrackStroke")
 
     btn.MouseButton1Click:Connect(function()
         TweenService:Create(btn, TweenInfo.new(0.1, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
