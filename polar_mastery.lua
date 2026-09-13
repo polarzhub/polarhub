@@ -105,7 +105,7 @@ PolarMastery.GunKeys = {"Z", "X"}
 -- Mechanics & Hover Lock (ALWAYS ABOVE MOBS AT 11.5 STUDS - SAFE FROM ALL DAMAGE)
 PolarMastery.BringMonster = true
 PolarMastery.BringRadius = 250
-PolarMastery.HoverHeight = 8.5
+PolarMastery.HoverHeight = 12.5
 PolarMastery.FastAttackDelay = 0.10
 PolarMastery.PosMethod = "Above"
 
@@ -231,7 +231,23 @@ function PolarMastery:StopAll()
     getgenv().PolarAutoFarmEnabled = false
     getgenv().PolarAutoBonesEnabled = false
     getgenv().PolarFastAttackEnabled = false
+    
+    -- Safe exit: lift player into air before removing hover to avoid dropping into mob clusters
+    pcall(function()
+        local char = LocalPlayer.Character
+        local root = char and char:FindFirstChild("HumanoidRootPart")
+        if root then
+            root.CFrame = root.CFrame * CFrame.new(0, 10, 0)
+            root.AssemblyLinearVelocity = Vector3.zero
+        end
+    end)
     clearHoverInstances()
+    
+    local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
+    if combat then
+        combat:ReleaseHover()
+        combat.Enabled = false
+    end
 end
 
 local function updateHoverEngine()
@@ -350,6 +366,15 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
     if (now - (self.LastM1Time or 0)) < delay then return end
     self.LastM1Time = now
 
+    local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
+    if combat then
+        combat.FastAttackDelay = self.FastAttackDelay or 0.10
+        combat.HoverHeight = self.HoverHeight or 12.5
+        combat:ExecuteAttack(targetMob)
+        return
+    end
+
+    -- Direct Fallback: Pure Unconstrained Hit Protocol
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -358,21 +383,18 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
     local tool = self:GetEquippedTool()
     if not tool then return end
 
-    -- 1. Silent aim target (never touches user camera)
     self:SetAimTarget(targetRoot)
 
-    -- 2. Bypass Blox Fruits internal client tap cooldown and animation debounce
     if GlobalModule then
         GlobalModule.tapCooldown = 0
+        GlobalModule.busy = nil
+        GlobalModule.castTimer = 0
     end
     if atkMeleeCached then
         pcall(debug.setupvalue, atkMeleeCached, 2, false)
     end
 
-    -- 3. Target Hit Part: Prioritize Head or UpperTorso (strictly required by CombatUtil u124 table)
     local hitPart = targetMob:FindFirstChild("Head") or targetMob:FindFirstChild("UpperTorso") or targetRoot
-
-    -- 4. Build Multi-Target AoE Hit List (all nearby clustered mobs take full damage simultaneously!)
     local hits = { {targetMob, hitPart} }
     local enemies = workspace:FindFirstChild("Enemies")
     if enemies then
@@ -383,7 +405,7 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
                 local oRoot = otherMob:FindFirstChild("HumanoidRootPart")
                 if oHum and oHum.Health > 0 and oRoot then
                     local d = (oRoot.Position - hrp.Position).Magnitude
-                    if d <= 45 then
+                    if d <= 50 then
                         local oPart = otherMob:FindFirstChild("Head") or otherMob:FindFirstChild("UpperTorso") or oRoot
                         table.insert(hits, {otherMob, oPart})
                     end
@@ -392,43 +414,17 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
         end
     end
 
-    local isFruit = tool.ToolTip == "Blox Fruit" or tool:GetAttribute("WeaponType") == "Demon Fruit"
-
-    if isFruit then
-        pcall(function()
-            if GlobalModule and GlobalModule.casFunc then
-                local u15 = {
-                    KeyCode = Enum.KeyCode.G,
-                    UserInputState = Enum.UserInputState.Begin,
-                    Position = UserInputService:GetMouseLocation(),
-                    Changed = tool.Deactivated
-                }
-                GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, u15, Enum.KeyCode.G)
-            end
-            tool:Activate()
-        end)
-    else
-        pcall(function()
-            if CombatController and CombatController.Attack then
-                CombatController:Attack(tool)
-            end
-        end)
-        pcall(function()
-            tool:Activate()
-        end)
-    end
-
-    -- 5. Force Server Attack Registration & Hit Confirmation (Bypasses all client restrictions)
+    self.AttackCombo = ((self.AttackCombo or 1) % 4) + 1
+    local cd = math.max(delay, 0.12)
     pcall(function()
-        self.AttackCombo = ((self.AttackCombo or 1) % 4) + 1
-        if RegisterAttack then
-            RegisterAttack:FireServer(delay, self.AttackCombo)
-        end
-        SendHitsToServer(hitPart, hits)
-        if RegisterHit then
-            RegisterHit:FireServer(hitPart, hits)
+        for _, entry in ipairs(hits) do
+            local m, p = entry[1], entry[2]
+            if RegisterAttack then RegisterAttack:FireServer(cd, self.AttackCombo) end
+            if GlobalModule and GlobalModule.SendHitsToServer then GlobalModule.SendHitsToServer(p, {{m, p}}) end
+            if RegisterHit then RegisterHit:FireServer(p, {{m, p}}) end
         end
     end)
+    pcall(function() tool:Activate() end)
 end
 
 -- ==============================================================================
@@ -453,6 +449,12 @@ function PolarMastery:CastKey(key, holdSeconds, targetRoot)
                     self:SetAimTarget(targetRoot)
                     local targetPos = targetRoot.Position
                     self.TargetHoverCFrame = CFrame.lookAt(targetPos + Vector3.new(0, self.HoverHeight, 0), targetPos)
+                    if hoverPlatform and hoverPlatform.Parent then
+                        hoverPlatform.CFrame = self.TargetHoverCFrame * CFrame.new(0, -3.5, 0)
+                    end
+                    if hoverVelocity and hoverVelocity.Parent then
+                        hoverVelocity.Velocity = Vector3.zero
+                    end
                 end
                 task.wait(0.05)
             end
@@ -461,6 +463,11 @@ function PolarMastery:CastKey(key, holdSeconds, targetRoot)
         end
 
         VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+        if GlobalModule then
+            GlobalModule.tapCooldown = 0
+            GlobalModule.busy = nil
+            GlobalModule.castTimer = 0
+        end
     end)
 end
 
@@ -733,6 +740,13 @@ local function runMasteryCombatStep()
         end
         tHum.WalkSpeed = 0
         
+        -- Emergency Health Recovery: If player HP < 35%, fly high into safe air to regenerate
+        if (hum.Health / math.max(1, hum.MaxHealth)) < 0.35 then
+            PolarMastery.TargetHoverCFrame = CFrame.lookAt(targetPos + Vector3.new(0, 30, 0), targetPos)
+            task.wait(0.3)
+            return
+        end
+
         -- POSITION: ALWAYS 11.5 STUDS DIRECTLY ABOVE TARGET (SAFE FROM ALL MOBS, PERFECT HIT REACH)
         PolarMastery.TargetHoverCFrame = CFrame.lookAt(targetPos + Vector3.new(0, PolarMastery.HoverHeight, 0), targetPos)
 

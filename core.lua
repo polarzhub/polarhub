@@ -766,7 +766,7 @@ function Polar.BossSystem.SetupReactiveListeners()
  local name = child.Name:gsub(" Respawn Marker", "")
  for _, b in ipairs(Polar.Data.Bosses) do
  if Norm(b.name) == Norm(name) then
- BossTracker[b.name].status = "DEAD"
+ BossTracker[b.name] = BossTracker[b.name] or {}; BossTracker[b.name].status = "DEAD"
  BossTracker[b.name].deadAt = os.time()
  break
  end
@@ -778,7 +778,7 @@ function Polar.BossSystem.SetupReactiveListeners()
  local name = child.Name:gsub(" Respawn Marker", "")
  for _, b in ipairs(Polar.Data.Bosses) do
  if Norm(b.name) == Norm(name) then
- BossTracker[b.name].status = "ALIVE"
+ BossTracker[b.name] = BossTracker[b.name] or {}; BossTracker[b.name].status = "ALIVE"
  BossTracker[b.name].aliveAt = os.time()
  break
  end
@@ -796,7 +796,7 @@ function Polar.BossSystem.SetupReactiveListeners()
  (normB == "bobby" and (cName:find("bobby") or cName:find("chef"))) or
  (normB == "saberexpert" and (cName:find("saber") or cName:find("shanks"))) or
  (cName:find(b.name:lower())) then
- BossTracker[b.name].status = "ALIVE"
+ BossTracker[b.name] = BossTracker[b.name] or {}; BossTracker[b.name].status = "ALIVE"
  BossTracker[b.name].aliveAt = os.time()
  break
  end
@@ -810,7 +810,7 @@ function Polar.BossSystem.SetupReactiveListeners()
  (normB == "bobby" and (cName:find("bobby") or cName:find("chef"))) or
  (normB == "saberexpert" and (cName:find("saber") or cName:find("shanks"))) or
  (cName:find(b.name:lower())) then
- BossTracker[b.name].status = "DEAD"
+ BossTracker[b.name] = BossTracker[b.name] or {}; BossTracker[b.name].status = "DEAD"
  BossTracker[b.name].deadAt = os.time()
  break
  end
@@ -2411,105 +2411,93 @@ end)
 
 
 
--- ==================== POLAR ULTRA FAST ATTACK & COMBAT ENGINE ====================
+-- ==================== POLAR UNCONSTRAINED CUSTOM COMBAT ENGINE ====================
 local FastAttackRange = 65
 local FastAttackCombo = 1
-local attackMeleeCached = nil
-pcall(function()
- if filtergc then
- attackMeleeCached = filtergc("function", {Name = "attackMelee"}, true)
- end
-end)
 
 task.spawn(function()
- while true do
- local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant or KillAuraEnabled
+	while true do
+		local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant or KillAuraEnabled
 
- -- DECONFLICTION: If PolarMastery is active, it handles M1 and skill attacks exclusively
- if getgenv().PolarMastery and (getgenv().PolarMastery.AutoBones or getgenv().PolarMastery.AutoFarm or getgenv().PolarMastery.AutoFarmBoss or getgenv().PolarMastery.AutoKillAllBosses) then
-  task.wait(0.5)
-  continue
- end
+		-- DECONFLICTION: If PolarMastery is active, it handles M1 and skill attacks exclusively
+		if getgenv().PolarMastery and (getgenv().PolarMastery.AutoBones or getgenv().PolarMastery.AutoFarm or getgenv().PolarMastery.AutoFarmBoss or getgenv().PolarMastery.AutoKillAllBosses) then
+			task.wait(0.3)
+			continue
+		end
 
- if not anyFarmActive then
- task.wait(0.5)
- continue
- end
- 
- task.wait(0.18) -- Cadencia óptima anti-kick verificada en servidor
- 
- local char = LocalPlayer.Character
- local hrp = char and char:FindFirstChild("HumanoidRootPart")
- local hum = GetValidHumanoid(char)
- if not hrp or not hum then continue end
- 
- -- 1. Auto-Equipar Arma Válida (Melee, Sword, Blox Fruit)
- local currentTool = char:FindFirstChildOfClass("Tool")
- local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
- if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
- EquipWeapon(100)
- currentTool = char:FindFirstChildOfClass("Tool")
- end
- 
- if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
- continue
- end
- 
- -- 2. Bypass de cooldown interno de animación
- if attackMeleeCached then
- pcall(function()
- debug.setupvalue(attackMeleeCached, 2, false)
- end)
- end
- if GlobalModule then
- GlobalModule.tapCooldown = 0
- end
- 
- -- 3. Detección de Buddha para AoE (al menos 3 targets sin Buda, 10 con Buda)
- local isBuddha = hrp:FindFirstChild("Buddha") or hrp:FindFirstChild("Buddha2")
- local maxTargets = isBuddha and 10 or 3
- 
- local targetEnemyName = GetCurrentTargetEnemyName()
- local targets = {}
- local mainTargetPart = nil
- 
- if enemiesFolder then
- for _, npc in ipairs(enemiesFolder:GetChildren()) do
- if not AutoFarmNearestEnabled and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
- continue
- end
- 
- local nHrp = npc:FindFirstChild("HumanoidRootPart")
- local nHum = GetValidHumanoid(npc)
- local ff = npc:FindFirstChildOfClass("ForceField")
- 
- if nHrp and nHum and not ff then
- local dist = (nHrp.Position - hrp.Position).Magnitude
- if dist <= FastAttackRange then
- if not mainTargetPart then
- mainTargetPart = nHrp
- else
- if #targets < (maxTargets - 1) then
- table.insert(targets, {npc, nHrp})
- end
- end
- end
- end
- end
- end
- 
- if mainTargetPart and mainTargetPart.Parent then
- pcall(function()
- if RegisterAttack then
- RegisterAttack:FireServer(0.18, FastAttackCombo)
- end
- SendHitsToServer(mainTargetPart, targets)
- FastAttackCombo = (FastAttackCombo % 4) + 1
- end)
- end
- end
+		if not anyFarmActive then
+			task.wait(0.3)
+			continue
+		end
+
+		local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
+		local delay = (combat and combat.FastAttackDelay) or (getgenv().PolarMastery and getgenv().PolarMastery.FastAttackDelay) or 0.10
+		task.wait(delay)
+
+		local char = LocalPlayer.Character
+		local hrp = char and char:FindFirstChild("HumanoidRootPart")
+		local hum = GetValidHumanoid(char)
+		if not hrp or not hum or hum.Health <= 0 then continue end
+
+		-- 1. Auto-Equipar Arma Válida (Melee, Sword, Blox Fruit)
+		local currentTool = char:FindFirstChildOfClass("Tool")
+		local validWeapons = {["Melee"]=true, ["Sword"]=true, ["Blox Fruit"]=true, ["Gun"]=true}
+		if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
+			EquipWeapon(100)
+			currentTool = char:FindFirstChildOfClass("Tool")
+		end
+
+		if not currentTool or not validWeapons[currentTool.ToolTip] or currentTool.Name == "Fishing Rod" then
+			continue
+		end
+
+		local targetEnemyName = GetCurrentTargetEnemyName()
+		local targetMob = nil
+		local targetPart = nil
+		local minDist = FastAttackRange
+
+		if enemiesFolder then
+			for _, npc in ipairs(enemiesFolder:GetChildren()) do
+				if not AutoFarmNearestEnabled and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
+					continue
+				end
+
+				local nHrp = npc:FindFirstChild("HumanoidRootPart")
+				local nHum = GetValidHumanoid(npc)
+				local ff = npc:FindFirstChildOfClass("ForceField")
+
+				if nHrp and nHum and not ff then
+					local dist = (nHrp.Position - hrp.Position).Magnitude
+					if dist <= minDist then
+						minDist = dist
+						targetMob = npc
+						if combat then
+							targetPart = combat:GetValidHitPart(npc)
+						else
+							targetPart = npc:FindFirstChild("Head") or npc:FindFirstChild("UpperTorso") or nHrp
+						end
+					end
+				end
+			end
+		end
+
+		if targetMob and targetPart then
+			if combat then
+				combat:ExecuteAttack(targetMob, targetPart)
+			else
+				pcall(function()
+					if GlobalModule then GlobalModule.tapCooldown = 0 end
+					local cd = math.max(delay, 0.12)
+					if RegisterAttack then RegisterAttack:FireServer(cd, FastAttackCombo) end
+					SendHitsToServer(targetPart, {{targetMob, targetPart}})
+					if RegisterHit then RegisterHit:FireServer(targetPart, {{targetMob, targetPart}}) end
+					FastAttackCombo = (FastAttackCombo % 4) + 1
+					currentTool:Activate()
+				end)
+			end
+		end
+	end
 end)
-
 
 -- ==================== AUTO CHEST ====================
 local AutoChestEnabled = false
@@ -2669,6 +2657,25 @@ getgenv().PolarBuyItem = BuyItem
 if setidentity then pcall(setidentity, 8) end
 if setthreadidentity then pcall(setthreadidentity, 8) end
 
+-- Cargar motor unconstrained de combate
+local PolarCombat = getgenv().PolarCombat
+if not PolarCombat then
+	pcall(function()
+		if isfile and isfile("polar_custom_combat.lua") then
+			PolarCombat = loadstring(readfile("polar_custom_combat.lua"))()
+		end
+	end)
+end
+if not PolarCombat then
+	pcall(function()
+		PolarCombat = loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_custom_combat.lua?t=" .. tostring(os.time())))()
+	end)
+end
+if PolarCombat then
+	Polar.Combat = PolarCombat
+	getgenv().PolarCombat = PolarCombat
+end
+
 -- Cargar motor de Auto Mastery
 local PolarMastery = getgenv().PolarMastery
 if not PolarMastery then
@@ -2728,6 +2735,8 @@ Polar.Registry:BindSlider(SecMainFarm, {
 	Suffix = "s",
 	Callback = function(Value)
 		if PolarMastery then PolarMastery.FastAttackDelay = Value end
+		local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
+		if combat then combat.FastAttackDelay = Value end
 	end
 }, "PolarMastery.FastAttackDelay")
 
@@ -2735,12 +2744,14 @@ Polar.Registry:BindSlider(SecMainFarm, {
 	Name = "Hover Height",
 	Min = 4.0,
 	Max = 15.0,
-	Default = (PolarMastery and PolarMastery.HoverHeight) or 8.5,
+	Default = (PolarMastery and PolarMastery.HoverHeight) or 12.5,
 	Step = 0.5,
 	Decimals = 1,
 	Suffix = " studs",
 	Callback = function(Value)
 		if PolarMastery then PolarMastery.HoverHeight = Value end
+		local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
+		if combat then combat.HoverHeight = Value end
 	end
 }, "PolarMastery.HoverHeight")
 

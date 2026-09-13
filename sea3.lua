@@ -582,7 +582,7 @@ task.spawn(function()
                         if targetNpc and targetNpc:FindFirstChild("HumanoidRootPart") then
                             local tHrp = targetNpc.HumanoidRootPart
                             local tHum = targetNpc:FindFirstChildOfClass("Humanoid")
-                            local targetHoverCF = tHrp.CFrame * CFrame.new(0, 12, 0)
+                            local targetHoverCF = tHrp.CFrame * CFrame.new(0, (Polar.Combat and Polar.Combat.HoverHeight) or 12.5, 0)
                             
                             -- Anclaje Hover para no caer jamás al suelo ni recibir daño de los NPCs
                             local hoverBv = hrp:FindFirstChild("Polar_PlayerHover")
