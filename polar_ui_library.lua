@@ -426,32 +426,6 @@ function PolarUI:MakeWindow(config)
         end
     end)
 
-    -- Window Dragging Logic
-    local dragging = false
-    local dragInput, dragStart, startPos
-    local function update(input)
-        local delta = input.Position - dragStart
-        mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-    end
-    mainFrame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            dragging = true
-            dragStart = input.Position
-            startPos = mainFrame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then dragging = false end
-            end)
-        end
-    end)
-    mainFrame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then update(input) end
-    end)
-
     -- 4. Top Bar (Header at {0, 0}, {0, 0}, Size {1, 0}, {0, 32})
     local topBar = Instance.new("Frame")
     topBar.Name = "TopBar"
@@ -460,7 +434,56 @@ function PolarUI:MakeWindow(config)
     topBar.BackgroundTransparency = 1
     topBar.BorderSizePixel = 0
     topBar.ZIndex = 205
+    topBar.Active = true
     topBar.Parent = mainFrame
+
+    -- Window Dragging Logic (Anchored to TopBar header ONLY - sliders/controls will NEVER drag the window)
+    local draggingWindow = false
+    local dragInput, dragStart, startPos
+    local function updateWindow(input)
+        if not dragStart or not startPos then return end
+        local delta = input.Position - dragStart
+        mainFrame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+
+    topBar.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingWindow = true
+            dragStart = input.Position
+            startPos = mainFrame.Position
+
+            local endConn
+            endConn = input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    draggingWindow = false
+                    if endConn then endConn:Disconnect() end
+                end
+            end)
+        end
+    end)
+
+    topBar.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and draggingWindow then
+            updateWindow(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            draggingWindow = false
+        end
+    end)
 
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "TitleHub"
@@ -474,6 +497,7 @@ function PolarUI:MakeWindow(config)
     titleLabel.TextColor3 = Theme.TextLight
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.ZIndex = 206
+    titleLabel.Active = false
     titleLabel.Parent = topBar
 
     local subtitleLabel = Instance.new("TextLabel")
@@ -489,6 +513,7 @@ function PolarUI:MakeWindow(config)
     subtitleLabel.TextColor3 = Color3.fromRGB(165, 165, 185)
     subtitleLabel.TextXAlignment = Enum.TextXAlignment.Left
     subtitleLabel.ZIndex = 206
+    subtitleLabel.Active = false
     subtitleLabel.Parent = topBar
 
     -- Centered Modals Overlay Container
@@ -737,6 +762,7 @@ function PolarUI:MakeWindow(config)
         fFill.BackgroundColor3 = Theme.AccentGlow
         fFill.BorderSizePixel = 0
         fFill.ZIndex = 2006
+        fFill.Active = false
         fFill.Parent = fTrack
         local ffc = Instance.new("UICorner"); ffc.CornerRadius = UDim.new(1, 0); ffc.Parent = fFill
         local ffg = Instance.new("UIGradient"); ffg.Color = LavenderGradient; ffg.Parent = fFill
@@ -748,8 +774,52 @@ function PolarUI:MakeWindow(config)
         fThumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         fThumb.BorderSizePixel = 0
         fThumb.ZIndex = 2007
+        fThumb.Active = false
         fThumb.Parent = fTrack
         local ftcc = Instance.new("UICorner"); ftcc.CornerRadius = UDim.new(1, 0); ftcc.Parent = fThumb
+
+        -- Interactive sliding for fadeBox
+        local fSliding = false
+        local function updateFade(input)
+            local p = math.clamp((input.Position.X - fTrack.AbsolutePosition.X) / math.max(1, fTrack.AbsoluteSize.X), 0, 1)
+            fFill.Size = UDim2.new(p, 0, 1, 0)
+            fThumb.Position = UDim2.new(p, 0, 0.5, 0)
+            local pctNum = math.floor(p * 100 + 0.5)
+            fVal.Text = tostring(pctNum) .. "%"
+        end
+
+        local fadeHitbox = Instance.new("TextButton")
+        fadeHitbox.Name = "FadeHitbox"
+        fadeHitbox.Position = UDim2.new(0, 0, 0, 20)
+        fadeHitbox.Size = UDim2.new(1, 0, 0, 26)
+        fadeHitbox.BackgroundTransparency = 1
+        fadeHitbox.BorderSizePixel = 0
+        fadeHitbox.Text = ""
+        fadeHitbox.ZIndex = 2008
+        fadeHitbox.Parent = fadeBox
+
+        fadeHitbox.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                fSliding = true
+                updateFade(input)
+            end
+        end)
+        fTrack.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                fSliding = true
+                updateFade(input)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(input)
+            if fSliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+                updateFade(input)
+            end
+        end)
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                fSliding = false
+            end
+        end)
 
         PolarUI:RegisterTranslatable(flbl, "BG Image Fade", "Opacidad de Fondo")
 
@@ -1675,6 +1745,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     fill.BackgroundColor3 = Theme.Accent
     fill.BorderSizePixel = 0
     fill.ZIndex = 212
+    fill.Active = false
     fill.Parent = track
 
     local filc = Instance.new("UICorner"); filc.CornerRadius = UDim.new(1, 0); filc.Parent = fill
@@ -1688,6 +1759,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     thumb.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
     thumb.BorderSizePixel = 0
     thumb.ZIndex = 213
+    thumb.Active = false
     thumb.Parent = track
 
     local thc = Instance.new("UICorner"); thc.CornerRadius = UDim.new(1, 0); thc.Parent = thumb
@@ -1704,13 +1776,25 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     innerDot.BackgroundColor3 = Theme.Accent
     innerDot.BorderSizePixel = 0
     innerDot.ZIndex = 214
+    innerDot.Active = false
     innerDot.Parent = thumb
     local idc = Instance.new("UICorner"); idc.CornerRadius = UDim.new(1, 0); idc.Parent = innerDot
+
+    -- Dedicated generous hit-box for smooth sliding on both PC and Mobile touch
+    local sliderHitbox = Instance.new("TextButton")
+    sliderHitbox.Name = "SliderHitbox"
+    sliderHitbox.Position = UDim2.new(0, 0, 0, 24)
+    sliderHitbox.Size = UDim2.new(1, 0, 0, 28)
+    sliderHitbox.BackgroundTransparency = 1
+    sliderHitbox.BorderSizePixel = 0
+    sliderHitbox.Text = ""
+    sliderHitbox.ZIndex = 220
+    sliderHitbox.Parent = frame
 
     -- Drag & Click Math
     local sliding = false
     local function update(input)
-        local p = math.clamp((input.Position.X - track.AbsolutePosition.X) / track.AbsoluteSize.X, 0, 1)
+        local p = math.clamp((input.Position.X - track.AbsolutePosition.X) / math.max(1, track.AbsoluteSize.X), 0, 1)
         local val = math.floor(minVal + (maxVal - minVal) * p + 0.5)
         currentVal = val
         valBox.Text = tostring(val)
@@ -1719,18 +1803,32 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
         callback(val)
     end
 
-    track.InputBegan:Connect(function(input)
+    local function startSliding(input)
+        sliding = true
+        update(input)
+    end
+
+    sliderHitbox.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            sliding = true
-            update(input)
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then sliding = false end
-            end)
+            startSliding(input)
         end
     end)
+
+    track.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            startSliding(input)
+        end
+    end)
+
     UserInputService.InputChanged:Connect(function(input)
         if sliding and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
             update(input)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            sliding = false
         end
     end)
 
