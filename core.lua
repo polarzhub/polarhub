@@ -729,25 +729,59 @@ function Polar.BossSystem.FindLiveBoss(bossName)
 end
 
 function Polar.BossSystem.GetBossStatusCard(bossName)
- local BS = Polar.BossSystem
- local bData = BS.FindBossData(bossName)
- if not bData then return "Boss no encontrado." end
- local trk = BossTracker[bData.name] or {}
- local cdMins = math.floor(bData.cd / 60)
- local lines = {
- string.format("Jefe: %s | Nivel: %d", bData.name, bData.lvl),
- string.format("Ubicacion: Isla %s", bData.island),
- string.format("Cooldown Base: ~%d minutos (%ds)", cdMins, bData.cd)
- }
- local marker = BS.GetOfficialBossMarker(bData.name)
- if marker then
- trk.status = "DEAD"
- table.insert(lines, "Estado: [DERROTADO] (En Cooldown)")
- table.insert(lines, string.format("Contador Oficial 3D: %s", marker.timerText))
- table.insert(lines, string.format("Reaparicion en: %s (Sincronizado con marcador)", marker.timerText))
- table.insert(lines, "Marcador: " .. marker.name)
- return table.concat(lines, "\n")
- end
+	local BS = Polar.BossSystem
+	local bData = BS.FindBossData(bossName)
+	if not bData then return "Boss not found." end
+	local trk = BossTracker[bData.name] or {}
+	local cdMins = math.floor(bData.cd / 60)
+	local lines = {
+		string.format("Boss: %s | Level: %d", bData.name, bData.lvl),
+		string.format("Location: %s Island", bData.island),
+		string.format("Base Cooldown: ~%d minutes (%ds)", cdMins, bData.cd)
+	}
+	local marker = BS.GetOfficialBossMarker(bData.name)
+	if marker then
+		trk.status = "DEAD"
+		table.insert(lines, "Status: [DEFEATED] (On Cooldown)")
+		table.insert(lines, string.format("Official 3D Timer: %s", marker.timerText))
+		table.insert(lines, string.format("Respawn in: %s (Synced with 3D marker)", marker.timerText))
+		table.insert(lines, "Marker: " .. marker.name)
+		return table.concat(lines, "
+")
+	end
+	local liveBoss = BS.FindLiveBoss(bData.name)
+	if liveBoss then
+		trk.status = "ALIVE"
+		trk.aliveAt = os.time()
+		local hum = liveBoss:FindFirstChild("Humanoid")
+		local hp = hum and math.floor(hum.Health) or 0
+		local maxHp = hum and math.floor(hum.MaxHealth) or 1
+		local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+		table.insert(lines, string.format("Status: [ALIVE] (Health: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
+		table.insert(lines, "Timer: Active in combat now")
+		return table.concat(lines, "
+")
+	end
+	if trk.deadAt then
+		trk.status = "DEAD"
+		local elapsed = os.time() - trk.deadAt
+		local remaining = math.max(0, bData.cd - elapsed)
+		local remainM = math.floor(remaining / 60)
+		local remainS = remaining % 60
+		table.insert(lines, "Status: [DEFEATED] (Cooldown active)")
+		if remaining > 0 then
+			table.insert(lines, string.format("Estimated Respawn: ~%02dm %02ds remaining", remainM, remainS))
+		else
+			table.insert(lines, "Respawn: Cooldown elapsed, ready to spawn.")
+		end
+	else
+		table.insert(lines, "Status: [NOT DETECTED / READY TO SPAWN]")
+		table.insert(lines, "Timer: No active marker (Cooldown elapsed or awaiting proximity)")
+		table.insert(lines, "Hint: Press 'Teleport to Boss' to check spawn location.")
+	end
+	return table.concat(lines, "
+")
+end
  local liveBoss = BS.FindLiveBoss(bData.name)
  if liveBoss then
  trk.status = "ALIVE"
@@ -844,6 +878,8 @@ end
 
 -- Módulo de Teletransporte
 Polar.Teleport = {}
+Polar.Teleport.IsTeleporting = false
+Polar.Teleport.ActiveTween = nil
 
 local activeTween = nil
 
@@ -857,82 +893,78 @@ local function CancelActiveTween()
 end
 
 local function MoveDirectly(targetCFrame)
- if typeof(targetCFrame) == "Vector3" then
- targetCFrame = CFrame.new(targetCFrame)
- end
- local char = LocalPlayer.Character
- local hrp = char and char:FindFirstChild("HumanoidRootPart")
- local hum = char and char:FindFirstChildOfClass("Humanoid")
- if not hrp or not hum or hum.Health <= 0 then return end
- 
- local dist = (hrp.Position - targetCFrame.Position).Magnitude
- 
- -- Solo hacer TP instantáneo si ya estamos muy cerca (<= 15 studs) para evitar rollback del anti-cheat
- if dist <= 15 then
- CancelActiveTween()
- hrp.CFrame = targetCFrame
- hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
- hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
- return
- end
- 
- CancelActiveTween()
- 
- local oldPlatformStand = hum and hum.PlatformStand
- if hum then hum.PlatformStand = true end
- 
- local bp = hrp:FindFirstChild("Polar_MoveVelocity")
- if not bp then
- bp = Instance.new("BodyVelocity")
- bp.Name = "Polar_MoveVelocity"
- bp.Velocity = Vector3.new(0, 0, 0)
- bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
- bp.Parent = hrp
- else
- bp.Velocity = Vector3.new(0, 0, 0)
- end
- 
- local nclConn = RunService.Stepped:Connect(function()
- for _, v in ipairs(char:GetChildren()) do
- if v:IsA("BasePart") then v.CanCollide = false end
- end
- end)
- 
- local tweenSpeed = 320
- 
- local function DoTween(cframeTarget)
- local tDist = (hrp.Position - cframeTarget.Position).Magnitude
- if tDist <= 5 then return end
- local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
- local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
- activeTween = tween
- 
- local startPos = hrp.Position
- local tpCheckConn = RunService.Stepped:Connect(function()
- if (hrp.Position - startPos).Magnitude > 5000 then
- tween:Cancel()
- end
- end)
- 
- tween:Play()
- tween.Completed:Wait()
- if tpCheckConn then tpCheckConn:Disconnect() end
- if activeTween == tween then activeTween = nil end
- end
- 
- -- Tween directo y suave al objetivo (noclip sin saltos bruscos ni elevarse al cielo)
- DoTween(targetCFrame)
- 
- -- Snap final seguro solo si ya llegó a menos de 15 studs
- if hrp and (hrp.Position - targetCFrame.Position).Magnitude <= 15 then
- hrp.CFrame = targetCFrame
- hrp.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
- hrp.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
- end
- 
- nclConn:Disconnect()
- if bp and bp.Parent then bp:Destroy() end
- if hum and hum.Parent then hum.PlatformStand = oldPlatformStand end
+	if typeof(targetCFrame) == "Vector3" then
+		targetCFrame = CFrame.new(targetCFrame)
+	end
+	local char = LocalPlayer.Character
+	local hrp = char and char:FindFirstChild("HumanoidRootPart")
+	local hum = char and char:FindFirstChildOfClass("Humanoid")
+	if not hrp or not hum or hum.Health <= 0 then return end
+	
+	local dist = (hrp.Position - targetCFrame.Position).Magnitude
+	
+	-- Solo hacer TP instantáneo si ya estamos muy cerca (<= 15 studs)
+	if dist <= 15 then
+		CancelActiveTween()
+		hrp.CFrame = targetCFrame
+		hrp.AssemblyLinearVelocity = Vector3.zero
+		hrp.AssemblyAngularVelocity = Vector3.zero
+		return
+	end
+	
+	CancelActiveTween()
+	Polar.Teleport.IsTeleporting = true
+	
+	local oldPlatformStand = hum and hum.PlatformStand
+	if hum then hum.PlatformStand = true end
+	
+	local bp = hrp:FindFirstChild("Polar_MoveVelocity")
+	if not bp then
+		bp = Instance.new("BodyVelocity")
+		bp.Name = "Polar_MoveVelocity"
+		bp.Velocity = Vector3.zero
+		bp.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+		bp.Parent = hrp
+	else
+		bp.Velocity = Vector3.zero
+	end
+	
+	local nclConn = RunService.Stepped:Connect(function()
+		for _, v in ipairs(char:GetDescendants()) do
+			if v:IsA("BasePart") then v.CanCollide = false end
+		end
+	end)
+	
+	local tweenSpeed = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150
+	
+	local function DoTween(cframeTarget)
+		local tDist = (hrp.Position - cframeTarget.Position).Magnitude
+		if tDist <= 5 then return end
+		local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
+		local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
+		activeTween = tween
+		Polar.Teleport.ActiveTween = tween
+		
+		tween:Play()
+		tween.Completed:Wait()
+		if activeTween == tween then activeTween = nil end
+		Polar.Teleport.ActiveTween = nil
+	end
+	
+	-- Tween directo y suave al objetivo (noclip total en todos los descendientes)
+	DoTween(targetCFrame)
+	
+	-- Snap final seguro solo si ya llegó a menos de 15 studs
+	if hrp and (hrp.Position - targetCFrame.Position).Magnitude <= 15 then
+		hrp.CFrame = targetCFrame
+		hrp.AssemblyLinearVelocity = Vector3.zero
+		hrp.AssemblyAngularVelocity = Vector3.zero
+	end
+	
+	nclConn:Disconnect()
+	if bp and bp.Parent then bp:Destroy() end
+	if hum and hum.Parent then hum.PlatformStand = oldPlatformStand end
+	Polar.Teleport.IsTeleporting = false
 end
 
 local function FindCursedShipEntrance()
@@ -2031,7 +2063,7 @@ local function GetCurrentTargetEnemyName()
  end
  if getgenv().PolarLastBossCheckedIndex > #Polar.Data.Bosses then
  ServerHop()
- return "Buscando Jefes..."
+ return "Searching Bosses..."
  end
  return Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex].name
  end
@@ -2138,7 +2170,7 @@ task.spawn(function()
  end
  end
  end
- targetEnemyName = nearestName or "Buscando Enemigos..."
+ targetEnemyName = nearestName or "Searching Enemies..."
  elseif getgenv().PolarAutoFarmAllBossesEnabled then
  for _, b in ipairs(Polar.Data.Bosses) do
  if Polar.World:IsEnemyAlive(b.name) then
@@ -2150,7 +2182,7 @@ task.spawn(function()
  if not targetEnemyName then
  if getgenv().PolarLastBossCheckedIndex > #Polar.Data.Bosses then
  ServerHop()
- targetEnemyName = "Buscando Jefes..."
+ targetEnemyName = "Searching Bosses..."
  else
  targetEnemyName = Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex].name
  activeBossQuestData = Polar.Data.Bosses[getgenv().PolarLastBossCheckedIndex]
@@ -2174,7 +2206,7 @@ task.spawn(function()
  end
  end
  
- if targetEnemyName == "Buscando Jefes..." or targetEnemyName == "Buscando Enemigos..." or not targetEnemyName then
+ if targetEnemyName == "Searching Bosses..." or targetEnemyName == "Searching Enemies..." or not targetEnemyName then
  Polar.Data.CurrentState = "IDLE"
  getgenv().PolarCurrentBotState = "IDLE"
  task.wait(1)
@@ -2481,7 +2513,7 @@ task.spawn(function()
 
 		if enemiesFolder then
 			for _, npc in ipairs(enemiesFolder:GetChildren()) do
-				if not AutoFarmNearestEnabled and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Buscando Jefes..." and not MatchEnemyName(npc.Name, targetEnemyName) then
+				if not AutoFarmNearestEnabled and targetEnemyName and targetEnemyName ~= "NearestNPC" and targetEnemyName ~= "Searching Bosses..." and not MatchEnemyName(npc.Name, targetEnemyName) then
 					continue
 				end
 
@@ -2787,6 +2819,8 @@ Polar.Registry:BindToggle(SecMainFarm, {
 		getgenv().PolarFastAttackEnabled = Value
 		if PolarMastery then
 			if Value then
+				PolarMastery.AutoBones = false
+				PolarMastery.AutoFarmBoss = false
 				PolarMastery.AutoFarm = true
 			else
 				PolarMastery:StopAll()
@@ -2812,6 +2846,8 @@ Polar.Registry:BindToggle(SecMainFarm, {
 		getgenv().PolarFastAttackEnabled = Value
 		if PolarMastery then
 			if Value then
+				PolarMastery.AutoFarm = false
+				PolarMastery.AutoFarmBoss = false
 				PolarMastery.AutoBones = true
 			else
 				PolarMastery:StopAll()
@@ -2836,6 +2872,19 @@ SecMainFarm:AddSlider({
 	Default = PolarMastery.HealthMobThreshold or 25,
 	Callback = function(Value)
 		if PolarMastery then PolarMastery.HealthMobThreshold = Value end
+	end
+})
+
+SecMainFarm:AddSlider({
+	Name = "Tween Speed",
+	Min = 50,
+	Max = 250,
+	Default = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150,
+	Step = 5,
+	Suffix = " studs/s",
+	Callback = function(Value)
+		if Polar.Teleport then Polar.Teleport.TweenSpeed = Value end
+		getgenv().PolarTweenSpeed = Value
 	end
 })
 
@@ -2997,11 +3046,12 @@ SecSkills:AddSlider({
 	end
 })
 
--- ==================== COLUMNA 1: BOSS FARM ====================
-local SecBossFarm = TabHome:AddSection("Boss Farm")
+-- ==================== BOSS HUNTER ====================
+local SecBossFarm = TabHome:AddSection("Boss Hunter")
+Polar.SecBossFarm = SecBossFarm
 
-local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Cake Prince", "Dough King", "Soul Reaper"}
-SecBossFarm:AddDropdown({
+local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Longma", "Tyrant of the Skies", "Soul Reaper", "Cake Prince", "Dough King", "rip_indra"}
+local BossDropdown = SecBossFarm:AddDropdown({
 	Name = "Select Boss",
 	Options = bossList,
 	Default = PolarMastery.SelectedBoss or "Stone",
@@ -3010,9 +3060,10 @@ SecBossFarm:AddDropdown({
 		if PolarMastery then PolarMastery.SelectedBoss = Value end
 	end
 })
+Polar.BossDropdown = BossDropdown
 
 Polar.Registry:BindToggle(SecBossFarm, {
-	Name = "Auto Farm Boss",
+	Name = "Auto Farm Selected Boss",
 	Default = false,
 	Callback = function(Value)
 		getgenv().PolarAutoFarmBossEnabled = Value
@@ -3028,7 +3079,7 @@ Polar.Registry:BindToggle(SecBossFarm, {
 }, "PolarMastery.AutoFarmBoss")
 
 Polar.Registry:BindToggle(SecBossFarm, {
-	Name = "Auto Kill All Bosses",
+	Name = "Auto Farm All Bosses",
 	Default = false,
 	Callback = function(Value)
 		getgenv().PolarAutoFarmAllBossesEnabled = Value
@@ -3043,7 +3094,7 @@ Polar.Registry:BindToggle(SecBossFarm, {
 }, "PolarMastery.AutoKillAllBosses")
 
 Polar.Registry:BindToggle(SecBossFarm, {
-	Name = "Get Boss Quest",
+	Name = "Take Boss Quest",
 	Desc = "Automatically takes the boss quest before attacking",
 	Default = true,
 	Callback = function(Value)
@@ -3145,298 +3196,9 @@ TabStats:AddToggle({
 })
 
 
--- ===== TAB STATUS (ENTERPRISE INTEGRITY, SAFETY & DIAGNOSTICS) =====
-local SecSafety = TabStatus:AddSection("🛡️ Salida Segura (Safe Exit - 5s Rule)")
-
-local LabelSafetyInfo = TabStatus:AddParagraph({
-	Title = "Arquitectura de Salida Segura",
-	Text = "Al desactivar cualquier farm, el personaje se eleva +20 studs con una plataforma Neon Cyan temporal activa por 5 segundos (no permanente) o se evacúa al spawn seguro de la isla para evitar caer en medio de los enemigos."
-})
-
-TabStatus:AddButton({
-	Name = "🛡️ Evacuar a Zona Segura (5s Hold + Teleport)",
-	Callback = function()
-		if Polar and Polar.Safety and Polar.Safety.EvacuateToSafety then
-			Polar.Safety:EvacuateToSafety(Polar.Safety.DefaultHoldSeconds or 5, true)
-		else
-			warn("[Polar Safety] Motor de seguridad no disponible.")
-		end
-	end
-})
-
-TabStatus:AddButton({
-	Name = "🪂 Plataforma de Salida Segura (5s Hold Aéreo)",
-	Callback = function()
-		if Polar and Polar.Safety and Polar.Safety.EvacuateToSafety then
-			Polar.Safety:EvacuateToSafety(Polar.Safety.DefaultHoldSeconds or 5, false)
-		else
-			warn("[Polar Safety] Motor de seguridad no disponible.")
-		end
-	end
-})
-
-TabStatus:AddSlider({
-	Name = "Duración de Plataforma Segura (Segundos)",
-	Min = 3,
-	Max = 15,
-	Default = 5,
-	Callback = function(val)
-		if Polar and Polar.Safety then
-			Polar.Safety.DefaultHoldSeconds = val
-		end
-	end
-})
-
-local SecDiagnostics = TabStatus:AddSection("🩺 Diagnóstico e Integridad del Núcleo")
-
-local LabelHealthScore = TabStatus:AddParagraph({
-	Title = "System Health Status",
-	Text = "Iniciando análisis de integridad..."
-})
-
-local LabelFunctionsAudit = TabStatus:AddParagraph({
-	Title = "Core Function Linkages",
-	Text = "Validando enlaces de funciones en memoria..."
-})
-
-local LabelRegistryAudit = TabStatus:AddParagraph({
-	Title = "UI Controls & Bindings",
-	Text = "Escaneando controles huérfanos y duplicados..."
-})
-
-local function RefreshDiagnosticsDisplay()
-	if not Polar.Diagnostics or not Polar.Diagnostics.RunAudit then return end
-	local audit = Polar.Diagnostics:RunAudit()
-	if not audit or not audit.checks then return end
-	local passed = audit.passed or 0
-	local failed = audit.failed or 0
-	local warnings = audit.warnings or 0
-	local total = #audit.checks
-	local scorePercent = math.floor((passed / math.max(1, total)) * 100)
-	local statusText = string.format("%d%% [OPTIMAL] (%d Pasados, %d Advertencias, %d Fallidos)", scorePercent, passed, warnings, failed)
-	
-	if LabelHealthScore and LabelHealthScore.SetDesc then LabelHealthScore:SetDesc(statusText)
-	elseif LabelHealthScore and LabelHealthScore.Set then LabelHealthScore:Set(statusText) end
-
-	local funcReport = (Polar.FunctionRegistry and Polar.FunctionRegistry.VerifyCoreLinkages and Polar.FunctionRegistry:VerifyCoreLinkages()) or { passed = 12, total = 12 }
-	local funcText = string.format("%d / %d Funciones Enlazadas y Operativas", funcReport.passed, funcReport.total)
-	if LabelFunctionsAudit and LabelFunctionsAudit.SetDesc then LabelFunctionsAudit:SetDesc(funcText)
-	elseif LabelFunctionsAudit and LabelFunctionsAudit.Set then LabelFunctionsAudit:Set(funcText) end
-
-	local orphanList = (Polar.Registry and Polar.Registry.ScanOrphans and Polar.Registry:ScanOrphans()) or {}
-	local dupList = (Polar.Registry and Polar.Registry.ScanDuplicates and Polar.Registry:ScanDuplicates()) or {}
-	local totalControls = 0
-	if Polar.Registry and Polar.Registry.Controls then
-		for _ in pairs(Polar.Registry.Controls) do totalControls = totalControls + 1 end
-	end
-	local regText = string.format("%d Controles Registrados | %d Duplicados | %d Huérfanos", totalControls, #dupList, #orphanList)
-	if LabelRegistryAudit and LabelRegistryAudit.SetDesc then LabelRegistryAudit:SetDesc(regText)
-	elseif LabelRegistryAudit and LabelRegistryAudit.Set then LabelRegistryAudit:Set(regText) end
-end
-
-TabStatus:AddButton({
-	Name = "🔍 Ejecutar Auditoría Completa (100% Real)",
-	Callback = function()
-		RefreshDiagnosticsDisplay()
-		if PolarUI and PolarUI.Notify then
-			PolarUI:Notify({
-				Title = "Auditoría del Núcleo Completada",
-				Content = "Todos los subsistemas, remotos y enlaces verificados en vivo.",
-				Duration = 4
-			})
-		end
-	end
-})
-
-TabStatus:AddButton({
-	Name = "🧹 Purgar Físicas Residuales y Plataformas",
-	Callback = function()
-		if Polar.Diagnostics and Polar.Diagnostics.PurgeLeaks then
-			local count = Polar.Diagnostics:PurgeLeaks()
-			if PolarUI and PolarUI.Notify then
-				PolarUI:Notify({
-					Title = "Purga de Física",
-					Content = string.format("Se eliminaron %d instancias residuales.", count or 0),
-					Duration = 3
-				})
-			end
-		end
-	end
-})
-
-TabStatus:AddButton({
-	Name = "🔎 Escanear Duplicados y Huérfanos",
-	Callback = function()
-		local dups = (Polar.Registry and Polar.Registry:ScanDuplicates()) or {}
-		local orphans = (Polar.Registry and Polar.Registry:ScanOrphans()) or {}
-		local msg = string.format("Duplicados: %d | Huérfanos: %d", #dups, #orphans)
-		print("[Polar Registry] " .. msg)
-		if PolarUI and PolarUI.Notify then
-			PolarUI:Notify({
-				Title = "Escaneo de Controles UI",
-				Content = msg .. " (Resultados detallados en F9 Consola).",
-				Duration = 4
-			})
-		end
-	end
-})
-
-TabStatus:AddButton({
-	Name = "🔗 Verificar Enlace de Funciones del Núcleo",
-	Callback = function()
-		if Polar.FunctionRegistry and Polar.FunctionRegistry.VerifyCoreLinkages then
-			local rep = Polar.FunctionRegistry:VerifyCoreLinkages()
-			local msg = string.format("%d de %d funciones enlazadas correctamente.", rep.passed, rep.total)
-			print("[Polar FunctionRegistry] " .. msg)
-			if PolarUI and PolarUI.Notify then
-				PolarUI:Notify({
-					Title = "Verificación de Funciones",
-					Content = msg,
-					Duration = 4
-				})
-			end
-		end
-	end
-})
-
--- Periodic background health audit
-task.spawn(function()
-	task.wait(4)
-	RefreshDiagnosticsDisplay()
-	while true do
-		task.wait(15)
-		pcall(RefreshDiagnosticsDisplay)
-	end
-end)
-
-local SecTelemetry = TabStatus:AddSection("📊 Telemetría en Vivo (100% Exacta)")
-
-local LabelPing = TabStatus:AddParagraph({
-	Title = "Latencia de Red (Ping)",
-	Text = "Midiendo..."
-})
-
-local LabelMemory = TabStatus:AddParagraph({
-	Title = "Memoria del Cliente",
-	Text = "Midiendo..."
-})
-
-local LabelEnemies = TabStatus:AddParagraph({
-	Title = "Densidad de Enemigos",
-	Text = "Escaneando..."
-})
-
-local LabelPlayerHP = TabStatus:AddParagraph({
-	Title = "Estado del Jugador y Bot",
-	Text = "Consultando..."
-})
-
-local LabelTimes = TabStatus:AddParagraph({
-	Title = "Tiempos de Servidor y Sesión",
-	Text = "Calculando..."
-})
-
-local telemetryStartTime = os.time()
-local function FormatTelemetryDuration(seconds)
-	local h = math.floor(seconds / 3600)
-	local m = math.floor((seconds % 3600) / 60)
-	local s = math.floor(seconds % 60)
-	return string.format("%02d:%02d:%02d", h, m, s)
-end
-
-task.spawn(function()
-	while true do
-		task.wait(3)
-		pcall(function()
-			if Polar.Telemetry and Polar.Telemetry.GetMetrics then
-				local m = Polar.Telemetry:GetMetrics()
-				if LabelPing and LabelPing.SetDesc then
-					LabelPing:SetDesc(string.format("%d ms (Tráfico verificado)", m.pingMs))
-				end
-				if LabelMemory and LabelMemory.SetDesc then
-					LabelMemory:SetDesc(string.format("Lua Heap: %d MB | Total Cliente: %d MB", m.luaHeapMB, m.totalClientMB))
-				end
-				if LabelEnemies and LabelEnemies.SetDesc then
-					LabelEnemies:SetDesc(string.format("%d enemigos activos en workspace", m.aliveMobCount))
-				end
-				if LabelPlayerHP and LabelPlayerHP.SetDesc then
-					LabelPlayerHP:SetDesc(string.format("Salud: %d%% | Estado: %s", m.playerHealthPercent, m.botState))
-				end
-			end
-			local serverUptime = workspace.DistributedGameTime
-			local sessionTime = os.time() - telemetryStartTime
-			if LabelTimes and LabelTimes.SetDesc then
-				LabelTimes:SetDesc(string.format("Uptime Servidor: %s | Sesión: %s", FormatTelemetryDuration(serverUptime), FormatTelemetryDuration(sessionTime)))
-			end
-		end)
-	end
-end)
-
-local SecErrors = TabStatus:AddSection("⚠️ Detector y Registro de Errores")
-
-local LabelErrorTracker = TabStatus:AddParagraph({
-	Title = "Registro de Excepciones",
-	Text = "0 Errores en Sesión"
-})
-
-local function RefreshErrorDisplay()
-	local errCount = (Polar.Diagnostics and Polar.Diagnostics.ErrorLog and #Polar.Diagnostics.ErrorLog) or 0
-	local lastErr = (Polar.Diagnostics and Polar.Diagnostics.ErrorLog and Polar.Diagnostics.ErrorLog[1])
-	local errText = string.format("%d Errores Registrados en Sesión", errCount)
-	if lastErr then
-		errText = errText .. string.format("\nÚltimo [%s]: %s", tostring(lastErr.source), tostring(lastErr.error):sub(1, 60))
-	end
-	if LabelErrorTracker and LabelErrorTracker.SetDesc then
-		LabelErrorTracker:SetDesc(errText)
-	elseif LabelErrorTracker and LabelErrorTracker.Set then
-		LabelErrorTracker:Set(errText)
-	end
-end
-
-TabStatus:AddButton({
-	Name = "📜 Mostrar Último Error y Stack Trace en Consola",
-	Callback = function()
-		RefreshErrorDisplay()
-		local errLog = Polar.Diagnostics and Polar.Diagnostics.ErrorLog
-		if errLog and #errLog > 0 then
-			local top = errLog[1]
-			warn(string.format("[Polar Error Tracker] Fuente: %s | Categoría: %s\nError: %s\nStack Trace:\n%s", top.source, top.category, top.error, top.trace))
-			if PolarUI and PolarUI.Notify then
-				PolarUI:Notify({
-					Title = "Error Inspeccionado",
-					Content = string.format("[%s]: %s", top.source, top.error:sub(1, 70)),
-					Duration = 5
-				})
-			end
-		else
-			print("[Polar Error Tracker] ✅ 0 Errores registrados. Código operando al 100% de integridad.")
-			if PolarUI and PolarUI.Notify then
-				PolarUI:Notify({
-					Title = "Registro Impecable",
-					Content = "0 Errores registrados en esta sesión.",
-					Duration = 3
-				})
-			end
-		end
-	end
-})
-
-TabStatus:AddButton({
-	Name = "🗑️ Limpiar Historial de Errores",
-	Callback = function()
-		if Polar.Diagnostics and Polar.Diagnostics.ClearErrorLog then
-			Polar.Diagnostics:ClearErrorLog()
-			RefreshErrorDisplay()
-			if PolarUI and PolarUI.Notify then
-				PolarUI:Notify({
-					Title = "Historial Limpio",
-					Content = "Registro de errores reiniciado a 0.",
-					Duration = 3
-				})
-			end
-		end
-	end
-})
+-- ===== TAB STATUS (GAME RADAR & BOSS STATUS ONLY) =====
+-- Note: Internal diagnostics, leak purger, and telemetry remain active on Polar.Diagnostics and Polar.Safety.
+-- Visual controls in TabStatus are reserved strictly for game tracking and radar.
 
 -- ===== TAB SHOP =====
 TabShop:AddSection("Abilities")
@@ -3797,143 +3559,6 @@ local function InitCombatHooks()
 end
 
 -- ===== TAB MISC =====
-TabMisc:AddSection("UI Customization")
-
-local themesList = {}
-pcall(function()
-	local thSrc = (PolarUI and PolarUI.Themes) or (redzlib and redzlib.Themes) or {}
-	for themeName, _ in pairs(thSrc) do
-		table.insert(themesList, themeName)
-	end
-end)
-if #themesList == 0 then
-	themesList = {"Polar Ice", "Liquid Glass", "Blizzard", "Arctic Aurora", "Cyberpunk Neon", "Crimson Blood", "Emerald Abyss", "Sunset Gold", "Midnight Violet", "Darker", "Dark", "Purple"}
-end
-table.sort(themesList)
-
-TabMisc:AddDropdown({
-	Name = "Visual Theme",
-	Description = "Changes UI color palette",
-	Options = themesList,
-	Default = "Polar Ice",
-	Callback = function(selected)
-		pcall(function()
-			if PolarUI and PolarUI.SetTheme then
-				PolarUI:SetTheme(selected)
-			elseif redzlib and redzlib.SetTheme then
-				redzlib:SetTheme(selected)
-			end
-		end)
-	end
-})
-
-TabMisc:AddButton({
-	Name = "Reset Floating Button",
-	Desc = "Resets floating button position",
-	Callback = function()
-		pcall(function()
-			local targets = {
-				(gethui and gethui()),
-				(get_hidden_gui and get_hidden_gui()),
-				game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
-				(pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
-			}
-			for _, c in ipairs(targets) do
-				if c then
-					local gui = c:FindFirstChild("PolarHub_Onyx_UI") or c:FindFirstChild("redz Library V5")
-					if gui then
-						local fl = gui:FindFirstChild("FloatToggle", true) or gui:FindFirstChild("PolarFloatingButton", true)
-						if fl then
-							fl.Position = UDim2.new(0.016, 0, 0.219, 0)
-						end
-					end
-				end
-			end
-		end)
-	end
-})
-
-TabMisc:AddDropdown({
-	Name = "Interface Scale",
-	Description = "Adjusts global UI size",
-	Options = {"Small", "Medium", "Large", "Extra Large"},
-	Default = "Large",
-	Callback = function(selected)
-		local scaleMap = {
-			["Small"] = 950,
-			["Medium"] = 800,
-			["Large"] = 650,
-			["Extra Large"] = 500,
-			["Pequeño"] = 950,
-			["Mediano"] = 800,
-			["Grande"] = 650,
-			["Muy Grande"] = 500
-		}
-		local val = scaleMap[selected] or 650
-		pcall(function()
-			if PolarUI and PolarUI.SetScale then
-				PolarUI:SetScale(val)
-			elseif redzlib and redzlib.SetScale then
-				redzlib:SetScale(val)
-			end
-		end)
-	end
-})
-TabMisc:AddSection("Extra Utilities")
-
-local FruitFinderEnabled = false
-local foundFruits = {}
-TabMisc:AddToggle({
-	Name = "Fruit Finder",
-	Desc = "Alerts when fruit spawns",
-	Callback = function(Value)
-		FruitFinderEnabled = Value
-	end
-})
-
-local FlyEnabled = false
-local flySpeed = 50
-local flyBodyMover = nil
-TabMisc:AddToggle({
-	Name = "Fly Mode",
-	Desc = "Fly using WASD and camera",
-	Callback = function(Value)
-		FlyEnabled = Value
-		local char = LocalPlayer.Character
-		local hrp = char and char:FindFirstChild("HumanoidRootPart")
-		if Value and hrp then
-			local bp = Instance.new("BodyVelocity", hrp)
-			bp.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
-			bp.Velocity = Vector3.new(0, 0, 0)
-			flyBodyMover = bp
-			
-			local bg = Instance.new("BodyGyro", hrp)
-			bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-			bg.D = 10
-			bg.CFrame = hrp.CFrame
-			flyBodyMover.Name = "Polar_Fly"
-			bg.Name = "Polar_FlyG"
-		else
-			if hrp then
-				local b1 = hrp:FindFirstChild("Polar_Fly")
-				local b2 = hrp:FindFirstChild("Polar_FlyG")
-				if b1 then b1:Destroy() end
-				if b2 then b2:Destroy() end
-			end
-			flyBodyMover = nil
-		end
-	end
-})
-
-local AutoRejoinEnabled = false
-TabMisc:AddToggle({
-	Name = "Auto Rejoin",
-	Desc = "Rejoins automatically if disconnected",
-	Callback = function(Value)
-		AutoRejoinEnabled = Value
-	end
-})
-
 TabMisc:AddSection("Movement")
 
 TabMisc:AddSlider({
@@ -3972,85 +3597,11 @@ TabMisc:AddToggle({
 	end
 })
 
-TabServers:AddSection("Server Management")
-
-local TargetJobId = ""
-TabServers:AddTextBox({
-	Name = "Job ID",
-	PlaceholderText = "Paste Job ID here...",
-	Callback = function(Value)
-		TargetJobId = Value
-	end
+TabServers:AddSection("Server Hop")
+TabServers:AddParagraph({
+	Title = "Server Hop",
+	Text = "In progress!"
 })
-
-TabServers:AddButton({
-	Name = "Join Job ID",
-	Callback = function()
-		if TargetJobId and TargetJobId:gsub(" ", ""):len() > 0 then
-			pcall(function()
-				TeleportService:TeleportToPlaceInstance(GetMainPlaceIdForCurrentSea(), TargetJobId, LocalPlayer)
-			end)
-		else
-			warn("[Polar Hub] Invalid or empty Job ID.")
-		end
-	end
-})
-
-TabServers:AddButton({
-	Name = "Copy Current Job ID",
-	Callback = function()
-		CopyToClipboard(tostring(game.JobId))
-	end
-})
-
-TabServers:AddButton({
-	Name = "Hop Low Players",
-	Callback = function()
-		ServerHopLowPlayers()
-	end
-})
-
-TabServers:AddButton({
-	Name = "Hop Best Ping",
-	Callback = function()
-		ServerHopBestPing()
-	end
-})
-
-local AutoCazarEnabled = false
-local lastTeleportedJobId = nil
-TabServers:AddToggle({
-	Name = "Auto Join Bounty",
-	Desc = "Joins target server automatically",
-	Callback = function(Value)
-		AutoCazarEnabled = Value
-		if not Value then
-			lastTeleportedJobId = nil
-		end
-	end
-})
-
-task.spawn(function()
- while true do
- task.wait(3)
- if AutoCazarEnabled then
- pcall(function()
- local url = bridgeUrl .. "/get_server?type=cazar&username=" .. tostring(LocalPlayer.Name)
- local raw = SafeHttpGet(url)
- if raw then
- local success, result = pcall(function() return HttpService:JSONDecode(raw) end)
- if success and result and result.success and result.jobId then
- if result.jobId ~= lastTeleportedJobId then
- lastTeleportedJobId = result.jobId
- warn("[Polar Hub] ¡Objetivo localizado por el Bot de Discord! Teletransportando...")
- TeleportService:TeleportToPlaceInstance(result.placeId or game.PlaceId, result.jobId, LocalPlayer)
- end
- end
- end
- end)
- end
- end
-end)
 
 -- ==================== LOGICA DE UTILIDADES Y COMBATE EXTREMO ====================
 

@@ -198,166 +198,16 @@ PolarUI.Language = "EN"
 PolarUI.Translatables = {}
 
 PolarUI.Dictionary = {
-    ["ES"] = {
-        -- Tabs
-        ["Farm"] = "Farmear",
-        ["Stats"] = "Estadísticas",
-        ["Status"] = "Estado",
-        ["Shop"] = "Tienda",
-        ["Quest Farm"] = "Misiones",
-        ["Teleport"] = "Teletransporte",
-        ["Combat PvP"] = "Combate PvP",
-        ["Server Hop"] = "Servidores",
-        ["Misc"] = "Varios",
-
-        -- Modals & General
-        ["Close"] = "Cerrar",
-        ["Cerrar"] = "Cerrar",
-        ["UI Font"] = "Fuente de Interfaz",
-        ["UI Theme"] = "Tema de Interfaz",
-        ["BG Image Fade"] = "Opacidad de Fondo",
-        ["Language: English [EN]"] = "Idioma: Español [ES]",
-        ["Idioma: Español [ES]"] = "Language: English [EN]",
-
-        -- Sections (Core)
-        ["Combat Settings"] = "Configuración de Combate",
-        ["Auto Farm"] = "Auto Farm Automático",
-        ["Player Enhancements"] = "Mejoras de Jugador",
-        ["Distribute Stats"] = "Auto Estadísticas",
-        ["Server Telemetry"] = "Telemetría del Servidor",
-        ["Abilities"] = "Habilidades",
-        ["Fighting Styles"] = "Estilos de Pelea",
-        ["Swords"] = "Espadas",
-        ["Guns"] = "Armas de Fuego",
-        ["Island Teleport"] = "Viajes a Islas",
-        ["Combat Enhancements"] = "Mejoras de Combate",
-        ["Bounty Hunter Tracker"] = "Rastreador de Recompensas",
-        ["Combat Mode"] = "Modo Combate",
-        ["Aimbot & Hitbox"] = "Aimbot y Hitbox",
-        ["Extreme Combat"] = "Combate Extremo",
-        ["UI Customization"] = "Personalización de Interfaz",
-        ["Extra Utilities"] = "Utilidades Extra",
-        ["Movement"] = "Movimiento",
-        ["Server Management"] = "Gestión de Servidores",
-
-        -- Controls (Core)
-        ["Farm Tool"] = "Arma de Farmeo",
-        ["Smart Mastery"] = "Maestría Inteligente",
-        ["Finishes mob with secondary weapon"] = "Remata al enemigo con arma secundaria",
-        ["Mastery Weapon"] = "Arma a Masterizar",
-        ["Auto Skills"] = "Habilidades Auto",
-        ["Cast skills while farming"] = "Usa habilidades al farmear",
-        ["Auto Farm Level"] = "Auto Farm Nivel",
-        ["Auto Chest"] = "Auto Cofres",
-        ["Farm Nearest"] = "Farmear Cercano",
-        ["Player & Mob ESP"] = "ESP Jugadores y Mobs",
-        ["Auto Buso Haki"] = "Auto Haki Buso",
-        ["Auto Ken Haki"] = "Auto Haki Ken",
-        ["Melee"] = "Cuerpo a Cuerpo",
-        ["Defense"] = "Defensa",
-        ["Sword"] = "Espada",
-        ["Gun"] = "Arma",
-        ["Demon Fruit"] = "Fruta",
-        ["Auto Assign Stats"] = "Asignar Puntos",
-        ["Server Uptime"] = "Tiempo del Servidor",
-        ["Session Time"] = "Tiempo en Sesión",
-        ["Select Target"] = "Seleccionar Objetivo",
-        ["Refresh Player List"] = "Actualizar Jugadores",
-        ["Target Information"] = "Información del Objetivo",
-        ["Teleport to Target"] = "Teleport al Objetivo",
-        ["Enable Combat Mode"] = "Activar Modo Combate",
-        ["Enables hitbox & silent aim"] = "Activa hitbox y silent aim",
-        ["Hitbox Expander"] = "Expansor de Hitbox",
-        ["Expands enemy collision box"] = "Aumenta la caja de colisión",
-        ["Hitbox Size"] = "Tamaño de Hitbox",
-        ["Silent Aim"] = "Silent Aim (Aimbot)",
-        ["Redirects attacks to target"] = "Redirige ataques al objetivo",
-        ["Bring Target"] = "Atraer Objetivo",
-        ["Brings enemy player to you"] = "Teletransporta enemigo frente a ti",
-        ["Kill Aura"] = "Kill Aura",
-        ["Attacks all nearby enemies"] = "Daña a todos los enemigos cercanos",
-        ["Visual Theme"] = "Tema Visual",
-        ["Reset Floating Button"] = "Recentrar Botón Flotante",
-        ["Interface Scale"] = "Escala de Interfaz",
-        ["Fruit Finder"] = "Buscador de Frutas",
-        ["Fly Mode"] = "Modo Vuelo",
-        ["Auto Rejoin"] = "Reconexión Automática",
-        ["Walk Speed"] = "Nivel de Velocidad",
-        ["Speed Boost"] = "Aumento de Velocidad",
-        ["Infinite Jump"] = "Salto Infinito",
-        ["NoClip"] = "Atravesar Paredes",
-        ["Walk on Water"] = "Caminar sobre el Agua",
-        ["Job ID"] = "Pegar Job ID",
-        ["Join Job ID"] = "Unirse por Job ID",
-        ["Copy Current Job ID"] = "Copiar Job ID Actual",
-        ["Hop Low Players"] = "Servidor con Menos Gente",
-        ["Hop Best Ping"] = "Servidor con Mejor Ping",
-        ["Auto Join Bounty"] = "Auto-Unirse a Caza",
-
-        -- Sections (Sea 1)
-        ["Boss Status & Timers"] = "Tabla de Jefes y Respawn",
-        ["Raid Boss Radar"] = "Radar de Jefes de Raid",
-        ["Sea 1 Boss Hunter"] = "Cazador de Jefes (Sea 1)",
-        ["Saber Puzzle"] = "Puzzle de Saber",
-        ["Secrets Master"] = "Maestro de Secretos (Sea 1)",
-        ["Island Secrets Explorer"] = "Explorador de Secretos",
-        ["Second Sea Journey"] = "Viaje al Second Sea",
-        ["Haki Trainers"] = "Entrenadores de Haki",
-        ["Sea 1 Fighting Styles"] = "Estilos de Pelea (Sea 1)",
-
-        -- Controls (Sea 1)
-        ["Select Boss to Inspect"] = "Seleccionar Jefe para Inspeccionar",
-        ["Refresh Boss Status"] = "Actualizar Estado del Jefe",
-        ["Teleport to Boss"] = "Teleport a Ubicación del Jefe",
-        ["Select Boss"] = "Seleccionar Jefe",
-        ["Farm Selected Boss"] = "Farmear Jefe Seleccionado",
-        ["Farm All Bosses"] = "Farmear Todos los Jefes",
-        ["Take Boss Quest"] = "Tomar Misión del Jefe",
-        ["Start Auto Saber"] = "Iniciar Auto Saber",
-        ["Stop Auto Saber"] = "Detener Auto Saber",
-        ["Teleport to Secrets Master"] = "Teleport a Secrets Master",
-        ["Auto Read Stories"] = "Auto Leer Historias",
-        ["Equip Combat Style"] = "Equipar Estilo Combat",
-        ["Equip Advanced Combat"] = "Equipar Advanced Combat",
-        ["Select Secret Zone"] = "Seleccionar Zona Secreta",
-        ["Teleport to Secret Zone"] = "Teleport a Zona Secreta",
-        ["Start Second Sea Journey"] = "Iniciar Viaje al Second Sea",
-        ["Stop Journey"] = "Detener Viaje",
-        ["Buy Geppo - $10k"] = "Comprar Geppo - $10k",
-        ["Buy Buso - $25k"] = "Comprar Buso - $25k",
-        ["Buy Soru - $100k"] = "Comprar Soru - $100k",
-        ["Buy Ken Haki - $750k"] = "Comprar Ken Haki - $750k",
-        ["Check Ken Haki"] = "Consultar Estado Ken Haki",
-        ["Buy Dark Step - $150k"] = "Comprar Dark Step - $150k",
-        ["Buy Electro - $500k"] = "Comprar Electro - $500k",
-        ["Buy Water Kung Fu - $750k"] = "Comprar Water Kung Fu - $750k",
-        ["Select Island"] = "Elegir Isla",
-        ["Teleport to Island"] = "Volar Hacia Isla"
-    }
+    ["EN"] = {}
 }
 
 function PolarUI:RegisterTranslatable(labelObj, enText, esText)
     if not labelObj then return end
-    local es = esText or (PolarUI.Dictionary["ES"] and PolarUI.Dictionary["ES"][enText]) or enText
-    table.insert(PolarUI.Translatables, {
-        Label = labelObj,
-        EN = enText,
-        ES = es
-    })
-    if PolarUI.Language == "ES" then
-        labelObj.Text = es
-    else
-        labelObj.Text = enText
-    end
+    labelObj.Text = enText
 end
 
 function PolarUI:SetLanguage(lang)
-    PolarUI.Language = lang
-    for _, item in ipairs(PolarUI.Translatables) do
-        if item.Label and item.Label.Parent then
-            item.Label.Text = (lang == "ES") and item.ES or item.EN
-        end
-    end
+    PolarUI.Language = "EN"
 end
 
 function PolarUI:SetScale(scaleVal)
@@ -1187,26 +1037,48 @@ function PolarUI:MakeWindow(config)
     -- Construct Config. Modal (exact replica matching user image)
     local configModal = createAuthenticModal("Config", "Config.", "rbxassetid://81151604784579")
     do
-        -- 1. Language Translator Box
-        local langBox = Instance.new("TextButton")
-        langBox.Size = UDim2.new(1, 0, 0, 28)
-        langBox.BackgroundColor3 = Color3.fromRGB(18, 13, 30)
-        langBox.BackgroundTransparency = 0.20
-        langBox.BorderSizePixel = 0
-        langBox.Text = "Language: English [EN]"
-        langBox.Font = Enum.Font.GothamBold
-        langBox.TextSize = 10
-        langBox.TextColor3 = Color3.fromRGB(215, 185, 255)
-        langBox.ZIndex = 2004
-        langBox.Parent = configModal.Scroll
-        local lbc = Instance.new("UICorner"); lbc.CornerRadius = UDim.new(0, 6); lbc.Parent = langBox
-        local lbs = Instance.new("UIStroke")
-        lbs.Color = Theme.AccentStroke
-        lbs.Thickness = 1
-        lbs.Transparency = 0.35
-        lbs.LineJoinMode = Enum.LineJoinMode.Round
-        lbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-        lbs.Parent = langBox
+        -- 1. Reset Floating Button
+        local resetFloatBtn = Instance.new("TextButton")
+        resetFloatBtn.Size = UDim2.new(1, 0, 0, 28)
+        resetFloatBtn.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
+        resetFloatBtn.BackgroundTransparency = 0.20
+        resetFloatBtn.BorderSizePixel = 0
+        resetFloatBtn.Text = "Reset Floating Button"
+        resetFloatBtn.Font = Enum.Font.GothamBold
+        resetFloatBtn.TextSize = 11
+        resetFloatBtn.TextColor3 = Color3.fromRGB(215, 185, 255)
+        resetFloatBtn.ZIndex = 2004
+        resetFloatBtn.Parent = configModal.Scroll
+        local rfbc = Instance.new("UICorner"); rfbc.CornerRadius = UDim.new(0, 6); rfbc.Parent = resetFloatBtn
+        local rfbs = Instance.new("UIStroke")
+        rfbs.Color = Theme.AccentStroke
+        rfbs.Thickness = 1
+        rfbs.Transparency = 0.35
+        rfbs.LineJoinMode = Enum.LineJoinMode.Round
+        rfbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        rfbs.Parent = resetFloatBtn
+
+        resetFloatBtn.MouseButton1Click:Connect(function()
+            pcall(function()
+                local targets = {
+                    (gethui and gethui()),
+                    (get_hidden_gui and get_hidden_gui()),
+                    game:GetService("Players").LocalPlayer:FindFirstChild("PlayerGui"),
+                    (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
+                }
+                for _, c in ipairs(targets) do
+                    if c then
+                        local gui = c:FindFirstChild("PolarHub_Onyx_UI") or c:FindFirstChild("redz Library V5")
+                        if gui then
+                            local fl = gui:FindFirstChild("FloatToggle", true) or gui:FindFirstChild("PolarFloatingButton", true)
+                            if fl then
+                                fl.Position = UDim2.new(0.016, 0, 0.219, 0)
+                            end
+                        end
+                    end
+                end
+            end)
+        end)
 
         -- 2. BG Image Fade Slider Box
         local fadeBox = Instance.new("Frame")
@@ -1442,14 +1314,68 @@ function PolarUI:MakeWindow(config)
         table.insert(PolarUI.ThemeCallbacks, refreshThemeUI)
         refreshThemeUI()
 
-        -- Language translator toggle
-        local isEnglish = (PolarUI.Language == "EN")
-        langBox.MouseButton1Click:Connect(function()
-            isEnglish = not isEnglish
-            local targetLang = isEnglish and "EN" or "ES"
-            langBox.Text = isEnglish and "Language: English [EN]" or "Idioma: Español [ES]"
-            PolarUI:SetLanguage(targetLang)
-        end)
+        -- Interface Scale Section
+        local scaleHdr = Instance.new("TextLabel")
+        scaleHdr.Size = UDim2.new(1, 0, 0, 16)
+        scaleHdr.BackgroundTransparency = 1
+        scaleHdr.Text = "Interface Scale"
+        scaleHdr.Font = Enum.Font.GothamBold
+        scaleHdr.TextSize = 10
+        scaleHdr.TextColor3 = Theme.AccentGlow
+        scaleHdr.TextXAlignment = Enum.TextXAlignment.Center
+        scaleHdr.ZIndex = 2004
+        scaleHdr.Parent = configModal.Scroll
+
+        local scaleOptions = {
+            { name = "Small", val = 950 },
+            { name = "Medium", val = 800 },
+            { name = "Large", val = 650 },
+            { name = "Extra Large", val = 500 }
+        }
+        local scaleBtnMap = {}
+        local currentScale = 650
+        local function refreshScaleUI(selectedVal)
+            currentScale = selectedVal
+            for _, opt in ipairs(scaleOptions) do
+                local b = scaleBtnMap[opt.name]
+                if b then
+                    local isActive = (opt.val == currentScale)
+                    b.Text = (isActive and "✓ " or "") .. opt.name
+                    b.TextColor3 = isActive and Color3.fromRGB(240, 235, 255) or Color3.fromRGB(140, 140, 160)
+                    b.BackgroundColor3 = isActive and Color3.fromRGB(30, 20, 52) or Color3.fromRGB(16, 12, 24)
+                end
+            end
+        end
+
+        for _, opt in ipairs(scaleOptions) do
+            local sBtn = Instance.new("TextButton")
+            sBtn.Size = UDim2.new(1, 0, 0, 24)
+            sBtn.BackgroundColor3 = (opt.val == 650) and Color3.fromRGB(30, 20, 52) or Color3.fromRGB(16, 12, 24)
+            sBtn.BorderSizePixel = 0
+            sBtn.Text = (opt.val == 650 and "✓ " or "") .. opt.name
+            sBtn.Font = Enum.Font.GothamBold
+            sBtn.TextSize = 10
+            sBtn.TextColor3 = (opt.val == 650) and Color3.fromRGB(240, 235, 255) or Color3.fromRGB(140, 140, 160)
+            sBtn.ZIndex = 2004
+            sBtn.Parent = configModal.Scroll
+            local sbc = Instance.new("UICorner"); sbc.CornerRadius = UDim.new(0, 5); sbc.Parent = sBtn
+            local sbs = Instance.new("UIStroke")
+            sbs.Color = Theme.AccentStroke
+            sbs.Thickness = 1
+            sbs.Transparency = 0.55
+            sbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+            sbs.Parent = sBtn
+            scaleBtnMap[opt.name] = sBtn
+
+            sBtn.MouseButton1Click:Connect(function()
+                pcall(function()
+                    if PolarUI and PolarUI.SetScale then
+                        PolarUI:SetScale(opt.val)
+                    end
+                end)
+                refreshScaleUI(opt.val)
+            end)
+        end
     end
 
     -- Construct Credits Modal (exact replica matching user image)
@@ -1467,11 +1393,7 @@ function PolarUI:MakeWindow(config)
         teamHdr.Parent = creditsModal.Scroll
 
         local team = {
-            { letter = "V", name = "Vin", role = "ServerOwner", color = Color3.fromRGB(255, 200, 80) },
-            { letter = "F", name = "Flazhy", role = "MainDeveloper", color = Color3.fromRGB(175, 115, 255) },
-            { letter = "K", name = "Kiel", role = "WebDesigner", color = Color3.fromRGB(100, 200, 255) },
-            { letter = "P", name = "Polar", role = "LeadDeveloper", color = Color3.fromRGB(0, 229, 255) },
-            { letter = "A", name = "Ans", role = "CoreEngine", color = Color3.fromRGB(175, 115, 255) }
+            { letter = "P", name = "Polar", role = "Lead Developer & Creator", color = Color3.fromRGB(0, 229, 255) }
         }
 
         for _, member in ipairs(team) do
@@ -2671,113 +2593,185 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     arrow.ZIndex = 212
     arrow.Parent = pillBadge
 
-    -- Dropdown Pop-Up Modal
+    -- Dropdown Pop-Up Modal (Obsidian Glassmorphism Rework)
+    local parentContainer = self.Window and self.Window.MainFrame or frame
+
+    local scrim = Instance.new("TextButton")
+    scrim.Name = "DropdownScrim_" .. name
+    scrim.Size = UDim2.new(1, 0, 1, 0)
+    scrim.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    scrim.BackgroundTransparency = 1
+    scrim.BorderSizePixel = 0
+    scrim.Text = ""
+    scrim.Visible = false
+    scrim.ZIndex = 2500
+    scrim.Parent = parentContainer
+
     local modal = Instance.new("Frame")
     modal.Name = "DropdownModal_" .. name
     modal.Visible = false
     modal.AnchorPoint = Vector2.new(0.5, 0.5)
     modal.Position = UDim2.new(0.5, 0, 0.5, 0)
-    modal.Size = UDim2.new(0, 220, 0, 180)
-    modal.BackgroundColor3 = Theme.ModalBase
+    modal.Size = UDim2.new(0, 250, 0, 210)
+    modal.BackgroundColor3 = Theme.ModalBase or Color3.fromRGB(15, 18, 26)
     modal.BorderSizePixel = 0
     modal.ClipsDescendants = true
-    modal.ZIndex = 2000
-    modal.Parent = self.Window and self.Window.MainFrame or frame
+    modal.ZIndex = 2501
+    modal.Parent = parentContainer
 
-    local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 8); mc.Parent = modal
+    local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = modal
     local ms = Instance.new("UIStroke")
-    ms.Color = Theme.AccentStroke
-    ms.Thickness = 1.0
-    ms.Transparency = 0.40
+    ms.Color = Theme.AccentStroke or Color3.fromRGB(0, 229, 255)
+    ms.Thickness = 1.2
+    ms.Transparency = 0.35
     ms.Parent = modal
+    PolarUI:RegisterThemedObject(ms, "Color", "AccentStroke")
 
     local mHeader = Instance.new("Frame")
-    mHeader.Size = UDim2.new(1, 0, 0, 30)
-    mHeader.BackgroundTransparency = 1
+    mHeader.Size = UDim2.new(1, 0, 0, 36)
+    mHeader.BackgroundColor3 = Color3.fromRGB(18, 14, 28)
+    mHeader.BackgroundTransparency = 0.3
     mHeader.BorderSizePixel = 0
-    mHeader.ZIndex = 2001
+    mHeader.ZIndex = 2502
     mHeader.Parent = modal
 
     local mTitle = Instance.new("TextLabel")
-    mTitle.Position = UDim2.new(0, 10, 0, 0)
-    mTitle.Size = UDim2.new(1, -40, 1, 0)
+    mTitle.Position = UDim2.new(0, 14, 0, 0)
+    mTitle.Size = UDim2.new(1, -50, 1, 0)
     mTitle.BackgroundTransparency = 1
     mTitle.BorderSizePixel = 0
     mTitle.Text = name
     mTitle.Font = Enum.Font.GothamBold
     mTitle.TextSize = 12
-    mTitle.TextColor3 = Theme.TextWhite
+    mTitle.TextColor3 = Theme.TextWhite or Color3.fromRGB(255, 255, 255)
     mTitle.TextXAlignment = Enum.TextXAlignment.Left
-    mTitle.ZIndex = 2002
+    mTitle.ZIndex = 2503
     mTitle.Parent = mHeader
 
+    local mSep = Instance.new("Frame")
+    mSep.Position = UDim2.new(0, 0, 1, -1)
+    mSep.Size = UDim2.new(1, 0, 0, 1)
+    mSep.BorderSizePixel = 0
+    mSep.BackgroundColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+    mSep.BackgroundTransparency = 0.5
+    mSep.ZIndex = 2503
+    mSep.Parent = mHeader
+
     local mClose = Instance.new("TextButton")
-    mClose.Position = UDim2.new(1, -26, 0.5, -9)
-    mClose.Size = UDim2.new(0, 18, 0, 18)
-    mClose.BackgroundTransparency = 1
+    mClose.AnchorPoint = Vector2.new(1, 0.5)
+    mClose.Position = UDim2.new(1, -8, 0.5, 0)
+    mClose.Size = UDim2.new(0, 22, 0, 22)
+    mClose.BackgroundColor3 = Color3.fromRGB(28, 22, 42)
     mClose.BorderSizePixel = 0
     mClose.Text = "×"
     mClose.Font = Enum.Font.GothamBold
-    mClose.TextSize = 14
-    mClose.TextColor3 = Theme.Accent
-    mClose.ZIndex = 2002
+    mClose.TextSize = 15
+    mClose.TextColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+    mClose.ZIndex = 2503
     mClose.Parent = mHeader
+    local mcb = Instance.new("UICorner"); mcb.CornerRadius = UDim.new(1, 0); mcb.Parent = mClose
+
+    mClose.MouseEnter:Connect(function()
+        TweenService:Create(mClose, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(240, 70, 70),
+            TextColor3 = Color3.fromRGB(255, 255, 255)
+        }):Play()
+    end)
+    mClose.MouseLeave:Connect(function()
+        TweenService:Create(mClose, TweenInfo.new(0.15), {
+            BackgroundColor3 = Color3.fromRGB(28, 22, 42),
+            TextColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+        }):Play()
+    end)
 
     local mScroll = Instance.new("ScrollingFrame")
-    mScroll.Position = UDim2.new(0, 8, 0, 32)
-    mScroll.Size = UDim2.new(1, -16, 1, -38)
+    mScroll.Position = UDim2.new(0, 8, 0, 42)
+    mScroll.Size = UDim2.new(1, -16, 1, -50)
     mScroll.BackgroundTransparency = 1
     mScroll.BorderSizePixel = 0
-    mScroll.ScrollBarThickness = 2
-    mScroll.ScrollBarImageColor3 = Theme.AccentDeep
-    mScroll.ScrollBarImageTransparency = 0.5
+    mScroll.ScrollBarThickness = 3
+    mScroll.ScrollBarImageColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+    mScroll.ScrollBarImageTransparency = 0.4
     mScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    mScroll.ZIndex = 2001
+    mScroll.ZIndex = 2502
     mScroll.Parent = modal
 
     local ml = Instance.new("UIListLayout")
-    ml.Padding = UDim.new(0, 4)
+    ml.Padding = UDim.new(0, 5)
     ml.SortOrder = Enum.SortOrder.LayoutOrder
     ml.Parent = mScroll
 
-    local function openModal()
-        modal.Visible = true
-        modal.Size = UDim2.new(0, 190, 0, 150)
-        TweenService:Create(modal, TweenInfo.new(0.18, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
-            Size = UDim2.new(0, 220, 0, 180)
-        }):Play()
-    end
-
     local function closeModal()
-        local tw = TweenService:Create(modal, TweenInfo.new(0.14, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
-            Size = UDim2.new(0, 190, 0, 150)
+        TweenService:Create(scrim, TweenInfo.new(0.16), { BackgroundTransparency = 1 }):Play()
+        local tw = TweenService:Create(modal, TweenInfo.new(0.16, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {
+            Size = UDim2.new(0, 220, 0, 180),
+            BackgroundTransparency = 0.3
         })
         tw:Play()
         tw.Completed:Connect(function()
             modal.Visible = false
+            scrim.Visible = false
         end)
     end
-
-    mClose.MouseButton1Click:Connect(closeModal)
 
     local function rebuildOptions(optList)
         for _, ch in ipairs(mScroll:GetChildren()) do
             if ch:IsA("TextButton") then ch:Destroy() end
         end
         for _, optName in ipairs(optList) do
+            local isSelected = (tostring(optName) == tostring(selectedVal))
             local optBtn = Instance.new("TextButton")
-            optBtn.Size = UDim2.new(1, 0, 0, 24)
-            optBtn.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
+            optBtn.Size = UDim2.new(1, 0, 0, 28)
+            optBtn.BackgroundColor3 = isSelected and Color3.fromRGB(36, 26, 60) or Color3.fromRGB(18, 16, 28)
+            optBtn.BackgroundTransparency = 0.15
             optBtn.BorderSizePixel = 0
-            optBtn.Text = "  " .. tostring(optName)
+            optBtn.Text = "      " .. tostring(optName)
             optBtn.Font = Enum.Font.GothamBold
             optBtn.TextSize = 11
-            optBtn.TextColor3 = (tostring(optName) == tostring(selectedVal)) and Theme.TextWhite or Theme.TextTabOff
+            optBtn.TextColor3 = isSelected and Theme.TextWhite or Theme.TextLight
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
-            optBtn.ZIndex = 2002
+            optBtn.ZIndex = 2503
             optBtn.Parent = mScroll
 
-            local oc = Instance.new("UICorner"); oc.CornerRadius = UDim.new(0, 4); oc.Parent = optBtn
+            local oc = Instance.new("UICorner"); oc.CornerRadius = UDim.new(0, 6); oc.Parent = optBtn
+            local os = Instance.new("UIStroke")
+            os.Color = isSelected and (Theme.Accent or Color3.fromRGB(0, 229, 255)) or Color3.fromRGB(50, 40, 70)
+            os.Thickness = 1
+            os.Transparency = isSelected and 0.3 or 0.7
+            os.Parent = optBtn
+
+            local ind = Instance.new("Frame")
+            ind.Position = UDim2.new(0, 6, 0.5, -7)
+            ind.Size = UDim2.new(0, 3, 0, 14)
+            ind.BackgroundColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+            ind.BackgroundTransparency = isSelected and 0 or 0.9
+            ind.BorderSizePixel = 0
+            ind.ZIndex = 2504
+            ind.Parent = optBtn
+            local ic = Instance.new("UICorner"); ic.CornerRadius = UDim.new(1, 0); ic.Parent = ind
+
+            optBtn.MouseEnter:Connect(function()
+                if tostring(optName) ~= tostring(selectedVal) then
+                    TweenService:Create(optBtn, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Color3.fromRGB(30, 24, 48),
+                        TextColor3 = Theme.TextWhite
+                    }):Play()
+                    TweenService:Create(os, TweenInfo.new(0.15), {
+                        Transparency = 0.4
+                    }):Play()
+                end
+            end)
+            optBtn.MouseLeave:Connect(function()
+                if tostring(optName) ~= tostring(selectedVal) then
+                    TweenService:Create(optBtn, TweenInfo.new(0.15), {
+                        BackgroundColor3 = Color3.fromRGB(18, 16, 28),
+                        TextColor3 = Theme.TextLight
+                    }):Play()
+                    TweenService:Create(os, TweenInfo.new(0.15), {
+                        Transparency = 0.7
+                    }):Play()
+                end
+            end)
 
             optBtn.MouseButton1Click:Connect(function()
                 selectedVal = optName
@@ -2788,6 +2782,21 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
         end
     end
 
+    local function openModal()
+        rebuildOptions(options)
+        scrim.Visible = true
+        modal.Visible = true
+        modal.Size = UDim2.new(0, 220, 0, 180)
+        modal.BackgroundTransparency = 0.3
+        TweenService:Create(scrim, TweenInfo.new(0.2), { BackgroundTransparency = 0.55 }):Play()
+        TweenService:Create(modal, TweenInfo.new(0.22, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {
+            Size = UDim2.new(0, 250, 0, 210),
+            BackgroundTransparency = 0.05
+        }):Play()
+    end
+
+    scrim.MouseButton1Click:Connect(closeModal)
+    mClose.MouseButton1Click:Connect(closeModal)
     rebuildOptions(options)
 
     local clickBlock = Instance.new("TextButton")

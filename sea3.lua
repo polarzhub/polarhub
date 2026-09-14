@@ -113,18 +113,18 @@ Polar.Data.QuestInfo = {
 }
 
 Polar.Data.Bosses = {
-    {name = "Stone", q = "PortQuest", ql = 3, giver = "Pirate Port Quest Giver", island = "Port Town", lvl = 1550},
-    {name = "Hydra Leader", q = "HydraQuest", ql = 3, giver = "Hydra Town Quest Giver", island = "Hydra Island", lvl = 1675},
-    {name = "Kilo Admiral", q = "MarineTreeQuest", ql = 3, giver = "Marine Tree Quest Giver", island = "Great Tree", lvl = 1750},
-    {name = "Captain Elephant", q = "DeepForestQuest", ql = 3, giver = "Deep Forest Quest Giver", island = "Floating Turtle", lvl = 1875},
-    {name = "Beautiful Pirate", q = "DeepForestQuest2", ql = 3, giver = "Deep Forest Area 2 Quest Giver", island = "Floating Turtle", lvl = 1950},
-    {name = "Soul Reaper", q = nil, ql = nil, giver = nil, island = "Haunted Castle", lvl = 2100},
-    {name = "Cake Queen", q = "IceCreamQuest", ql = 3, giver = "Ice Cream Quest Giver", island = "Sea of Treats", lvl = 2175},
-    {name = "rip_indra True Form", q = nil, ql = nil, giver = nil, island = "Castle on Sea", lvl = 5000},
-    {name = "Cake Prince", q = nil, ql = nil, giver = nil, island = "Sea of Treats", lvl = 2300},
-    {name = "Dough King", q = nil, ql = nil, giver = nil, island = "Sea of Treats", lvl = 2300},
-    {name = "Tyrant of the Skies", q = nil, ql = nil, giver = nil, island = "Tiki Outpost", lvl = 2200},
-    {name = "Longma", q = nil, ql = nil, giver = nil, island = "Floating Turtle", lvl = 2000}
+    {name = "Stone", q = "PortQuest", ql = 3, giver = "Pirate Port Quest Giver", island = "Port Town", lvl = 1550, cd = 300, pos = Vector3.new(-1052.7, 40.2, 6729.8)},
+    {name = "Hydra Leader", q = "HydraQuest", ql = 3, giver = "Hydra Town Quest Giver", island = "Hydra Island", lvl = 1675, cd = 300, pos = Vector3.new(5229.8, 604.2, 345.1)},
+    {name = "Kilo Admiral", q = "MarineTreeQuest", ql = 3, giver = "Marine Tree Quest Giver", island = "Great Tree", lvl = 1750, cd = 300, pos = Vector3.new(2889.3, 73.1, -7231.5)},
+    {name = "Captain Elephant", q = "DeepForestQuest", ql = 3, giver = "Deep Forest Quest Giver", island = "Floating Turtle", lvl = 1875, cd = 300, pos = Vector3.new(-13373.2, 331.7, -9832.2)},
+    {name = "Beautiful Pirate", q = "DeepForestQuest2", ql = 3, giver = "Deep Forest Area 2 Quest Giver", island = "Floating Turtle", lvl = 1950, cd = 600, pos = Vector3.new(5052.3, 616.4, 250.2)},
+    {name = "Cake Queen", q = "IceCreamQuest", ql = 3, giver = "Ice Cream Quest Giver", island = "Sea of Treats", lvl = 2175, cd = 600, pos = Vector3.new(-710.2, 381.5, -11150.2)},
+    {name = "Longma", q = nil, ql = nil, giver = nil, island = "Floating Turtle", lvl = 2000, cd = 900, pos = Vector3.new(-10220.5, 333.1, -9420.2)},
+    {name = "Soul Reaper", q = nil, ql = nil, giver = nil, island = "Haunted Castle", lvl = 2100, cd = 3600, pos = Vector3.new(-9515.2, 172.1, 6075.4)},
+    {name = "Cake Prince", q = nil, ql = nil, giver = nil, island = "Sea of Treats", lvl = 2300, cd = 3600, pos = Vector3.new(-2103.5, 70.1, -12165.2)},
+    {name = "Dough King", q = nil, ql = nil, giver = nil, island = "Sea of Treats", lvl = 2300, cd = 3600, pos = Vector3.new(-2103.5, 70.1, -12165.2)},
+    {name = "Tyrant of the Skies", q = nil, ql = nil, giver = nil, island = "Tiki Outpost", lvl = 2200, cd = 1200, pos = Vector3.new(-16234.5, 60.1, 452.3)},
+    {name = "rip_indra True Form", q = nil, ql = nil, giver = nil, island = "Castle on Sea", lvl = 5000, cd = 7200, pos = Vector3.new(-5333.1, 423.8, -2672.9)}
 }
 
 -- Mapeos Dinámicos
@@ -682,45 +682,21 @@ function Polar.Functions:AutoKillLongma()
     end)
 end
 
--- ==================== INTERFAZ Y CONTROLES SEA 3 (REDZLIB INTEGRADA) ====================
-if TabFarm then
-    TabFarm:AddSection("Cazador de Jefes (Sea 3)")
+-- ==================== INTERFAZ Y CONTROLES SEA 3 ====================
 
-    local BossNamesList = {}
-    for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
+local BossNamesList = {}
+for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
 
-    TabFarm:AddDropdown({
-        Name = "Seleccionar Jefe",
-        Options = BossNamesList,
-        Default = BossNamesList[1],
-        Callback = function(Value)
-            getgenv().PolarSelectedBossToFarm = Value
-        end
-    })
-
-    TabFarm:AddToggle({
-        Name = "Auto Farm Jefe Seleccionado",
-        Default = false,
-        Callback = function(Value)
-            getgenv().PolarAutoFarmBossEnabled = Value
-        end
-    })
-
-    TabFarm:AddToggle({
-        Name = "Auto Farm TODOS los Jefes (Server Hop)",
-        Default = false,
-        Callback = function(Value)
-            getgenv().PolarAutoFarmAllBossesEnabled = Value
-            if Value then getgenv().PolarLastBossCheckedIndex = 1 end
-        end
-    })
+-- Sync Sea 3 bosses with Boss Hunter dropdown in TabHome
+if Polar.BossDropdown and Polar.BossDropdown.SetValues then
+    Polar.BossDropdown:SetValues(BossNamesList)
 end
 
 if TabQuest then
-    TabQuest:AddSection("Eventos Especiales (Sea 3 Exclusivo)")
+    TabQuest:AddSection("Special Events")
 
     TabQuest:AddToggle({
-        Name = "Auto Elite Hunter (Yama Quest)",
+        Name = "Auto Elite Hunter",
         Default = false,
         Callback = function(Value)
             getgenv().PolarAutoElitePiratesEnabled = Value
@@ -728,7 +704,7 @@ if TabQuest then
     })
 
     TabQuest:AddToggle({
-        Name = "Auto rip_indra (Castle on Sea)",
+        Name = "Auto rip_indra",
         Default = false,
         Callback = function(Value)
             getgenv().PolarAutoRipIndraEnabled = Value
@@ -736,7 +712,7 @@ if TabQuest then
     })
 
     TabQuest:AddToggle({
-        Name = "Auto Dough King / Cake Prince",
+        Name = "Auto Dough King",
         Default = false,
         Callback = function(Value)
             getgenv().PolarAutoDoughKingEnabled = Value
@@ -744,15 +720,32 @@ if TabQuest then
     })
 
     TabQuest:AddToggle({
-        Name = "Auto Farm Huesos (Haunted Castle)",
+        Name = "Auto Cake Prince",
         Default = false,
         Callback = function(Value)
-            getgenv().PolarAutoBonesEnabled = Value
+            getgenv().PolarAutoCakePrinceEnabled = Value
         end
     })
 
     TabQuest:AddToggle({
-        Name = "Auto Spin Huesos (Death King)",
+        Name = "Auto Bones",
+        Default = false,
+        Callback = function(Value)
+            getgenv().PolarAutoBonesEnabled = Value
+            if PolarMastery then
+                if Value then
+                    PolarMastery.AutoFarm = false
+                    PolarMastery.AutoFarmBoss = false
+                    PolarMastery.AutoBones = true
+                else
+                    PolarMastery:StopAll()
+                end
+            end
+        end
+    })
+
+    TabQuest:AddToggle({
+        Name = "Auto Spin Bones",
         Default = false,
         Callback = function(Value)
             getgenv().PolarAutoSpinBones = Value
@@ -760,14 +753,14 @@ if TabQuest then
     })
 
     TabQuest:AddButton({
-        Name = "Auto Extraer Espada Yama (Hydra Secret Cave)",
+        Name = "Pull Yama Sword",
         Callback = function()
             Polar.Functions:AutoPullYama()
         end
     })
 
     TabQuest:AddButton({
-        Name = "Auto Matar Longma (Tushita Boss)",
+        Name = "Kill Longma",
         Callback = function()
             Polar.Functions:AutoKillLongma()
         end
@@ -775,69 +768,216 @@ if TabQuest then
 end
 
 if TabStatus then
-    TabStatus:AddSection("Radar Sea 3 en Tiempo Real")
+    local BS = Polar.BossSystem
+    if BS and BS.InitTracker then
+        BS.InitTracker()
+        BS.SetupReactiveListeners()
+    end
 
-    local LabelRipIndra = TabStatus:AddParagraph({ Title = "rip_indra Status", Text = "Buscando..." })
-    local LabelElitePirates = TabStatus:AddParagraph({ Title = "Elite Pirates Tracker", Text = "Buscando..." })
-    local LabelDoughKing = TabStatus:AddParagraph({ Title = "Dough King / Cake Prince Status", Text = "Buscando..." })
-    local LabelMirage = TabStatus:AddParagraph({ Title = "Isla Mirage", Text = "Escaneando mar..." })
+    local SelectedStatusBoss = "Stone"
+
+    local function GetBossStatusCard(bossName)
+        if BS and BS.GetBossStatusCard then
+            return BS.GetBossStatusCard(bossName or SelectedStatusBoss)
+        end
+        return "Loading..."
+    end
+
+    local function UpdatePara(para, text)
+        if not para then return end
+        if para.SetDesc then para:SetDesc(text)
+        elseif para.Set then para:Set(text)
+        elseif type(para) == "table" and para.Desc then para.Desc.Text = text end
+    end
+
+    TabStatus:AddSection("Boss Status & Timers")
+
+    local LabelSelectedBossInfo = TabStatus:AddParagraph({
+        Title = "Boss Details: Stone",
+        Text = GetBossStatusCard("Stone")
+    })
+
+    TabStatus:AddDropdown({
+        Name = "Select Boss to Inspect",
+        Options = BossNamesList,
+        Default = "Stone",
+        Callback = function(value)
+            local resolved = BS and BS.FindBossData(value)
+            SelectedStatusBoss = resolved and resolved.name or value
+            if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+                LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+            end
+            UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
+        end
+    })
+
+    TabStatus:AddButton({
+        Name = "Refresh Boss Status",
+        Desc = "Syncs boss timer",
+        Callback = function()
+            if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
+                LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+            end
+            UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
+            if PolarUI and PolarUI.Notify then
+                PolarUI:Notify({ Title = "Polar Hub", Content = "Boss details synced.", Duration = 2 })
+            end
+        end
+    })
+
+    TabStatus:AddButton({
+        Name = "Teleport to Boss",
+        Desc = "Fly to boss spawn",
+        Callback = function()
+            local bData = (BS and BS.FindBossData(SelectedStatusBoss)) or Polar.Data.Bosses[1]
+            if bData and bData.pos then
+                if PolarUI and PolarUI.Notify then
+                    PolarUI:Notify({ Title = "Polar Hub", Content = "Teleporting to " .. bData.name .. "...", Duration = 3 })
+                end
+                local destCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
+                if Polar.Teleport and Polar.Teleport.To then
+                    Polar.Teleport:To(destCF)
+                elseif getgenv().PolarBypassTeleport then
+                    getgenv().PolarBypassTeleport(destCF)
+                else
+                    local char = LocalPlayer.Character
+                    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                    if hrp then hrp.CFrame = destCF end
+                end
+            end
+        end
+    })
+
+    TabStatus:AddSection("World & Raid Boss Radar")
+
+    local LabelRipIndra = TabStatus:AddParagraph({ Title = "rip_indra", Text = "Scanning..." })
+    local LabelCakePrince = TabStatus:AddParagraph({ Title = "Cake Prince (v1)", Text = "Scanning..." })
+    local LabelDoughKing = TabStatus:AddParagraph({ Title = "Dough King (v2)", Text = "Scanning..." })
+    local LabelElitePirates = TabStatus:AddParagraph({ Title = "Elite Hunter", Text = "Scanning..." })
+    local LabelMirage = TabStatus:AddParagraph({ Title = "Mirage Island", Text = "Scanning ocean..." })
+    local LabelSoulReaper = TabStatus:AddParagraph({ Title = "Soul Reaper", Text = "Scanning..." })
+
+    local function getMoonPhase()
+        local lighting = game:GetService("Lighting")
+        local clock = lighting.ClockTime
+        local sky = lighting:FindFirstChildOfClass("Sky")
+        local moonTex = sky and sky.MoonTextureId or ""
+        if moonTex:find("9709149431") or moonTex:find("Full") or moonTex:find("full") then
+            return "Full Moon (100%)"
+        end
+        local isNight = (clock < 6 or clock > 18)
+        return isNight and string.format("Night (Clock: %.1f)", clock) or string.format("Day (Clock: %.1f)", clock)
+    end
+
+    local EliteNames = {"Urban", "Deandre", "Diablo"}
 
     task.spawn(function()
         while true do
             task.wait(4)
-            local hasRipIndra = false
-            local hasElite = false
-            local eliteName = ""
-            local hasDoughKing = false
-            local hasCakePrince = false
-            local hasMirage = false
-            
-            local enemies = workspace:FindFirstChild("Enemies")
-            local map = workspace:FindFirstChild("Map") or workspace
-            
-            if enemies then
-                for _, obj in ipairs(enemies:GetChildren()) do
-                    if obj.Name == "rip_indra" then hasRipIndra = true end
-                    if obj.Name == "Dough King" then hasDoughKing = true end
-                    if obj.Name == "Cake Prince" then hasCakePrince = true end
-                    for _, name in ipairs(EliteNames) do
-                        if string.find(obj.Name, name) then
-                            hasElite = true
-                            eliteName = name
-                        end
-                    end
-                end
-            end
-            
-            if map:FindFirstChild("MysticIsland") or workspace:FindFirstChild("MysticIsland") then
-                hasMirage = true
-            end
-            
             pcall(function()
-                if LabelRipIndra and LabelRipIndra.SetDesc then
-                    LabelRipIndra:SetDesc(hasRipIndra and "¡VIVO! (Castle on Sea)" or "Muerto / No Spawneado")
+                local enemies = workspace:FindFirstChild("Enemies")
+                local characters = workspace:FindFirstChild("Characters")
+                local map = workspace:FindFirstChild("Map") or workspace
+
+                -- 1. rip_indra
+                local indraMob = (enemies and (enemies:FindFirstChild("rip_indra") or enemies:FindFirstChild("rip_indra True Form"))) or (characters and characters:FindFirstChild("rip_indra True Form"))
+                if indraMob then
+                    local hum = indraMob:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                    UpdatePara(LabelRipIndra, string.format("[ALIVE] Active at Castle on Sea! (Health: %d/%d)", hp, maxHp))
+                else
+                    UpdatePara(LabelRipIndra, "[NOT SPAWNED] Summonable at Castle on Sea (God's Chalice + 3 Aura Colors)")
                 end
-                if LabelElitePirates and LabelElitePirates.SetDesc then
-                    LabelElitePirates:SetDesc(hasElite and ("¡SPAWNEADO! (" .. eliteName .. ")") or "Esperando spawn / buscando NPC")
+
+                -- 2. Cake Prince (v1)
+                local princeMob = enemies and enemies:FindFirstChild("Cake Prince")
+                if princeMob then
+                    local hum = princeMob:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                    UpdatePara(LabelCakePrince, string.format("[ALIVE] Active in Mirror Dimension! (Health: %d/%d)", hp, maxHp))
+                else
+                    UpdatePara(LabelCakePrince, "[WAITING SPAWNER] Requires 500 mobs on Sea of Treats (Drip Mama)")
                 end
-                if LabelDoughKing and LabelDoughKing.SetDesc then
-                    if hasDoughKing then
-                        LabelDoughKing:SetDesc("¡DOUGH KING VIVO! (Sea of Treats)")
-                    elseif hasCakePrince then
-                        LabelDoughKing:SetDesc("¡CAKE PRINCE VIVO! (Sea of Treats)")
-                    else
-                        LabelDoughKing:SetDesc("Farmeando / Esperando Invocación")
+
+                -- 3. Dough King (v2)
+                local doughMob = enemies and enemies:FindFirstChild("Dough King")
+                if doughMob then
+                    local hum = doughMob:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                    UpdatePara(LabelDoughKing, string.format("[ALIVE] Active in Mirror Dimension! (Health: %d/%d)", hp, maxHp))
+                else
+                    UpdatePara(LabelDoughKing, "[NOT SUMMONED] Requires Sweet Chalice (Chalice + 10 Cocoa) + 500 mobs")
+                end
+
+                -- 4. Elite Hunter
+                local eliteFound = nil
+                if enemies then
+                    for _, child in ipairs(enemies:GetChildren()) do
+                        for _, ename in ipairs(EliteNames) do
+                            if string.find(child.Name, ename) then
+                                eliteFound = child
+                                break
+                            end
+                        end
+                        if eliteFound then break end
                     end
                 end
-                if LabelMirage and LabelMirage.SetDesc then
-                    LabelMirage:SetDesc(hasMirage and "¡ISLA MIRAGE SPAWNEADA!" or "No detectada")
+
+                if eliteFound then
+                    local hum = eliteFound:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                    UpdatePara(LabelElitePirates, string.format("[SPAWNED] %s is ALIVE! (Health: %d/%d)", eliteFound.Name, hp, maxHp))
+                else
+                    local CommF = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
+                    local eliteHint = nil
+                    if CommF then
+                        pcall(function()
+                            local res = CommF:InvokeServer("EliteHunter")
+                            if type(res) == "string" and #res > 0 then
+                                eliteHint = res
+                            end
+                        end)
+                    end
+                    if eliteHint then
+                        UpdatePara(LabelElitePirates, string.format("[STATUS] %s", eliteHint:sub(1, 70)))
+                    else
+                        UpdatePara(LabelElitePirates, "[COOLDOWN] Waiting next spawn cycle (~10-15m)")
+                    end
+                end
+
+                -- 5. Mirage Island
+                local mirageFound = (map and map:FindFirstChild("MysticIsland"))
+                    or (workspace:FindFirstChild("MysticIsland"))
+                    or (workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations") and workspace._WorldOrigin.Locations:FindFirstChild("Mirage"))
+                    or (workspace:FindFirstChild("Locations") and workspace.Locations:FindFirstChild("Mirage Island"))
+
+                local moonText = getMoonPhase()
+                if mirageFound then
+                    UpdatePara(LabelMirage, string.format("[SPAWNED] Mystic Island detected at sea! | %s", moonText))
+                else
+                    UpdatePara(LabelMirage, string.format("[NOT DETECTED] Wandering sea event | %s", moonText))
+                end
+
+                -- 6. Soul Reaper
+                local reaperMob = enemies and enemies:FindFirstChild("Soul Reaper")
+                if reaperMob then
+                    local hum = reaperMob:FindFirstChildOfClass("Humanoid")
+                    local hp = hum and math.floor(hum.Health) or 0
+                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                    UpdatePara(LabelSoulReaper, string.format("[ALIVE] Summoned at Haunted Castle! (Health: %d/%d)", hp, maxHp))
+                else
+                    UpdatePara(LabelSoulReaper, "[NOT SUMMONED] Summonable at Haunted Castle with Hallow Essence")
                 end
             end)
         end
     end)
 end
 
-print("✅ Sea 3 optimizado de forma extrema, perfecto y totalmente funcional sin errores.")
+print("✅ Sea 3 optimized, 100% English, Boss Inspector & World Radar active.")
 
 
 -- ==================== 5. AUTO TYRANT OF THE SKIES ====================

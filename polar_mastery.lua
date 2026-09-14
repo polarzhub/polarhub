@@ -121,6 +121,7 @@ PolarMastery.CurrentTarget = nil
 PolarMastery.CurrentTargetRoot = nil
 PolarMastery.CurrentAimPos = nil
 PolarMastery.TargetHoverCFrame = nil
+PolarMastery.IsTraveling = false
 PolarMastery.LastM1Time = 0
 PolarMastery.LastClusterTime = 0
 PolarMastery.AttackCombo = 1
@@ -184,39 +185,51 @@ function PolarMastery:SetAimTarget(targetRoot)
 end
 
 -- ==============================================================================
+-- CONTINUOUS ANTI-FALL HOVER LOCK FORWARD DECLARATIONS
+-- ==============================================================================
+local hoverVelocity = nil
+local hoverPlatform = nil
+local function clearHoverInstances()
+    if hoverVelocity and hoverVelocity.Parent then
+        pcall(function() hoverVelocity:Destroy() end)
+    end
+    hoverVelocity = nil
+    if hoverPlatform and hoverPlatform.Parent then
+        pcall(function() hoverPlatform:Destroy() end)
+    end
+    hoverPlatform = nil
+end
+
+-- ==============================================================================
 -- SAFE TELEPORTATION HELPER
 -- ==============================================================================
 function PolarMastery:TeleportTo(cf)
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root or not cf then return end
+
+    local dist = (root.Position - cf.Position).Magnitude
+    if dist <= 8 then return end
+
+    self.IsTraveling = true
+    clearHoverInstances()
+
     local Polar = getgenv().Polar
     if Polar and Polar.Teleport and type(Polar.Teleport.To) == "function" then
         Polar.Teleport:To(cf)
     else
-        local char = LocalPlayer.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        if root then
-            root.CFrame = cf
-            root.AssemblyLinearVelocity = Vector3.zero
-            root.AssemblyAngularVelocity = Vector3.zero
-        end
+        root.CFrame = cf
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
     end
+
+    self.IsTraveling = false
 end
 
 -- ==============================================================================
 -- CONTINUOUS ANTI-FALL HOVER LOCK (HEARTBEAT + STEPPED + BODYVELOCITY + PLATFORM)
 -- ==============================================================================
-local hoverVelocity = nil
-local hoverPlatform = nil
 
-local function clearHoverInstances()
-    if hoverVelocity then
-        pcall(function() hoverVelocity:Destroy() end)
-        hoverVelocity = nil
-    end
-    if hoverPlatform then
-        pcall(function() hoverPlatform:Destroy() end)
-        hoverPlatform = nil
-    end
-end
 
 function PolarMastery:StopAll()
     self.AutoBones = false
@@ -263,7 +276,18 @@ local function updateHoverEngine()
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
-    if not isActive or not root or not hum or hum.Health <= 0 or not PolarMastery.TargetHoverCFrame then
+    -- Check if inactive, dead, or actively traveling
+    local Polar = getgenv().Polar
+    local isTeleporting = (Polar and Polar.Teleport and Polar.Teleport.IsTeleporting) or PolarMastery.IsTraveling
+    if not isActive or not root or not hum or hum.Health <= 0 or not PolarMastery.TargetHoverCFrame or isTeleporting then
+        clearHoverInstances()
+        return
+    end
+
+    -- Check proximity: ONLY lock hover and spawn anchor when within combat proximity (<= 25 studs)
+    -- This prevents pinning/rubberbanding when the character needs to travel to a new target or quest giver!
+    local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
+    if distToTarget > 25 then
         clearHoverInstances()
         return
     end
@@ -291,7 +315,7 @@ local function updateHoverEngine()
         hoverVelocity.Parent = root
     end
 
-    -- 3. Direct CFrame lock 11.5 studs above mob with zero angular/linear inertia
+    -- 3. Direct CFrame lock 11.5-12.5 studs above mob with zero angular/linear inertia
     root.CFrame = PolarMastery.TargetHoverCFrame
     root.AssemblyLinearVelocity = Vector3.zero
     root.AssemblyAngularVelocity = Vector3.zero
@@ -531,11 +555,28 @@ function PolarMastery:ClusterMobs(pivotPos, targetMobName)
     local enemies = workspace:FindFirstChild("Enemies")
     if not enemies then return end
 
+    -- Strict Single-Mode Lock: Ensure only ONE farm mode is active at any time
+    if PolarMastery.AutoBones then
+        PolarMastery.AutoFarm = false
+        PolarMastery.AutoFarmBoss = false
+        PolarMastery.AutoKillAllBosses = false
+    elseif PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses then
+        PolarMastery.AutoBones = false
+        PolarMastery.AutoFarm = false
+    elseif PolarMastery.AutoFarm then
+        PolarMastery.AutoBones = false
+        PolarMastery.AutoFarmBoss = false
+        PolarMastery.AutoKillAllBosses = false
+    end
+
+
     pcall(function()
         if setsimulationradius then
             setsimulationradius(math.huge, math.huge)
-        elseif sethiddenproperty then
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+        end
+        if sethiddenproperty and LocalPlayer then
+            sethiddenproperty(LocalPlayer, "SimulationRadius", 2000)
+            sethiddenproperty(LocalPlayer, "MaxSimulationRadius", 3000)
         end
     end)
 
@@ -556,10 +597,12 @@ function PolarMastery:ClusterMobs(pivotPos, targetMobName)
                     if yDiff < 45 and dist <= (self.BringRadius or 250) and brought < maxBring then
                         brought = brought + 1
                         
-                        -- 2. Completely disable collisions on ALL parts of the mob to prevent physics explosion
+                        -- 2. Disable collision to prevent physics explosion, preserve touch/query for hitbox registration
                         for _, part in ipairs(mob:GetDescendants()) do
                             if part:IsA("BasePart") then
                                 part.CanCollide = false
+                                part.CanTouch = true
+                                part.CanQuery = true
                             end
                         end
                         
@@ -572,7 +615,12 @@ function PolarMastery:ClusterMobs(pivotPos, targetMobName)
                         hrp.AssemblyLinearVelocity = Vector3.zero
                         hrp.AssemblyAngularVelocity = Vector3.zero
                         hum.WalkSpeed = 0
-                        -- NEVER set hum.PlatformStand = true!
+                        pcall(function()
+                            local st = hum:GetState()
+                            if st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Ragdoll then
+                                hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+                            end
+                        end)
                     end
                 end
             end
@@ -640,6 +688,7 @@ local function runMasteryCombatStep()
     local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
     if not isActive then
         PolarMastery.TargetHoverCFrame = nil
+PolarMastery.IsTraveling = false
         PolarMastery.CurrentTarget = nil
         PolarMastery.CurrentTargetRoot = nil
         PolarMastery.CurrentAimPos = nil
@@ -655,11 +704,27 @@ local function runMasteryCombatStep()
     local hum = char and char:FindFirstChildOfClass("Humanoid")
     if not root or not hum or hum.Health <= 0 then
         PolarMastery.TargetHoverCFrame = nil
+PolarMastery.IsTraveling = false
         return
     end
 
     local enemies = workspace:FindFirstChild("Enemies")
     if not enemies then return end
+
+    -- Strict Single-Mode Lock: Ensure only ONE farm mode is active at any time
+    if PolarMastery.AutoBones then
+        PolarMastery.AutoFarm = false
+        PolarMastery.AutoFarmBoss = false
+        PolarMastery.AutoKillAllBosses = false
+    elseif PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses then
+        PolarMastery.AutoBones = false
+        PolarMastery.AutoFarm = false
+    elseif PolarMastery.AutoFarm then
+        PolarMastery.AutoBones = false
+        PolarMastery.AutoFarmBoss = false
+        PolarMastery.AutoKillAllBosses = false
+    end
+
 
     -- ==========================================================================
     -- MODE 1: AUTO BONES (HAUNTED CASTLE)
@@ -728,6 +793,7 @@ local function runMasteryCombatStep()
         end
 
         if not targetMob then
+            PolarMastery.TargetHoverCFrame = nil
             PolarMastery:TeleportTo(mobAreaCF)
             task.wait(0.4)
             return
@@ -846,6 +912,7 @@ local function runMasteryCombatStep()
                 -- Take quest if needed
                 local hasQuest = Polar.Quest:HasQuest()
                 if PolarMastery.TakeQuest and not hasQuest then
+                    PolarMastery.TargetHoverCFrame = nil
                     local giverName = bestQuest.giverName
                     local giverCF = bestQuest.pos or (Polar.NPCCache and Polar.NPCCache[giverName])
                     if giverCF then
