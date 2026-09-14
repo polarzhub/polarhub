@@ -1426,20 +1426,52 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
     mClose.MouseButton1Click:Connect(closeModal)
 
     for _, opt in ipairs(options) do
+        local isSelected = (opt == selected)
         local optBtn = Instance.new("TextButton")
-        optBtn.Size = UDim2.new(1, 0, 0, 26)
-        optBtn.BackgroundColor3 = Theme.ControlRow
-        optBtn.BackgroundTransparency = 0.4
-        optBtn.Text = "  " .. opt
+        optBtn.Size = UDim2.new(1, -2, 0, 30)
+        optBtn.BackgroundColor3 = isSelected and Color3.fromRGB(44, 26, 72) or Color3.fromRGB(20, 16, 32)
+        optBtn.BackgroundTransparency = isSelected and 0.10 or 0.25
+        optBtn.Text = "        " .. tostring(opt)
         optBtn.Font = Enum.Font.GothamBold
         optBtn.TextSize = 11
-        optBtn.TextColor3 = (opt == selected) and Theme.Accent or Theme.TextWhite
+        optBtn.TextColor3 = isSelected and Color3.fromRGB(255, 255, 255) or Theme.TextLight
         optBtn.TextXAlignment = Enum.TextXAlignment.Left
         optBtn.ZIndex = 2003
         local oc = Instance.new("UICorner")
-        oc.CornerRadius = UDim.new(0, 4)
+        oc.CornerRadius = UDim.new(0, 15)
         oc.Parent = optBtn
-        optBtn.Parent = mScroll
+
+        local os = Instance.new("UIStroke")
+        os.Color = isSelected and Color3.fromRGB(192, 132, 252) or Color3.fromRGB(147, 51, 234)
+        os.Thickness = isSelected and 1.4 or 1.2
+        os.Transparency = isSelected and 0.05 or 0.35
+        os.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+        os.Parent = optBtn
+
+        optBtn.MouseEnter:Connect(function()
+            if opt ~= selected then
+                TweenService:Create(optBtn, TweenInfo.new(0.15), {
+                    BackgroundColor3 = Color3.fromRGB(36, 26, 58),
+                    TextColor3 = Color3.fromRGB(255, 255, 255)
+                }):Play()
+                TweenService:Create(os, TweenInfo.new(0.15), {
+                    Color = Color3.fromRGB(216, 180, 254),
+                    Transparency = 0.1
+                }):Play()
+            end
+        end)
+        optBtn.MouseLeave:Connect(function()
+            if opt ~= selected then
+                TweenService:Create(optBtn, TweenInfo.new(0.15), {
+                    BackgroundColor3 = Color3.fromRGB(20, 16, 32),
+                    TextColor3 = Theme.TextLight
+                }):Play()
+                TweenService:Create(os, TweenInfo.new(0.15), {
+                    Color = Color3.fromRGB(147, 51, 234),
+                    Transparency = 0.35
+                }):Play()
+            end
+        end)
 
         optBtn.MouseButton1Click:Connect(function()
             selected = opt
@@ -1447,6 +1479,7 @@ function QuantumOnyxUI:AddDropdown(innerParent, labelText, options, defaultOptio
             closeModal()
             callback(opt)
         end)
+        optBtn.Parent = mScroll
     end
 
     local clickBlock = Instance.new("TextButton")

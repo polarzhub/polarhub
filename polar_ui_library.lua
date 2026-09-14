@@ -2553,11 +2553,11 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     pillBadge.ZIndex = 211
     pillBadge.Parent = frame
 
-    local pbc = Instance.new("UICorner"); pbc.CornerRadius = UDim.new(0, 6); pbc.Parent = pillBadge
+    local pbc = Instance.new("UICorner"); pbc.CornerRadius = UDim.new(1, 0); pbc.Parent = pillBadge
     local pbs = Instance.new("UIStroke")
-    pbs.Color = Theme.BadgeStroke
-    pbs.Thickness = 1.0
-    pbs.Transparency = 0.32
+    pbs.Color = Theme.BadgeStroke or Color3.fromRGB(192, 132, 252)
+    pbs.Thickness = 1.2
+    pbs.Transparency = 0.22
     pbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     pbs.Parent = pillBadge
     PolarUI:RegisterThemedObject(pbs, "Color", "BadgeStroke")
@@ -2619,11 +2619,12 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     modal.ZIndex = 2501
     modal.Parent = parentContainer
 
-    local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 10); mc.Parent = modal
+    local mc = Instance.new("UICorner"); mc.CornerRadius = UDim.new(0, 14); mc.Parent = modal
     local ms = Instance.new("UIStroke")
-    ms.Color = Theme.AccentStroke or Color3.fromRGB(0, 229, 255)
-    ms.Thickness = 1.2
-    ms.Transparency = 0.35
+    ms.Color = Theme.AccentStroke or Color3.fromRGB(160, 100, 240)
+    ms.Thickness = 1.4
+    ms.Transparency = 0.20
+    ms.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     ms.Parent = modal
     PolarUI:RegisterThemedObject(ms, "Color", "AccentStroke")
 
@@ -2652,7 +2653,7 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     mSep.Position = UDim2.new(0, 0, 1, -1)
     mSep.Size = UDim2.new(1, 0, 0, 1)
     mSep.BorderSizePixel = 0
-    mSep.BackgroundColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+    mSep.BackgroundColor3 = Theme.Accent or Color3.fromRGB(192, 132, 252)
     mSep.BackgroundTransparency = 0.5
     mSep.ZIndex = 2503
     mSep.Parent = mHeader
@@ -2661,15 +2662,20 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     mClose.AnchorPoint = Vector2.new(1, 0.5)
     mClose.Position = UDim2.new(1, -8, 0.5, 0)
     mClose.Size = UDim2.new(0, 22, 0, 22)
-    mClose.BackgroundColor3 = Color3.fromRGB(28, 22, 42)
+    mClose.BackgroundColor3 = Color3.fromRGB(28, 20, 44)
     mClose.BorderSizePixel = 0
     mClose.Text = "×"
     mClose.Font = Enum.Font.GothamBold
     mClose.TextSize = 15
-    mClose.TextColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+    mClose.TextColor3 = Theme.Accent or Color3.fromRGB(192, 132, 252)
     mClose.ZIndex = 2503
     mClose.Parent = mHeader
     local mcb = Instance.new("UICorner"); mcb.CornerRadius = UDim.new(1, 0); mcb.Parent = mClose
+    local mcs = Instance.new("UIStroke")
+    mcs.Color = Color3.fromRGB(160, 100, 240)
+    mcs.Thickness = 1.0
+    mcs.Transparency = 0.35
+    mcs.Parent = mClose
 
     mClose.MouseEnter:Connect(function()
         TweenService:Create(mClose, TweenInfo.new(0.15), {
@@ -2679,8 +2685,8 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     end)
     mClose.MouseLeave:Connect(function()
         TweenService:Create(mClose, TweenInfo.new(0.15), {
-            BackgroundColor3 = Color3.fromRGB(28, 22, 42),
-            TextColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
+            BackgroundColor3 = Color3.fromRGB(28, 20, 44),
+            TextColor3 = Theme.Accent or Color3.fromRGB(192, 132, 252)
         }):Play()
     end)
 
@@ -2690,16 +2696,23 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     mScroll.BackgroundTransparency = 1
     mScroll.BorderSizePixel = 0
     mScroll.ScrollBarThickness = 3
-    mScroll.ScrollBarImageColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
-    mScroll.ScrollBarImageTransparency = 0.4
+    mScroll.ScrollBarImageColor3 = Theme.Accent or Color3.fromRGB(192, 132, 252)
+    mScroll.ScrollBarImageTransparency = 0.3
     mScroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
     mScroll.ZIndex = 2502
     mScroll.Parent = modal
 
     local ml = Instance.new("UIListLayout")
-    ml.Padding = UDim.new(0, 5)
+    ml.Padding = UDim.new(0, 6)
     ml.SortOrder = Enum.SortOrder.LayoutOrder
     ml.Parent = mScroll
+
+    local msp = Instance.new("UIPadding")
+    msp.PaddingTop = UDim.new(0, 4)
+    msp.PaddingBottom = UDim.new(0, 4)
+    msp.PaddingLeft = UDim.new(0, 4)
+    msp.PaddingRight = UDim.new(0, 4)
+    msp.Parent = mScroll
 
     local function closeModal()
         TweenService:Create(scrim, TweenInfo.new(0.16), { BackgroundTransparency = 1 }):Play()
@@ -2721,30 +2734,34 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
         for _, optName in ipairs(optList) do
             local isSelected = (tostring(optName) == tostring(selectedVal))
             local optBtn = Instance.new("TextButton")
-            optBtn.Size = UDim2.new(1, 0, 0, 28)
-            optBtn.BackgroundColor3 = isSelected and Color3.fromRGB(36, 26, 60) or Color3.fromRGB(18, 16, 28)
-            optBtn.BackgroundTransparency = 0.15
+            optBtn.Size = UDim2.new(1, -2, 0, 30)
+            optBtn.BackgroundColor3 = isSelected and Color3.fromRGB(44, 26, 72) or Color3.fromRGB(20, 16, 32)
+            optBtn.BackgroundTransparency = isSelected and 0.10 or 0.25
             optBtn.BorderSizePixel = 0
-            optBtn.Text = "      " .. tostring(optName)
+            optBtn.Text = "         " .. tostring(optName)
             optBtn.Font = Enum.Font.GothamBold
             optBtn.TextSize = 11
-            optBtn.TextColor3 = isSelected and Theme.TextWhite or Theme.TextLight
+            optBtn.TextColor3 = isSelected and Color3.fromRGB(255, 255, 255) or Theme.TextLight
             optBtn.TextXAlignment = Enum.TextXAlignment.Left
             optBtn.ZIndex = 2503
             optBtn.Parent = mScroll
 
-            local oc = Instance.new("UICorner"); oc.CornerRadius = UDim.new(0, 6); oc.Parent = optBtn
+            local oc = Instance.new("UICorner")
+            oc.CornerRadius = UDim.new(0, 15)
+            oc.Parent = optBtn
+
             local os = Instance.new("UIStroke")
-            os.Color = isSelected and (Theme.Accent or Color3.fromRGB(0, 229, 255)) or Color3.fromRGB(50, 40, 70)
-            os.Thickness = 1
-            os.Transparency = isSelected and 0.3 or 0.7
+            os.Color = isSelected and Color3.fromRGB(192, 132, 252) or Color3.fromRGB(147, 51, 234)
+            os.Thickness = isSelected and 1.4 or 1.2
+            os.Transparency = isSelected and 0.05 or 0.35
+            os.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
             os.Parent = optBtn
 
             local ind = Instance.new("Frame")
-            ind.Position = UDim2.new(0, 6, 0.5, -7)
+            ind.Position = UDim2.new(0, 10, 0.5, -7)
             ind.Size = UDim2.new(0, 3, 0, 14)
-            ind.BackgroundColor3 = Theme.Accent or Color3.fromRGB(0, 229, 255)
-            ind.BackgroundTransparency = isSelected and 0 or 0.9
+            ind.BackgroundColor3 = isSelected and Color3.fromRGB(216, 180, 254) or Color3.fromRGB(160, 100, 240)
+            ind.BackgroundTransparency = isSelected and 0 or 0.6
             ind.BorderSizePixel = 0
             ind.ZIndex = 2504
             ind.Parent = optBtn
@@ -2753,22 +2770,30 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
             optBtn.MouseEnter:Connect(function()
                 if tostring(optName) ~= tostring(selectedVal) then
                     TweenService:Create(optBtn, TweenInfo.new(0.15), {
-                        BackgroundColor3 = Color3.fromRGB(30, 24, 48),
-                        TextColor3 = Theme.TextWhite
+                        BackgroundColor3 = Color3.fromRGB(36, 26, 58),
+                        TextColor3 = Color3.fromRGB(255, 255, 255)
                     }):Play()
                     TweenService:Create(os, TweenInfo.new(0.15), {
-                        Transparency = 0.4
+                        Color = Color3.fromRGB(216, 180, 254),
+                        Transparency = 0.1
+                    }):Play()
+                    TweenService:Create(ind, TweenInfo.new(0.15), {
+                        BackgroundTransparency = 0.2
                     }):Play()
                 end
             end)
             optBtn.MouseLeave:Connect(function()
                 if tostring(optName) ~= tostring(selectedVal) then
                     TweenService:Create(optBtn, TweenInfo.new(0.15), {
-                        BackgroundColor3 = Color3.fromRGB(18, 16, 28),
+                        BackgroundColor3 = Color3.fromRGB(20, 16, 32),
                         TextColor3 = Theme.TextLight
                     }):Play()
                     TweenService:Create(os, TweenInfo.new(0.15), {
-                        Transparency = 0.7
+                        Color = Color3.fromRGB(147, 51, 234),
+                        Transparency = 0.35
+                    }):Play()
+                    TweenService:Create(ind, TweenInfo.new(0.15), {
+                        BackgroundTransparency = 0.6
                     }):Play()
                 end
             end)
