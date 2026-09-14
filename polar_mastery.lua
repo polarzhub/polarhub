@@ -129,7 +129,8 @@ PolarMastery.AttackCombo = 1
 getgenv().PolarMastery = PolarMastery
 
 -- ==============================================================================
--- PURE SILENT AIM (METAMETHOD HOOK + MOUSEPOS - ZERO CAMERA MANIPULATION)
+-- PURE SILENT AIM & INTERNAL VIRTUAL MOUSE (HOOKS X, Y, HIT, TARGET, UNITRAY, GETMOUSELOCATION)
+-- ZERO PHYSICAL MOUSE HIJACKING - USER CURSOR STAYS 100% FREE
 -- ==============================================================================
 pcall(function()
     if hookmetamethod and not getgenv().__PolarAimHooked then
@@ -137,13 +138,48 @@ pcall(function()
         local oldIndex
         oldIndex = hookmetamethod(game, "__index", function(self, key)
             if not checkcaller() and (self == Mouse or tostring(self) == "Mouse") then
-                if key == "Hit" and PolarMastery.CurrentAimPos then
-                    return CFrame.new(PolarMastery.CurrentAimPos)
-                elseif key == "Target" and PolarMastery.CurrentTargetRoot then
-                    return PolarMastery.CurrentTargetRoot
+                local pm = getgenv().PolarMastery
+                if pm and pm.CurrentAimPos then
+                    if key == "Hit" then
+                        return CFrame.new(pm.CurrentAimPos)
+                    elseif key == "Target" then
+                        return pm.CurrentTargetRoot
+                    elseif key == "X" or key == "Y" then
+                        local cam = workspace.CurrentCamera
+                        if cam then
+                            local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
+                            if key == "X" then return math.floor(sp.X) end
+                            if key == "Y" then return math.floor(sp.Y) end
+                        end
+                    elseif key == "UnitRay" then
+                        local cam = workspace.CurrentCamera
+                        if cam then
+                            local dir = (pm.CurrentAimPos - cam.CFrame.Position).Unit
+                            return Ray.new(cam.CFrame.Position, dir)
+                        end
+                    end
                 end
             end
             return oldIndex(self, key)
+        end)
+    end
+
+    if hookmetamethod and not getgenv().__PolarNamecallAimHooked then
+        getgenv().__PolarNamecallAimHooked = true
+        local oldNamecall
+        oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+            local method = getnamecallmethod()
+            if not checkcaller() and method == "GetMouseLocation" and (self == UserInputService or tostring(self) == "UserInputService") then
+                local pm = getgenv().PolarMastery
+                if pm and pm.CurrentAimPos then
+                    local cam = workspace.CurrentCamera
+                    if cam then
+                        local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
+                        return Vector2.new(sp.X, sp.Y)
+                    end
+                end
+            end
+            return oldNamecall(self, ...)
         end)
     end
 end)
@@ -159,9 +195,20 @@ function PolarMastery:SetAimTarget(targetRoot)
     self.CurrentAimPos = aimPos
     self.CurrentTargetRoot = targetRoot
 
-    -- Update Blox Fruits internal Mouse module
+    -- Calcular coordenadas de pantalla 2D del NPC para el mouse virtual interno
+    local cam = workspace.CurrentCamera
+    local screenX, screenY = 0, 0
+    if cam then
+        local sp = cam:WorldToViewportPoint(aimPos)
+        screenX = math.floor(sp.X)
+        screenY = math.floor(sp.Y)
+    end
+
+    -- Update Blox Fruits internal Mouse module (ReplicatedStorage.Mouse)
     if MouseModule and type(MouseModule) == "table" then
         pcall(function()
+            MouseModule.X = screenX
+            MouseModule.Y = screenY
             MouseModule.Hit = CFrame.new(aimPos)
             MouseModule.Target = targetRoot
         end)
