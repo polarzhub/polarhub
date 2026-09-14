@@ -932,21 +932,7 @@ if TabStatus then
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
                     UpdatePara(LabelElitePirates, string.format("[SPAWNED] %s is ALIVE! (Health: %d/%d)", eliteFound.Name, hp, maxHp))
                 else
-                    local CommF = game:GetService("ReplicatedStorage"):FindFirstChild("Remotes") and game:GetService("ReplicatedStorage").Remotes:FindFirstChild("CommF_")
-                    local eliteHint = nil
-                    if CommF then
-                        pcall(function()
-                            local res = CommF:InvokeServer("EliteHunter")
-                            if type(res) == "string" and #res > 0 then
-                                eliteHint = res
-                            end
-                        end)
-                    end
-                    if eliteHint then
-                        UpdatePara(LabelElitePirates, string.format("[STATUS] %s", eliteHint:sub(1, 70)))
-                    else
-                        UpdatePara(LabelElitePirates, "[COOLDOWN] Waiting next spawn cycle (~10-15m)")
-                    end
+                    UpdatePara(LabelElitePirates, "[NOT DETECTED] No active Elite Hunter NPC")
                 end
 
                 -- 5. Mirage Island
