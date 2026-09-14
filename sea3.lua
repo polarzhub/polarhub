@@ -223,6 +223,13 @@ end)
 local EliteNames = {"Urban", "Deandre", "Diablo"}
 local AutoEliteRunning = false
 
+local EliteIslandFallbacks = {
+    ["Floating Turtle"] = CFrame.new(-2014, 250, -10238),
+    ["Hydra Island"] = CFrame.new(5230, 150, 763),
+    ["Port Town"] = CFrame.new(-290, 100, 5582),
+    ["Great Tree"] = CFrame.new(2402, 120, -6682)
+}
+
 task.spawn(function()
     while true do
         task.wait(1)
@@ -231,29 +238,55 @@ task.spawn(function()
             task.spawn(function()
                 while getgenv().PolarAutoElitePiratesEnabled do
                     pcall(function()
-                        -- Aceptar Misión de Elite Hunter en Castle on Sea
-                        if CommF then
-                            CommF:InvokeServer("EliteHunter")
-                        end
-                        task.wait(0.5)
+                        if not CommF then return end
 
-                        -- Buscar enemigo Elite en el mapa
+                        -- 1. Consultar estado del Elite de forma no intrusiva (sin activar quest)
+                        local ok, checkRes = pcall(function()
+                            return CommF:InvokeServer("EliteHunter", "Check")
+                        end)
+
+                        local activeEliteName = nil
+                        local activeIsland = nil
+                        if ok and type(checkRes) == "string" then
+                            for _, name in ipairs(EliteNames) do
+                                if checkRes:find(name) then
+                                    activeEliteName = name
+                                    break
+                                end
+                            end
+                            local islands = {"Floating Turtle", "Hydra Island", "Port Town", "Great Tree"}
+                            for _, isl in ipairs(islands) do
+                                if checkRes:find(isl) then
+                                    activeIsland = isl
+                                    break
+                                end
+                            end
+                        end
+
+                        -- Si no hay Elite disponible, esperar pacíficamente sin aceptar misiones
+                        if not activeEliteName then
+                            task.wait(3)
+                            return
+                        end
+
+                        -- 2. Hay un Elite activo y el usuario tiene activado Auto Elite Hunter -> Aceptar misión
+                        CommF:InvokeServer("EliteHunter")
+                        task.wait(0.3)
+
+                        -- 3. Buscar enemigo Elite en el mapa
                         local enemies = workspace:FindFirstChild("Enemies")
                         local targetElite = nil
 
                         if enemies then
                             for _, npc in ipairs(enemies:GetChildren()) do
-                                for _, name in ipairs(EliteNames) do
-                                    if string.find(npc.Name, name) or string.find(string.lower(npc.Name), "elite") then
-                                        local hum = npc:FindFirstChildOfClass("Humanoid")
-                                        local hrp = npc:FindFirstChild("HumanoidRootPart")
-                                        if hum and hrp and hum.Health > 0 then
-                                            targetElite = npc
-                                            break
-                                        end
+                                if string.find(npc.Name, activeEliteName) then
+                                    local hum = npc:FindFirstChildOfClass("Humanoid")
+                                    local hrp = npc:FindFirstChild("HumanoidRootPart")
+                                    if hum and hrp and hum.Health > 0 then
+                                        targetElite = npc
+                                        break
                                     end
                                 end
-                                if targetElite then break end
                             end
                         end
 
@@ -265,11 +298,17 @@ task.spawn(function()
                             VirtualUser:CaptureController()
                             VirtualUser:ClickButton1(Vector2.new(0,0))
                         else
-                            -- Si no está cerca, teleport a Castle on Sea para esperar
-                            if Polar.Teleport then Polar.Teleport:To(CFrame.new(-5085, 316, 3152)) end
+                            -- Si no está en rango de streaming local, volar a la isla donde fue reportado
+                            local targetCF = activeIsland and EliteIslandFallbacks[activeIsland]
+                            if targetCF and Polar.Teleport then
+                                Polar.Teleport:To(targetCF)
+                                task.wait(1.5)
+                            else
+                                if Polar.Teleport then Polar.Teleport:To(CFrame.new(-5085, 316, 3152)) end
+                            end
                         end
                     end)
-                    task.wait(0.3)
+                    task.wait(0.4)
                 end
                 getgenv().PolarFastAttackEnabled = false
                 AutoEliteRunning = false
@@ -913,28 +952,61 @@ if TabStatus then
                     UpdatePara(LabelDoughKing, "Nombre: Dough King\nIsla: Sea of Treats\nEstado: Muerto")
                 end
 
-                -- 4. Elite Hunter
-                local eliteFound = nil
-                if enemies then
-                    for _, child in ipairs(enemies:GetChildren()) do
-                        for _, ename in ipairs(EliteNames) do
-                            if string.find(child.Name, ename) then
-                                eliteFound = child
+                -- 4. Elite Hunter (Consulta directa a remoto sin activar mision ni abrir dialogos)
+                local eliteInfo = nil
+                pcall(function()
+                    if CommF then
+                        local ok, res = pcall(function()
+                            return CommF:InvokeServer("EliteHunter", "Check")
+                        end)
+                        if ok and type(res) == "string" then
+                            local foundName = nil
+                            for _, ename in ipairs(EliteNames) do
+                                if res:find(ename) then
+                                    foundName = ename
+                                    break
+                                end
+                            end
+                            if foundName then
+                                local foundIsland = "Mar"
+                                local islands = {"Floating Turtle", "Hydra Island", "Port Town", "Great Tree", "Castle on Sea", "Haunted Castle"}
+                                for _, isl in ipairs(islands) do
+                                    if res:find(isl) then
+                                        foundIsland = isl
+                                        break
+                                    end
+                                end
+                                eliteInfo = {
+                                    name = foundName,
+                                    island = foundIsland
+                                }
+                            end
+                        end
+                    end
+                end)
+
+                if eliteInfo then
+                    local liveMob = nil
+                    if enemies then
+                        for _, child in ipairs(enemies:GetChildren()) do
+                            if string.find(child.Name, eliteInfo.name) then
+                                liveMob = child
                                 break
                             end
                         end
-                        if eliteFound then break end
                     end
-                end
 
-                if eliteFound then
-                    local hum = eliteFound:FindFirstChildOfClass("Humanoid")
-                    local hp = hum and math.floor(hum.Health) or 0
-                    local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
-                    UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: Mar\nEstado: Vivo\nVida: %d%%", eliteFound.Name, pct))
+                    if liveMob then
+                        local hum = liveMob:FindFirstChildOfClass("Humanoid")
+                        local hp = hum and math.floor(hum.Health) or 0
+                        local maxHp = hum and math.floor(hum.MaxHealth) or 1
+                        local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo\nVida: %d%%", eliteInfo.name, eliteInfo.island, pct))
+                    else
+                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo", eliteInfo.name, eliteInfo.island))
+                    end
                 else
-                    UpdatePara(LabelElitePirates, "Nombre: Elite Hunter\nIsla: Mar\nEstado: Muerto")
+                    UpdatePara(LabelElitePirates, "Nombre: Elite Hunter\nIsla: Desconocida\nEstado: Muerto")
                 end
 
                 -- 5. Mirage Island
