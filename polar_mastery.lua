@@ -129,15 +129,38 @@ PolarMastery.AttackCombo = 1
 getgenv().PolarMastery = PolarMastery
 
 -- ==============================================================================
--- PURE SILENT AIM & INTERNAL VIRTUAL MOUSE (HOOKS X, Y, HIT, TARGET, UNITRAY, GETMOUSELOCATION)
--- ZERO PHYSICAL MOUSE HIJACKING - USER CURSOR STAYS 100% FREE
+-- PURE SILENT AIM & ADVANCED INTERNAL VIRTUAL MOUSE ENGINE (MULTI-LAYER INTERCEPTION)
+-- ZERO PHYSICAL MOUSE HIJACKING - USER CURSOR STAYS 100% FREE TO MOVE ANYWHERE
 -- ==============================================================================
+
+local PolarVirtualMouse = {}
+PolarVirtualMouse.RawData = PolarVirtualMouse.RawData or {}
+
+local function isPlayerMouse(obj)
+    if not obj then return false end
+    if obj == Mouse then return true end
+    if typeof(obj) == "Instance" then
+        local ok, isM = pcall(function()
+            return obj:IsA("PlayerMouse") or obj:IsA("Mouse") or obj.ClassName == "PlayerMouse" or obj.ClassName == "Mouse"
+        end)
+        return ok and isM
+    end
+    return false
+end
+
+-- 1. PROXY & INTERCEPTION FOR ReplicatedStorage.Mouse (CRITICAL FOR FRUIT M1S & SKILLS)
 pcall(function()
-    if hookmetamethod and not getgenv().__PolarAimHooked then
-        getgenv().__PolarAimHooked = true
-        local oldIndex
-        oldIndex = hookmetamethod(game, "__index", function(self, key)
-            if not checkcaller() and (self == Mouse or tostring(self) == "Mouse") then
+    if MouseModule and type(MouseModule) == "table" and not getgenv().__PolarRSMouseProxied then
+        getgenv().__PolarRSMouseProxied = true
+
+        -- Transferir y respaldar campos nativos
+        for k, v in pairs(MouseModule) do
+            PolarVirtualMouse.RawData[k] = v
+            MouseModule[k] = nil
+        end
+
+        local mouseProxyMt = {
+            __index = function(t, key)
                 local pm = getgenv().PolarMastery
                 if pm and pm.CurrentAimPos then
                     if key == "Hit" then
@@ -157,11 +180,110 @@ pcall(function()
                             local dir = (pm.CurrentAimPos - cam.CFrame.Position).Unit
                             return Ray.new(cam.CFrame.Position, dir)
                         end
+                    elseif key == "Origin" then
+                        local cam = workspace.CurrentCamera
+                        if cam then return cam.CFrame end
                     end
                 end
+                return PolarVirtualMouse.RawData[key]
+            end,
+            __newindex = function(t, key, val)
+                -- Neutralizar la sobreescritura continua del bucle RenderStepped de Blox Fruits
+                PolarVirtualMouse.RawData[key] = val
+                -- Mantener t[key] nil para que __index siempre devuelva el objetivo virtual
+            end
+        }
+
+        local existingMt = (getrawmetatable and getrawmetatable(MouseModule)) or getmetatable(MouseModule)
+        if existingMt then
+            for mk, mv in pairs(existingMt) do
+                if not mouseProxyMt[mk] then
+                    mouseProxyMt[mk] = mv
+                end
+            end
+        end
+
+        setmetatable(MouseModule, mouseProxyMt)
+    end
+end)
+
+-- 2. METAMETHOD HOOK FOR game.__index (PLAYERMOUSE & USERINPUTSERVICE FALLBACK)
+pcall(function()
+    getgenv().__PolarAimIndexHandler = function(self, key, oldIndex)
+        local pm = getgenv().PolarMastery
+        if pm and pm.CurrentAimPos then
+            if isPlayerMouse(self) then
+                if key == "Hit" then
+                    return CFrame.new(pm.CurrentAimPos)
+                elseif key == "Target" then
+                    return pm.CurrentTargetRoot
+                elseif key == "X" or key == "Y" then
+                    local cam = workspace.CurrentCamera
+                    if cam then
+                        local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
+                        if key == "X" then return math.floor(sp.X) end
+                        if key == "Y" then return math.floor(sp.Y) end
+                    end
+                elseif key == "UnitRay" then
+                    local cam = workspace.CurrentCamera
+                    if cam then
+                        local dir = (pm.CurrentAimPos - cam.CFrame.Position).Unit
+                        return Ray.new(cam.CFrame.Position, dir)
+                    end
+                elseif key == "Origin" then
+                    local cam = workspace.CurrentCamera
+                    if cam then return cam.CFrame end
+                end
+            elseif not checkcaller() and (self == UserInputService or (typeof(self) == "Instance" and self:IsA("UserInputService"))) and key == "GetMouseLocation" then
+                return function(...)
+                    local cam = workspace.CurrentCamera
+                    if cam then
+                        local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
+                        local guiInset = Vector2.zero
+                        pcall(function()
+                            local gs = game:GetService("GuiService")
+                            if gs then guiInset = gs:GetGuiInset() end
+                        end)
+                        return Vector2.new(sp.X + guiInset.X, sp.Y + guiInset.Y)
+                    end
+                    return Vector2.zero
+                end
+            end
+        end
+        return oldIndex(self, key)
+    end
+
+    if hookmetamethod and not getgenv().__PolarAimHooked then
+        getgenv().__PolarAimHooked = true
+        local oldIndex
+        oldIndex = hookmetamethod(game, "__index", function(self, key)
+            if getgenv().__PolarAimIndexHandler then
+                return getgenv().__PolarAimIndexHandler(self, key, oldIndex)
             end
             return oldIndex(self, key)
         end)
+    end
+end)
+
+-- 3. METAMETHOD HOOK FOR game.__namecall (USERINPUTSERVICE:GETMOUSELOCATION)
+pcall(function()
+    getgenv().__PolarAimNamecallHandler = function(self, method, oldNamecall, ...)
+        if not checkcaller() and method == "GetMouseLocation" and (self == UserInputService or (typeof(self) == "Instance" and self:IsA("UserInputService"))) then
+            local pm = getgenv().PolarMastery
+            if pm and pm.CurrentAimPos then
+                local cam = workspace.CurrentCamera
+                if cam then
+                    local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
+                    local guiInset = Vector2.zero
+                    pcall(function()
+                        local gs = game:GetService("GuiService")
+                        if gs then guiInset = gs:GetGuiInset() end
+                    end)
+                    return Vector2.new(sp.X + guiInset.X, sp.Y + guiInset.Y)
+                end
+            end
+        end
+        return oldNamecall(self, ...)
     end
 
     if hookmetamethod and not getgenv().__PolarNamecallAimHooked then
@@ -169,15 +291,8 @@ pcall(function()
         local oldNamecall
         oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
             local method = getnamecallmethod()
-            if not checkcaller() and method == "GetMouseLocation" and (self == UserInputService or tostring(self) == "UserInputService") then
-                local pm = getgenv().PolarMastery
-                if pm and pm.CurrentAimPos then
-                    local cam = workspace.CurrentCamera
-                    if cam then
-                        local sp = cam:WorldToViewportPoint(pm.CurrentAimPos)
-                        return Vector2.new(sp.X, sp.Y)
-                    end
-                end
+            if getgenv().__PolarAimNamecallHandler then
+                return getgenv().__PolarAimNamecallHandler(self, method, oldNamecall, ...)
             end
             return oldNamecall(self, ...)
         end)
@@ -188,6 +303,14 @@ function PolarMastery:SetAimTarget(targetRoot)
     if not targetRoot then
         self.CurrentAimPos = nil
         self.CurrentTargetRoot = nil
+        if MouseModule and PolarVirtualMouse.RawData then
+            pcall(function()
+                rawset(MouseModule, "Hit", PolarVirtualMouse.RawData["Hit"])
+                rawset(MouseModule, "Target", PolarVirtualMouse.RawData["Target"])
+                rawset(MouseModule, "X", PolarVirtualMouse.RawData["X"])
+                rawset(MouseModule, "Y", PolarVirtualMouse.RawData["Y"])
+            end)
+        end
         return
     end
 
@@ -195,7 +318,7 @@ function PolarMastery:SetAimTarget(targetRoot)
     self.CurrentAimPos = aimPos
     self.CurrentTargetRoot = targetRoot
 
-    -- Calcular coordenadas de pantalla 2D del NPC para el mouse virtual interno
+    -- Sincronizar ReplicatedStorage.Mouse con coordenadas del NPC objetivo
     local cam = workspace.CurrentCamera
     local screenX, screenY = 0, 0
     if cam then
@@ -204,27 +327,32 @@ function PolarMastery:SetAimTarget(targetRoot)
         screenY = math.floor(sp.Y)
     end
 
-    -- Update Blox Fruits internal Mouse module (ReplicatedStorage.Mouse)
-    if MouseModule and type(MouseModule) == "table" then
+    if MouseModule then
         pcall(function()
-            MouseModule.X = screenX
-            MouseModule.Y = screenY
-            MouseModule.Hit = CFrame.new(aimPos)
-            MouseModule.Target = targetRoot
+            rawset(MouseModule, "X", screenX)
+            rawset(MouseModule, "Y", screenY)
+            rawset(MouseModule, "Hit", CFrame.new(aimPos))
+            rawset(MouseModule, "Target", targetRoot)
         end)
     end
 
-    -- Update Tool MousePos Vector3Value if tool has it
+    -- Sincronizar Vector3Value MousePos en Tool y Character
     local tool = self:GetEquippedTool()
     if tool then
-        local mousePos = tool:FindFirstChild("MousePos")
+        local mousePos = tool:FindFirstChild("MousePos") or tool:FindFirstChild("Mouse")
         if mousePos and mousePos:IsA("Vector3Value") then
             mousePos.Value = aimPos
         end
     end
-
-    -- Orientación horizontal segura: solo aplicar si la distancia horizontal > 1.5 studs para evitar matrices NaN o giros bruscos de cámara
     local char = LocalPlayer.Character
+    if char then
+        local charMousePos = char:FindFirstChild("MousePos") or char:FindFirstChild("Mouse")
+        if charMousePos and charMousePos:IsA("Vector3Value") then
+            charMousePos.Value = aimPos
+        end
+    end
+
+    -- Orientación horizontal segura: solo aplicar si la distancia horizontal > 1.5 studs
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if root then
         local deltaX = aimPos.X - root.Position.X
@@ -307,6 +435,16 @@ function PolarMastery:StopAll()
     getgenv().PolarAutoFarmEnabled = false
     getgenv().PolarAutoBonesEnabled = false
     getgenv().PolarFastAttackEnabled = false
+
+    -- Restaurar mouse original en ReplicatedStorage.Mouse
+    if MouseModule and PolarVirtualMouse.RawData then
+        pcall(function()
+            rawset(MouseModule, "Hit", PolarVirtualMouse.RawData["Hit"])
+            rawset(MouseModule, "Target", PolarVirtualMouse.RawData["Target"])
+            rawset(MouseModule, "X", PolarVirtualMouse.RawData["X"])
+            rawset(MouseModule, "Y", PolarVirtualMouse.RawData["Y"])
+        end)
+    end
     
     -- Limpieza instantánea sin plataformas ni esperas de 5 segundos
     clearHoverInstances()
@@ -459,6 +597,50 @@ end))
 table.insert(PolarMastery._Connections, RunService.Heartbeat:Connect(function()
     pcall(updateHoverEngine)
     pcall(stabilizeClusterMobs)
+end))
+
+-- RenderStepped: Sincronización continua de Mouse Virtual interno
+table.insert(PolarMastery._Connections, RunService.RenderStepped:Connect(function()
+    local pm = getgenv().PolarMastery
+    if pm and pm.CurrentAimPos then
+        local aimPos = pm.CurrentAimPos
+        local targetRoot = pm.CurrentTargetRoot
+
+        -- Sincronizar ReplicatedStorage.Mouse
+        if MouseModule then
+            local cam = workspace.CurrentCamera
+            local screenX, screenY = 0, 0
+            if cam then
+                local sp = cam:WorldToViewportPoint(aimPos)
+                screenX = math.floor(sp.X)
+                screenY = math.floor(sp.Y)
+            end
+            pcall(function()
+                rawset(MouseModule, "X", screenX)
+                rawset(MouseModule, "Y", screenY)
+                rawset(MouseModule, "Hit", CFrame.new(aimPos))
+                if targetRoot then
+                    rawset(MouseModule, "Target", targetRoot)
+                end
+            end)
+        end
+
+        -- Sincronizar Vector3Value MousePos en Tool y Character
+        local tool = pm:GetEquippedTool()
+        if tool then
+            local mousePos = tool:FindFirstChild("MousePos") or tool:FindFirstChild("Mouse")
+            if mousePos and mousePos:IsA("Vector3Value") then
+                mousePos.Value = aimPos
+            end
+        end
+        local char = LocalPlayer.Character
+        if char then
+            local charMousePos = char:FindFirstChild("MousePos") or char:FindFirstChild("Mouse")
+            if charMousePos and charMousePos:IsA("Vector3Value") then
+                charMousePos.Value = aimPos
+            end
+        end
+    end
 end))
 
 -- ==============================================================================
