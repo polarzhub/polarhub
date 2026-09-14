@@ -370,8 +370,16 @@ local function updateHoverEngine()
     end)
 end
 
--- Stepped: Sin colisiones y estabilizacin previa a la fsica
-RunService.Stepped:Connect(function()
+-- Limpieza y registro de conexiones seguras para recarga en vivo
+if PolarMastery._Connections then
+    for _, conn in ipairs(PolarMastery._Connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+end
+PolarMastery._Connections = {}
+
+-- Stepped: Sin colisiones y estabilización previa a la física
+table.insert(PolarMastery._Connections, RunService.Stepped:Connect(function()
     local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
     if isActive and PolarMastery.TargetHoverCFrame then
         local char = LocalPlayer.Character
@@ -384,13 +392,13 @@ RunService.Stepped:Connect(function()
         end
         pcall(stabilizeClusterMobs)
     end
-end)
+end))
 
--- Heartbeat: CFrame solid lock y estabilizacin posterior
-RunService.Heartbeat:Connect(function()
+-- Heartbeat: CFrame solid lock y estabilización posterior
+table.insert(PolarMastery._Connections, RunService.Heartbeat:Connect(function()
     pcall(updateHoverEngine)
     pcall(stabilizeClusterMobs)
-end)
+end))
 
 -- ==============================================================================
 -- WEAPON MANAGEMENT & AUTO-EQUIP
@@ -1081,9 +1089,12 @@ PolarMastery.IsTraveling = false
     end
 end
 
--- Fast combat loop
+-- Fast combat loop con sesin controlada para recargas limpias
+PolarMastery._CombatSessionId = (PolarMastery._CombatSessionId or 0) + 1
+local curSession = PolarMastery._CombatSessionId
+
 task.spawn(function()
-    while true do
+    while PolarMastery._CombatSessionId == curSession do
         task.wait(PolarMastery.FastAttackDelay or 0.10)
         local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
         if isActive then
