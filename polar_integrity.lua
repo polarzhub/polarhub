@@ -485,100 +485,42 @@ function Polar.Safety:GetIslandSafeCFrame()
 end
 
 function Polar.Safety:EvacuateToSafety(holdSeconds, shouldTeleportToSafeZone)
-    holdSeconds = holdSeconds or self.DefaultHoldSeconds or 5
-    if shouldTeleportToSafeZone == nil then shouldTeleportToSafeZone = true end
-
-    self.IsSafeExiting = true
+    self.IsSafeExiting = false
     if self._SafeExitThread then
         task.cancel(self._SafeExitThread)
         self._SafeExitThread = nil
     end
 
-    local char = LocalPlayer.Character
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    local hum = char and char:FindFirstChildOfClass("Humanoid")
-    if not root or not hum or hum.Health <= 0 then
-        self.IsSafeExiting = false
-        return
-    end
-
-    -- 1. Stop all combat actions immediately
+    -- 1. Detener acciones de combate inmediatamente
     if Polar.Combat then
         Polar.Combat.Enabled = false
         Polar.Combat.CurrentTarget = nil
         Polar.Combat:ReleaseHover()
     end
 
-    -- 2. Elevate 22 studs above current position immediately
-    local currentPos = root.Position
-    local safeAirCF = CFrame.lookAt(currentPos + Vector3.new(0, 22, 0), currentPos + Vector3.new(0, 22, 0) + root.CFrame.LookVector)
-    root.CFrame = safeAirCF
-    root.AssemblyLinearVelocity = Vector3.zero
-    root.AssemblyAngularVelocity = Vector3.zero
+    -- 2. Limpiar velocidades del personaje de inmediato sin plataformas
+    local char = LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if root then
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+    end
 
-    -- 3. Create 5-Second Safe Neon Cyan Platform
-    local safePlat = Instance.new("Part")
-    safePlat.Name = "PolarSafeExitPlatform"
-    safePlat.Size = Vector3.new(16, 1, 16)
-    safePlat.Transparency = 0.5
-    safePlat.BrickColor = BrickColor.new("Cyan")
-    safePlat.Material = Enum.Material.Neon
-    safePlat.Anchored = true
-    safePlat.CanCollide = true
-    safePlat.CFrame = safeAirCF * CFrame.new(0, -3.5, 0)
-    safePlat.Parent = workspace
-
-    local safeBv = Instance.new("BodyVelocity")
-    safeBv.Name = "PolarSafeExitBV"
-    safeBv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-    safeBv.Velocity = Vector3.zero
-    safeBv.Parent = root
-
-    -- 4. If near danger, optionally transport to island safe zone / spawn point
-    if shouldTeleportToSafeZone then
-        task.delay(0.4, function()
-            if self.IsSafeExiting then
-                local safeZoneCF = self:GetIslandSafeCFrame()
-                if safeZoneCF then
-                    if Polar.Teleport and type(Polar.Teleport.To) == "function" then
-                        Polar.Teleport:To(safeZoneCF)
-                    else
-                        root.CFrame = safeZoneCF
-                    end
-                end
-            end
-        end)
+    -- 3. Limpiar plataformas residuales si existieran
+    for _, name in ipairs({"PolarSafeExitPlatform", "PolarHoverPlatform", "PolarHoverPlatform_V6"}) do
+        local p = workspace:FindFirstChild(name)
+        if p then pcall(function() p:Destroy() end) end
     end
 
     pcall(function()
-        local PolarUI = getgenv().PolarUI
+        local PolarUI = getgenv().PolarUI or (Polar and Polar.UI)
         if PolarUI and PolarUI.Notify then
             PolarUI:Notify({
-                Title = "🛡️ Salida Segura Activada",
-                Content = string.format("Plataforma activa por %d segundos. Evacuando a zona segura sin recibir daño.", holdSeconds),
-                Duration = 4
+                Title = "Polar Hub",
+                Content = "Farm deactivated.",
+                Duration = 2
             })
         end
-    end)
-
-    -- 5. Countdown and Graceful Cleanup after holdSeconds (no todo el rato!)
-    self._SafeExitThread = task.spawn(function()
-        local elapsed = 0
-        while elapsed < holdSeconds do
-            task.wait(0.5)
-            elapsed = elapsed + 0.5
-            -- If user turns farm back ON, abort safe exit immediately
-            local isFarming = (getgenv().PolarMastery and (getgenv().PolarMastery.AutoBones or getgenv().PolarMastery.AutoFarm)) or getgenv().PolarAutoFarmEnabled or getgenv().PolarAutoBonesEnabled
-            if isFarming then
-                break
-            end
-        end
-
-        if safePlat and safePlat.Parent then safePlat:Destroy() end
-        if safeBv and safeBv.Parent then safeBv:Destroy() end
-        self.IsSafeExiting = false
-        self._SafeExitThread = nil
-        print("[Polar Safety] 🛡️ Salida segura concluida con exito. Modo normal restaurado.")
     end)
 end
 
