@@ -790,7 +790,7 @@ if TabStatus then
         elseif type(para) == "table" and para.Desc then para.Desc.Text = text end
     end
 
-    TabStatus:AddSection("Boss Status & Timers")
+    TabStatus:AddSection("Boss Status")
 
     local LabelSelectedBossInfo = TabStatus:AddParagraph({
         Title = "Boss Details: Stone",
@@ -848,11 +848,11 @@ if TabStatus then
         end
     })
 
-    TabStatus:AddSection("World & Raid Boss Radar")
+    TabStatus:AddSection("Event Radar")
 
     local LabelRipIndra = TabStatus:AddParagraph({ Title = "rip_indra", Text = "Scanning..." })
-    local LabelCakePrince = TabStatus:AddParagraph({ Title = "Cake Prince (v1)", Text = "Scanning..." })
-    local LabelDoughKing = TabStatus:AddParagraph({ Title = "Dough King (v2)", Text = "Scanning..." })
+    local LabelCakePrince = TabStatus:AddParagraph({ Title = "Cake Prince", Text = "Scanning..." })
+    local LabelDoughKing = TabStatus:AddParagraph({ Title = "Dough King", Text = "Scanning..." })
     local LabelElitePirates = TabStatus:AddParagraph({ Title = "Elite Hunter", Text = "Scanning..." })
     local LabelMirage = TabStatus:AddParagraph({ Title = "Mirage Island", Text = "Scanning ocean..." })
     local LabelSoulReaper = TabStatus:AddParagraph({ Title = "Soul Reaper", Text = "Scanning..." })
@@ -896,9 +896,9 @@ if TabStatus then
                     local hum = princeMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelCakePrince, string.format("[ALIVE] Active in Mirror Dimension! (Health: %d/%d)", hp, maxHp))
+                    UpdatePara(LabelCakePrince, string.format("[ALIVE - Mirror Dimension] (Health: %d/%d)", hp, maxHp))
                 else
-                    UpdatePara(LabelCakePrince, "[WAITING SPAWNER] Requires 500 mobs on Sea of Treats (Drip Mama)")
+                    UpdatePara(LabelCakePrince, "[v1 Normal] Requires 500 mobs on Sea of Treats (Drip Mama)")
                 end
 
                 -- 3. Dough King (v2)
@@ -907,9 +907,9 @@ if TabStatus then
                     local hum = doughMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelDoughKing, string.format("[ALIVE] Active in Mirror Dimension! (Health: %d/%d)", hp, maxHp))
+                    UpdatePara(LabelDoughKing, string.format("[ALIVE - Mirror Dimension] (Health: %d/%d)", hp, maxHp))
                 else
-                    UpdatePara(LabelDoughKing, "[NOT SUMMONED] Requires Sweet Chalice (Chalice + 10 Cocoa) + 500 mobs")
+                    UpdatePara(LabelDoughKing, "[v2 Sweet Chalice] Requires Sweet Chalice (Chalice + 10 Cocoa) + 500 mobs")
                 end
 
                 -- 4. Elite Hunter

@@ -746,8 +746,7 @@ function Polar.BossSystem.GetBossStatusCard(bossName)
 		table.insert(lines, string.format("Official 3D Timer: %s", marker.timerText))
 		table.insert(lines, string.format("Respawn in: %s (Synced with 3D marker)", marker.timerText))
 		table.insert(lines, "Marker: " .. marker.name)
-		return table.concat(lines, "
-")
+		return table.concat(lines, "\n")
 	end
 	local liveBoss = BS.FindLiveBoss(bData.name)
 	if liveBoss then
@@ -759,8 +758,7 @@ function Polar.BossSystem.GetBossStatusCard(bossName)
 		local pct = math.floor((hp / math.max(1, maxHp)) * 100)
 		table.insert(lines, string.format("Status: [ALIVE] (Health: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
 		table.insert(lines, "Timer: Active in combat now")
-		return table.concat(lines, "
-")
+		return table.concat(lines, "\n")
 	end
 	if trk.deadAt then
 		trk.status = "DEAD"
@@ -779,39 +777,7 @@ function Polar.BossSystem.GetBossStatusCard(bossName)
 		table.insert(lines, "Timer: No active marker (Cooldown elapsed or awaiting proximity)")
 		table.insert(lines, "Hint: Press 'Teleport to Boss' to check spawn location.")
 	end
-	return table.concat(lines, "
-")
-end
- local liveBoss = BS.FindLiveBoss(bData.name)
- if liveBoss then
- trk.status = "ALIVE"
- trk.aliveAt = os.time()
- local hum = liveBoss:FindFirstChild("Humanoid")
- local hp = hum and math.floor(hum.Health) or 0
- local maxHp = hum and math.floor(hum.MaxHealth) or 1
- local pct = math.floor((hp / math.max(1, maxHp)) * 100)
- table.insert(lines, string.format("Estado: [VIVO] (Salud: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
- table.insert(lines, "Contador: Sin contador (En combate actualmente)")
- return table.concat(lines, "\n")
- end
- if trk.deadAt then
- trk.status = "DEAD"
- local elapsed = os.time() - trk.deadAt
- local remaining = math.max(0, bData.cd - elapsed)
- local remainM = math.floor(remaining / 60)
- local remainS = remaining % 60
- table.insert(lines, "Estado: [DERROTADO] (Marcador 3D concluido)")
- if remaining > 0 then
- table.insert(lines, string.format("Reaparicion estimada: ~%02dm %02ds restantes", remainM, remainS))
- else
- table.insert(lines, "Reaparicion: Cooldown cumplido, listo para reaparecer.")
- end
- else
- table.insert(lines, "Estado: [NO DETECTADO / LISTO PARA SPAWNEAR]")
- table.insert(lines, "Contador: Sin marcador activo (Cooldown concluido o en espera de proximidad)")
- table.insert(lines, "Sugerencia: Presiona 'Teleport' para volar a su isla y verificar spawn.")
- end
- return table.concat(lines, "\n")
+	return table.concat(lines, "\n")
 end
 
 function Polar.BossSystem.SetupReactiveListeners()

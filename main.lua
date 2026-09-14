@@ -13,21 +13,25 @@ end
 
 -- Limpieza preventiva de interfaces previas para evitar ventanas duplicadas o congeladas
 pcall(function()
- local targets = {
- (gethui and gethui()),
- (get_hidden_gui and get_hidden_gui()),
- LocalPlayer:FindFirstChild("PlayerGui"),
- (pcall(function() return game:GetService("CoreGui") end) and game:GetService("CoreGui"))
- }
- for _, container in ipairs(targets) do
- if container then
- for _, child in ipairs(container:GetChildren()) do
- if child.Name == "redz Library V5" or child.Name == "PolarHub_Onyx_UI" or child.Name == "Quantum_Onyx_UI" then
- pcall(function() child:Destroy() end)
- end
- end
- end
- end
+	local function purge(parent)
+		if not parent then return end
+		for _, ch in ipairs(parent:GetChildren()) do
+			if ch.Name:find("Polar") or ch.Name:find("redz") or ch.Name:find("Quantum") then
+				pcall(function() ch:Destroy() end)
+			end
+			pcall(function()
+				for _, sub in ipairs(ch:GetChildren()) do
+					if sub.Name:find("Polar") or sub.Name:find("redz") or sub.Name:find("Quantum") then
+						pcall(function() sub:Destroy() end)
+					end
+				end
+			end)
+		end
+	end
+	pcall(function() purge(game:GetService("CoreGui")) end)
+	pcall(function() purge(game:GetService("CoreGui"):FindFirstChild("RobloxGui")) end)
+	pcall(function() if gethui then purge(gethui()) end end)
+	pcall(function() purge(LocalPlayer:FindFirstChild("PlayerGui")) end)
 end)
 
 -- Obtener URL base dinámica usando el commit SHA más reciente para evitar 100% el caché CDN de GitHub
