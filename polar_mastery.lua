@@ -176,11 +176,15 @@ function PolarMastery:SetAimTarget(targetRoot)
         end
     end
 
-    -- Orient character horizontally towards target without tilting or touching camera
+    -- Orientación horizontal segura: solo aplicar si la distancia horizontal > 1.5 studs para evitar matrices NaN o giros bruscos de cámara
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if root then
-        root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aimPos.X, root.Position.Y, aimPos.Z))
+        local deltaX = aimPos.X - root.Position.X
+        local deltaZ = aimPos.Z - root.Position.Z
+        if (deltaX * deltaX + deltaZ * deltaZ) > 2.25 then
+            root.CFrame = CFrame.lookAt(root.Position, Vector3.new(aimPos.X, root.Position.Y, aimPos.Z))
+        end
     end
 end
 
@@ -578,7 +582,7 @@ function PolarMastery:CastKey(key, holdSeconds, targetRoot)
             while (os.clock() - startTime) < duration do
                 local center = self.ClusterCenterPos or (targetRoot and targetRoot.Parent and targetRoot.Position)
                 if center then
-                    self.TargetHoverCFrame = CFrame.lookAt(center + Vector3.new(0, self.HoverHeight or 12.5, 0), center)
+                    self.TargetHoverCFrame = CFrame.new(center + Vector3.new(0, self.HoverHeight or 12.5, 0))
                 end
                 if hoverVelocity and hoverVelocity.Parent then
                     hoverVelocity.Velocity = Vector3.zero
@@ -871,6 +875,12 @@ PolarMastery.IsTraveling = false
 
         -- Take Quest if needed
         if PolarMastery.TakeQuest and not activeQuestMob then
+            PolarMastery.TargetHoverCFrame = nil
+            clearHoverInstances()
+            PolarMastery.CurrentTarget = nil
+            PolarMastery.CurrentTargetRoot = nil
+            PolarMastery.CurrentAimPos = nil
+
             local distGiver = (root.Position - giverCF.Position).Magnitude
             if distGiver > 15 then
                 PolarMastery:TeleportTo(giverCF)
@@ -909,6 +919,10 @@ PolarMastery.IsTraveling = false
 
         if not targetMob then
             PolarMastery.TargetHoverCFrame = nil
+            clearHoverInstances()
+            PolarMastery.CurrentTarget = nil
+            PolarMastery.CurrentTargetRoot = nil
+            PolarMastery.CurrentAimPos = nil
             PolarMastery:TeleportTo(mobAreaCF)
             task.wait(0.4)
             return
@@ -930,8 +944,8 @@ PolarMastery.IsTraveling = false
         -- Safe Mob Clustering (estrictamente 3 a 4 mobs)
         PolarMastery:ClusterMobs(PolarMastery.ClusterCenterPos, targetMobName)
 
-        -- ALTURA DE COMBATE: Anclada firmemente sobre el centro esttico (sin variacin por ataques)
-        PolarMastery.TargetHoverCFrame = CFrame.lookAt(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0), PolarMastery.ClusterCenterPos)
+        -- ALTURA DE COMBATE: Anclada firmemente erguida sobre el centro esttico (sin inclinación ni volteo de cámara)
+        PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
 
         -- Instant Snap if far
         local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
@@ -987,7 +1001,7 @@ PolarMastery.IsTraveling = false
             end
             PolarMastery.ActiveClusterMobs = { boss }
 
-            PolarMastery.TargetHoverCFrame = CFrame.lookAt(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0), PolarMastery.ClusterCenterPos)
+            PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
 
             local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
             if distToTarget > 6 then
@@ -1085,7 +1099,7 @@ PolarMastery.IsTraveling = false
                 PolarMastery:ClusterMobs(PolarMastery.ClusterCenterPos, targetMob.Name)
 
                 -- ALTURA DE COMBATE: Anclada firmemente sobre el centro esttico
-                PolarMastery.TargetHoverCFrame = CFrame.lookAt(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0), PolarMastery.ClusterCenterPos)
+                PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
 
                 local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
                 if distToTarget > 6 then
