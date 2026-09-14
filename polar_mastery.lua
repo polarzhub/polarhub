@@ -209,8 +209,18 @@ function PolarMastery:TeleportTo(cf)
     if not root or not cf then return end
 
     local dist = (root.Position - cf.Position).Magnitude
-    if dist <= 8 then return end
+    if dist <= 4 then return end
 
+    -- Para distancias de combate o reposicionamiento cercano (<= 150 studs):
+    -- Snap cinemtico directo sin Tween, sin PlatformStand, sin prdida de altura ni lag
+    if dist <= 150 then
+        root.CFrame = cf
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        return
+    end
+
+    -- Solo para distancias largas (> 150 studs) viajar con Tween
     self.IsTraveling = true
     clearHoverInstances()
 
@@ -453,7 +463,8 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
     if not targetMob or not targetRoot then return end
     local now = os.clock()
     local delay = self.FastAttackDelay or 0.10
-    if (now - (self.LastM1Time or 0)) < delay then return end
+    local minCooldown = math.max(0.04, delay * 0.5)
+    if (now - (self.LastM1Time or 0)) < minCooldown then return end
     self.LastM1Time = now
 
     local char = LocalPlayer.Character
@@ -640,28 +651,35 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
 
         local delay = self.SkillDelays[self.MasteryTarget] or 0
 
+        -- Detectar habilidades que están fuera de cooldown
+        local readyKeys = {}
         for _, key in ipairs(keys) do
-            local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
-            if not hum or hum.Health <= 0 or not targetMob.Parent then break end
-
-            -- Solo lanzar si la habilidad est fuera de cooldown
             if self:IsSkillReady(key) then
-                local holdSec = self.HoldTimes[key] or 0
-                self:CastKey(key, holdSec, tRoot)
-                
-                -- Intercalar M1 inmediatamente despus de cada skill
-                self:PerformM1(targetMob, tRoot)
-
-                if delay > 0 then task.wait(delay) else task.wait(0.04) end
-            else
-                -- Si est en cooldown, no perder tiempo: atacar con M1 de la fruta!
-                self:PerformM1(targetMob, tRoot)
+                table.insert(readyKeys, key)
             end
         end
 
-        -- Rematar con M1 continuo si el mob an sigue vivo
-        local humAfter = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
-        if humAfter and humAfter.Health > 0 and targetMob.Parent then
+        if #readyKeys == 0 then
+            -- MODO M1 CONTINUO: Si todas las habilidades están en cooldown, disparar ráfaga rápida de M1 de la fruta sin perder tiempo
+            for _ = 1, 3 do
+                local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 or not targetMob.Parent then break end
+                self:PerformM1(targetMob, tRoot)
+                task.wait(0.06)
+            end
+        else
+            -- Lanzar habilidades listas intercalando M1 de fruta en cada intervalo
+            for _, key in ipairs(readyKeys) do
+                local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
+                if not hum or hum.Health <= 0 or not targetMob.Parent then break end
+
+                local holdSec = self.HoldTimes[key] or 0
+                self:CastKey(key, holdSec, tRoot)
+                self:PerformM1(targetMob, tRoot)
+
+                if delay > 0 then task.wait(delay) else task.wait(0.04) end
+            end
+            -- Continuar presionando con M1 de la fruta
             self:PerformM1(targetMob, tRoot)
         end
     end)
