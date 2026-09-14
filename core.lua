@@ -731,23 +731,15 @@ end
 function Polar.BossSystem.GetBossStatusCard(bossName)
 	local BS = Polar.BossSystem
 	local bData = BS.FindBossData(bossName)
-	if not bData then return "Boss not found." end
+	if not bData then return "Boss no encontrado" end
 	local trk = BossTracker[bData.name] or {}
-	local cdMins = math.floor(bData.cd / 60)
-	local lines = {
-		string.format("Boss: %s | Level: %d", bData.name, bData.lvl),
-		string.format("Location: %s Island", bData.island),
-		string.format("Base Cooldown: ~%d minutes (%ds)", cdMins, bData.cd)
-	}
+
 	local marker = BS.GetOfficialBossMarker(bData.name)
 	if marker then
 		trk.status = "DEAD"
-		table.insert(lines, "Status: [DEFEATED] (On Cooldown)")
-		table.insert(lines, string.format("Official 3D Timer: %s", marker.timerText))
-		table.insert(lines, string.format("Respawn in: %s (Synced with 3D marker)", marker.timerText))
-		table.insert(lines, "Marker: " .. marker.name)
-		return table.concat(lines, "\n")
+		return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %s", bData.name, bData.island, tostring(marker.timerText))
 	end
+
 	local liveBoss = BS.FindLiveBoss(bData.name)
 	if liveBoss then
 		trk.status = "ALIVE"
@@ -756,28 +748,23 @@ function Polar.BossSystem.GetBossStatusCard(bossName)
 		local hp = hum and math.floor(hum.Health) or 0
 		local maxHp = hum and math.floor(hum.MaxHealth) or 1
 		local pct = math.floor((hp / math.max(1, maxHp)) * 100)
-		table.insert(lines, string.format("Status: [ALIVE] (Health: %d%% [%s/%s])", pct, tostring(hp), tostring(maxHp)))
-		table.insert(lines, "Timer: Active in combat now")
-		return table.concat(lines, "\n")
+		return string.format("Nombre: %s\nIsla: %s\nEstado: Vivo\nVida: %d%%", bData.name, bData.island, pct)
 	end
+
 	if trk.deadAt then
 		trk.status = "DEAD"
 		local elapsed = os.time() - trk.deadAt
 		local remaining = math.max(0, bData.cd - elapsed)
 		local remainM = math.floor(remaining / 60)
 		local remainS = remaining % 60
-		table.insert(lines, "Status: [DEFEATED] (Cooldown active)")
 		if remaining > 0 then
-			table.insert(lines, string.format("Estimated Respawn: ~%02dm %02ds remaining", remainM, remainS))
+			return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %02d:%02d", bData.name, bData.island, remainM, remainS)
 		else
-			table.insert(lines, "Respawn: Cooldown elapsed, ready to spawn.")
+			return string.format("Nombre: %s\nIsla: %s\nEstado: Listo para aparecer\nFaltan: 0s", bData.name, bData.island)
 		end
-	else
-		table.insert(lines, "Status: [NOT DETECTED / READY TO SPAWN]")
-		table.insert(lines, "Timer: No active marker (Cooldown elapsed or awaiting proximity)")
-		table.insert(lines, "Hint: Press 'Teleport to Boss' to check spawn location.")
 	end
-	return table.concat(lines, "\n")
+
+	return string.format("Nombre: %s\nIsla: %s\nEstado: Listo para aparecer\nFaltan: 0s", bData.name, bData.island)
 end
 
 function Polar.BossSystem.SetupReactiveListeners()
@@ -2768,7 +2755,6 @@ Polar.Registry:BindSlider(SecMainFarm, {
 	Default = (PolarMastery and PolarMastery.HoverHeight) or 12.5,
 	Step = 0.5,
 	Decimals = 1,
-	Suffix = " studs",
 	Callback = function(Value)
 		if PolarMastery then PolarMastery.HoverHeight = Value end
 		local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
@@ -2847,7 +2833,6 @@ SecMainFarm:AddSlider({
 	Max = 250,
 	Default = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150,
 	Step = 5,
-	Suffix = " studs/s",
 	Callback = function(Value)
 		if Polar.Teleport then Polar.Teleport.TweenSpeed = Value end
 		getgenv().PolarTweenSpeed = Value

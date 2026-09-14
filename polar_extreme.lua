@@ -237,7 +237,7 @@ TabCombat:Toggle({
 })
 
 TabCombat:Slider({
-    Title = "Tamaño (Studs)", Step = 10, Min = 10, Max = 300, Default = 50,
+    Title = "Tamaño", Step = 10, Min = 10, Max = 300, Default = 50,
     Callback = function(val) getgenv().PolarHitboxSize = val end
 })
 

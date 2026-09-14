@@ -620,11 +620,11 @@ local function GetBossStatusCard(bossName)
  return BS.GetBossStatusCard(bossName or SelectedStatusBoss)
 end
 
--- Interfaz en TabStatus (Sin emojis):
-TabStatus:AddSection("Boss Status & Timers")
+-- -- Interfaz en TabStatus (Sin emojis):
+TabStatus:AddSection("Boss Status")
 
 local LabelSelectedBossInfo = TabStatus:AddParagraph({
-	Title = "Boss Details: Gorilla King",
+	Title = "Gorilla King",
 	Text = GetBossStatusCard("Gorilla King")
 })
 
@@ -633,10 +633,10 @@ TabStatus:AddDropdown({
 	Options = BossNamesList,
 	Default = "Gorilla King",
 	Callback = function(value)
-		local resolved = BS.FindBossData(value)
+		local resolved = BS and BS.FindBossData(value)
 		SelectedStatusBoss = resolved and resolved.name or value
 		if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
-			LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+			LabelSelectedBossInfo:SetTitle(tostring(SelectedStatusBoss))
 		end
 		UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
 	end
@@ -644,19 +644,17 @@ TabStatus:AddDropdown({
 
 TabStatus:AddButton({
 	Name = "Refresh Boss Status",
-	Desc = "Syncs boss timer",
 	Callback = function()
 		if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
-			LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+			LabelSelectedBossInfo:SetTitle(tostring(SelectedStatusBoss))
 		end
 		UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
-		Notify("Polar Hub", "Boss details for " .. tostring(SelectedStatusBoss) .. " synced.", 2)
+		Notify("Polar Hub", "Boss status actualizado", 2)
 	end
 })
 
 TabStatus:AddButton({
 	Name = "Teleport to Boss",
-	Desc = "Fly to boss spawn",
 	Callback = function()
 		local bData = BS.FindBossData(SelectedStatusBoss) or Polar.Data.Bosses[1]
 		if bData and bData.pos then

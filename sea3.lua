@@ -793,7 +793,7 @@ if TabStatus then
     TabStatus:AddSection("Boss Status")
 
     local LabelSelectedBossInfo = TabStatus:AddParagraph({
-        Title = "Boss Details: Stone",
+        Title = "Stone",
         Text = GetBossStatusCard("Stone")
     })
 
@@ -805,7 +805,7 @@ if TabStatus then
             local resolved = BS and BS.FindBossData(value)
             SelectedStatusBoss = resolved and resolved.name or value
             if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
-                LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+                LabelSelectedBossInfo:SetTitle(tostring(SelectedStatusBoss))
             end
             UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
         end
@@ -813,21 +813,19 @@ if TabStatus then
 
     TabStatus:AddButton({
         Name = "Refresh Boss Status",
-        Desc = "Syncs boss timer",
         Callback = function()
             if LabelSelectedBossInfo and LabelSelectedBossInfo.SetTitle then
-                LabelSelectedBossInfo:SetTitle("Boss Details: " .. tostring(SelectedStatusBoss))
+                LabelSelectedBossInfo:SetTitle(tostring(SelectedStatusBoss))
             end
             UpdatePara(LabelSelectedBossInfo, GetBossStatusCard(SelectedStatusBoss))
             if PolarUI and PolarUI.Notify then
-                PolarUI:Notify({ Title = "Polar Hub", Content = "Boss details synced.", Duration = 2 })
+                PolarUI:Notify({ Title = "Polar Hub", Content = "Boss status actualizado", Duration = 2 })
             end
         end
     })
 
     TabStatus:AddButton({
         Name = "Teleport to Boss",
-        Desc = "Fly to boss spawn",
         Callback = function()
             local bData = (BS and BS.FindBossData(SelectedStatusBoss)) or Polar.Data.Bosses[1]
             if bData and bData.pos then
@@ -863,10 +861,10 @@ if TabStatus then
         local sky = lighting:FindFirstChildOfClass("Sky")
         local moonTex = sky and sky.MoonTextureId or ""
         if moonTex:find("9709149431") or moonTex:find("Full") or moonTex:find("full") then
-            return "Full Moon (100%)"
+            return "Luna Llena"
         end
         local isNight = (clock < 6 or clock > 18)
-        return isNight and string.format("Night (Clock: %.1f)", clock) or string.format("Day (Clock: %.1f)", clock)
+        return isNight and "Noche" or "Dia"
     end
 
     local EliteNames = {"Urban", "Deandre", "Diablo"}
@@ -885,31 +883,34 @@ if TabStatus then
                     local hum = indraMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelRipIndra, string.format("[ALIVE] Active at Castle on Sea! (Health: %d/%d)", hp, maxHp))
+                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                    UpdatePara(LabelRipIndra, string.format("Nombre: rip_indra\nIsla: Castle on Sea\nEstado: Vivo\nVida: %d%%", pct))
                 else
-                    UpdatePara(LabelRipIndra, "[NOT SPAWNED] Summonable at Castle on Sea (God's Chalice + 3 Aura Colors)")
+                    UpdatePara(LabelRipIndra, "Nombre: rip_indra\nIsla: Castle on Sea\nEstado: Muerto")
                 end
 
-                -- 2. Cake Prince (v1)
+                -- 2. Cake Prince
                 local princeMob = enemies and enemies:FindFirstChild("Cake Prince")
                 if princeMob then
                     local hum = princeMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelCakePrince, string.format("[ALIVE - Mirror Dimension] (Health: %d/%d)", hp, maxHp))
+                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                    UpdatePara(LabelCakePrince, string.format("Nombre: Cake Prince\nIsla: Mirror Dimension\nEstado: Vivo\nVida: %d%%", pct))
                 else
-                    UpdatePara(LabelCakePrince, "[v1 Normal] Requires 500 mobs on Sea of Treats (Drip Mama)")
+                    UpdatePara(LabelCakePrince, "Nombre: Cake Prince\nIsla: Sea of Treats\nEstado: Muerto")
                 end
 
-                -- 3. Dough King (v2)
+                -- 3. Dough King
                 local doughMob = enemies and enemies:FindFirstChild("Dough King")
                 if doughMob then
                     local hum = doughMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelDoughKing, string.format("[ALIVE - Mirror Dimension] (Health: %d/%d)", hp, maxHp))
+                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                    UpdatePara(LabelDoughKing, string.format("Nombre: Dough King\nIsla: Mirror Dimension\nEstado: Vivo\nVida: %d%%", pct))
                 else
-                    UpdatePara(LabelDoughKing, "[v2 Sweet Chalice] Requires Sweet Chalice (Chalice + 10 Cocoa) + 500 mobs")
+                    UpdatePara(LabelDoughKing, "Nombre: Dough King\nIsla: Sea of Treats\nEstado: Muerto")
                 end
 
                 -- 4. Elite Hunter
@@ -930,9 +931,10 @@ if TabStatus then
                     local hum = eliteFound:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelElitePirates, string.format("[SPAWNED] %s is ALIVE! (Health: %d/%d)", eliteFound.Name, hp, maxHp))
+                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                    UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: Mar\nEstado: Vivo\nVida: %d%%", eliteFound.Name, pct))
                 else
-                    UpdatePara(LabelElitePirates, "[NOT DETECTED] No active Elite Hunter NPC")
+                    UpdatePara(LabelElitePirates, "Nombre: Elite Hunter\nIsla: Mar\nEstado: Muerto")
                 end
 
                 -- 5. Mirage Island
@@ -941,11 +943,10 @@ if TabStatus then
                     or (workspace:FindFirstChild("_WorldOrigin") and workspace._WorldOrigin:FindFirstChild("Locations") and workspace._WorldOrigin.Locations:FindFirstChild("Mirage"))
                     or (workspace:FindFirstChild("Locations") and workspace.Locations:FindFirstChild("Mirage Island"))
 
-                local moonText = getMoonPhase()
                 if mirageFound then
-                    UpdatePara(LabelMirage, string.format("[SPAWNED] Mystic Island detected at sea! | %s", moonText))
+                    UpdatePara(LabelMirage, "Nombre: Mirage Island\nIsla: Mar\nEstado: Activa")
                 else
-                    UpdatePara(LabelMirage, string.format("[NOT DETECTED] Wandering sea event | %s", moonText))
+                    UpdatePara(LabelMirage, "Nombre: Mirage Island\nIsla: Mar\nEstado: No detectada")
                 end
 
                 -- 6. Soul Reaper
@@ -954,9 +955,10 @@ if TabStatus then
                     local hum = reaperMob:FindFirstChildOfClass("Humanoid")
                     local hp = hum and math.floor(hum.Health) or 0
                     local maxHp = hum and math.floor(hum.MaxHealth) or 1
-                    UpdatePara(LabelSoulReaper, string.format("[ALIVE] Summoned at Haunted Castle! (Health: %d/%d)", hp, maxHp))
+                    local pct = math.floor((hp / math.max(1, maxHp)) * 100)
+                    UpdatePara(LabelSoulReaper, string.format("Nombre: Soul Reaper\nIsla: Haunted Castle\nEstado: Vivo\nVida: %d%%", pct))
                 else
-                    UpdatePara(LabelSoulReaper, "[NOT SUMMONED] Summonable at Haunted Castle with Hallow Essence")
+                    UpdatePara(LabelSoulReaper, "Nombre: Soul Reaper\nIsla: Haunted Castle\nEstado: Muerto")
                 end
             end)
         end
