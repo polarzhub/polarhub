@@ -260,19 +260,16 @@ function PolarCombat:ExecuteAttack(targetMob, targetHitPart)
         end
     end
 
-    -- 6. Dual-Dispatch Hits to Server for Each Mob in Cluster
+    -- 6. Dual-Dispatch Hits to Server for Entire Cluster at once (Multi-Target Atomic Dispatch)
     pcall(function()
-        for _, entry in ipairs(cluster) do
-            local mob, part = entry[1], entry[2]
-            if RegisterAttack then
-                RegisterAttack:FireServer(cd, combo)
-            end
-            if GlobalModule and GlobalModule.SendHitsToServer then
-                GlobalModule.SendHitsToServer(part, {{mob, part}})
-            end
-            if RegisterHit then
-                RegisterHit:FireServer(part, {{mob, part}})
-            end
+        if RegisterAttack then
+            RegisterAttack:FireServer(cd, combo)
+        end
+        if GlobalModule and GlobalModule.SendHitsToServer then
+            GlobalModule.SendHitsToServer(hitPart, cluster)
+        end
+        if RegisterHit then
+            RegisterHit:FireServer(hitPart, cluster)
         end
     end)
 

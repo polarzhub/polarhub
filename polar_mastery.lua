@@ -305,9 +305,9 @@ local function stabilizeClusterMobs()
                 hrp.AssemblyLinearVelocity = Vector3.zero
                 hrp.AssemblyAngularVelocity = Vector3.zero
 
-                -- 3. Fijar posicin circular alrededor del centro esttico
+                -- 3. Fijar posicin ultra-compacta (0.75 studs) alrededor del centro esttico
                 local angle = (i - 1) * (2 * math.pi / math.max(1, count))
-                local offset = Vector3.new(math.cos(angle) * 1.5, 0, math.sin(angle) * 1.5)
+                local offset = (count > 1) and Vector3.new(math.cos(angle) * 0.75, 0, math.sin(angle) * 0.75) or Vector3.zero
                 hrp.CFrame = CFrame.new(center + offset)
 
                 -- 4. Mantener CanCollide=false pero CanTouch y CanQuery activos para recibir dao
@@ -448,15 +448,6 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
     if (now - (self.LastM1Time or 0)) < delay then return end
     self.LastM1Time = now
 
-    local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
-    if combat then
-        combat.FastAttackDelay = self.FastAttackDelay or 0.10
-        combat.HoverHeight = self.HoverHeight or 12.5
-        combat:ExecuteAttack(targetMob)
-        return
-    end
-
-    -- Direct Fallback: Pure Unconstrained Hit Protocol
     local char = LocalPlayer.Character
     if not char then return end
     local hrp = char:FindFirstChild("HumanoidRootPart")
@@ -478,18 +469,40 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
 
     local hitPart = targetMob:FindFirstChild("Head") or targetMob:FindFirstChild("UpperTorso") or targetRoot
     local hits = { {targetMob, hitPart} }
+
+    -- 1. Incluir todos los NPCs del cluster activo (garantiza 2 a 4 NPCs golpeados simultneamente)
+    if self.ActiveClusterMobs then
+        for _, cMob in ipairs(self.ActiveClusterMobs) do
+            if cMob ~= targetMob and cMob:IsA("Model") and cMob.Parent then
+                local cHum = cMob:FindFirstChildOfClass("Humanoid")
+                local cRoot = cMob:FindFirstChild("HumanoidRootPart")
+                if cHum and cHum.Health > 0 and cRoot then
+                    local cPart = cMob:FindFirstChild("Head") or cMob:FindFirstChild("UpperTorso") or cRoot
+                    table.insert(hits, {cMob, cPart})
+                end
+            end
+        end
+    end
+
+    -- 2. Escanear enemigos cercanos si hay menos de 4
     local enemies = workspace:FindFirstChild("Enemies")
-    if enemies then
-        local maxAoE = 6
+    if enemies and #hits < 4 then
         for _, otherMob in ipairs(enemies:GetChildren()) do
-            if otherMob ~= targetMob and otherMob:IsA("Model") and #hits < maxAoE then
-                local oHum = otherMob:FindFirstChildOfClass("Humanoid")
-                local oRoot = otherMob:FindFirstChild("HumanoidRootPart")
-                if oHum and oHum.Health > 0 and oRoot then
-                    local d = (oRoot.Position - hrp.Position).Magnitude
-                    if d <= 50 then
-                        local oPart = otherMob:FindFirstChild("Head") or otherMob:FindFirstChild("UpperTorso") or oRoot
-                        table.insert(hits, {otherMob, oPart})
+            if #hits >= 6 then break end
+            if otherMob ~= targetMob and otherMob:IsA("Model") then
+                local isAlready = false
+                for _, existing in ipairs(hits) do
+                    if existing[1] == otherMob then isAlready = true break end
+                end
+                if not isAlready then
+                    local oHum = otherMob:FindFirstChildOfClass("Humanoid")
+                    local oRoot = otherMob:FindFirstChild("HumanoidRootPart")
+                    if oHum and oHum.Health > 0 and oRoot then
+                        local d = (oRoot.Position - hrp.Position).Magnitude
+                        if d <= 55 then
+                            local oPart = otherMob:FindFirstChild("Head") or otherMob:FindFirstChild("UpperTorso") or oRoot
+                            table.insert(hits, {otherMob, oPart})
+                        end
                     end
                 end
             end
@@ -498,15 +511,32 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
 
     self.AttackCombo = ((self.AttackCombo or 1) % 4) + 1
     local cd = math.max(delay, 0.12)
+    local combo = self.AttackCombo
+
+    -- Despacho atmico multi-target: enva TODOS los hits en una sola llamada sin debounce de servidor
     pcall(function()
-        for _, entry in ipairs(hits) do
-            local m, p = entry[1], entry[2]
-            if RegisterAttack then RegisterAttack:FireServer(cd, self.AttackCombo) end
-            if GlobalModule and GlobalModule.SendHitsToServer then GlobalModule.SendHitsToServer(p, {{m, p}}) end
-            if RegisterHit then RegisterHit:FireServer(p, {{m, p}}) end
-        end
+        if RegisterAttack then RegisterAttack:FireServer(cd, combo) end
+        if GlobalModule and GlobalModule.SendHitsToServer then GlobalModule.SendHitsToServer(hitPart, hits) end
+        if RegisterHit then RegisterHit:FireServer(hitPart, hits) end
     end)
-    pcall(function() tool:Activate() end)
+
+    -- Activacin nativa del arma / M1 de fruta
+    local isFruit = tool.ToolTip == "Blox Fruit" or tool:GetAttribute("WeaponType") == "Demon Fruit"
+    if isFruit then
+        pcall(function()
+            local remFunc = tool:FindFirstChild("RemoteFunction") or tool:FindFirstChildWhichIsA("RemoteFunction")
+            if remFunc then remFunc:InvokeServer("TAP", nil, hitPart.Position) end
+            local remEvent = tool:FindFirstChild("RemoteEvent") or tool:FindFirstChildWhichIsA("RemoteEvent")
+            if remEvent then remEvent:FireServer(hitPart.Position) end
+            tool:Activate()
+        end)
+    else
+        pcall(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton1(Vector2.new(0, 0))
+            tool:Activate()
+        end)
+    end
 end
 
 -- ==============================================================================
@@ -549,6 +579,39 @@ function PolarMastery:CastKey(key, holdSeconds, targetRoot)
     end)
 end
 
+-- Verificacin en tiempo real de cooldown de habilidades
+function PolarMastery:IsSkillReady(key)
+    local tool = self:GetEquippedTool()
+    if not tool then return true end
+
+    local pgui = LocalPlayer:FindFirstChild("PlayerGui")
+    local main = pgui and pgui:FindFirstChild("Main")
+    local skills = main and main:FindFirstChild("Skills")
+    if not skills then return true end
+
+    local toolSkills = skills:FindFirstChild(tool.Name)
+    if not toolSkills then
+        for _, ch in ipairs(skills:GetChildren()) do
+            if ch:FindFirstChild(key) then
+                toolSkills = ch
+                break
+            end
+        end
+    end
+
+    if toolSkills then
+        local kFrame = toolSkills:FindFirstChild(key)
+        if kFrame then
+            local cd = kFrame:FindFirstChild("Cooldown")
+            if cd and cd.Visible and cd.Size.X.Scale > 0.05 then
+                return false -- En cooldown!
+            end
+        end
+    end
+
+    return true -- Lista para lanzar!
+end
+
 function PolarMastery:ExecuteSkillBurst(targetMob)
     if self.IsBusyWithSkills then return end
     self.IsBusyWithSkills = true
@@ -557,11 +620,10 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
         local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
         if not tRoot then return end
 
-        -- 1. Equip mastery target
+        -- 1. Equipar objetivo de maestra
         self:EquipWeapon(self.MasteryTarget)
-        task.wait(0.12)
 
-        -- 2. Select keys
+        -- 2. Seleccionar teclas correspondientes
         local keys = self.BloxFruitKeys
         if self.MasteryTarget == "Melee" then keys = self.MeleeKeys
         elseif self.MasteryTarget == "Sword" then keys = self.SwordKeys
@@ -574,13 +636,22 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
             local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
             if not hum or hum.Health <= 0 or not targetMob.Parent then break end
 
-            local holdSec = self.HoldTimes[key] or 0
-            self:CastKey(key, holdSec, tRoot)
+            -- Solo lanzar si la habilidad est fuera de cooldown
+            if self:IsSkillReady(key) then
+                local holdSec = self.HoldTimes[key] or 0
+                self:CastKey(key, holdSec, tRoot)
+                
+                -- Intercalar M1 inmediatamente despus de cada skill
+                self:PerformM1(targetMob, tRoot)
 
-            if delay > 0 then task.wait(delay) else task.wait(0.08) end
+                if delay > 0 then task.wait(delay) else task.wait(0.04) end
+            else
+                -- Si est en cooldown, no perder tiempo: atacar con M1 de la fruta!
+                self:PerformM1(targetMob, tRoot)
+            end
         end
 
-        -- Finish with M1 if mob still has remaining health
+        -- Rematar con M1 continuo si el mob an sigue vivo
         local humAfter = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
         if humAfter and humAfter.Health > 0 and targetMob.Parent then
             self:PerformM1(targetMob, tRoot)
