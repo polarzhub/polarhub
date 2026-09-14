@@ -2553,11 +2553,11 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
     pillBadge.ZIndex = 211
     pillBadge.Parent = frame
 
-    local pbc = Instance.new("UICorner"); pbc.CornerRadius = UDim.new(1, 0); pbc.Parent = pillBadge
+    local pbc = Instance.new("UICorner"); pbc.CornerRadius = UDim.new(0, 6); pbc.Parent = pillBadge
     local pbs = Instance.new("UIStroke")
-    pbs.Color = Theme.BadgeStroke or Color3.fromRGB(192, 132, 252)
-    pbs.Thickness = 1.2
-    pbs.Transparency = 0.22
+    pbs.Color = Theme.BadgeStroke
+    pbs.Thickness = 1.0
+    pbs.Transparency = 0.32
     pbs.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     pbs.Parent = pillBadge
     PolarUI:RegisterThemedObject(pbs, "Color", "BadgeStroke")
