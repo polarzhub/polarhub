@@ -18,8 +18,9 @@ local UserInputService = game:GetService("UserInputService")
 local VirtualUser = game:GetService("VirtualUser")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Mouse = nil
+pcall(function() Mouse = LocalPlayer:GetMouse() end)
 
 -- Remotes & Core Modules
 local Remotes = ReplicatedStorage:WaitForChild("Remotes", 5)
@@ -48,6 +49,16 @@ local MouseModule = nil
 pcall(function()
     MouseModule = require(ReplicatedStorage:WaitForChild("Mouse", 5))
 end)
+
+local function getMouseModule()
+    if not MouseModule then
+        pcall(function()
+            local m = ReplicatedStorage:FindFirstChild("Mouse")
+            if m then MouseModule = require(m) end
+        end)
+    end
+    return MouseModule
+end
 
 local CombatController = nil
 pcall(function()
@@ -140,10 +151,13 @@ getgenv().__PolarAimNamecallHandler = nil
 -- Reglas estrictas: solo key == "Hit" y key == "Target", ZERO llamadas a engine methods o WorldToViewportPoint
 pcall(function()
     getgenv().__PolarAimIndexHandler = function(self, key, oldIndex)
-        if (key == "Hit" or key == "Target") and not checkcaller() then
+        if key == "Hit" or key == "Target" then
             local pm = getgenv().PolarMastery
             if pm and pm.CurrentAimPos then
-                local pMouse = Mouse or (LocalPlayer and LocalPlayer:GetMouse())
+                local pMouse = Mouse
+                if not pMouse and LocalPlayer then
+                    pcall(function() Mouse = LocalPlayer:GetMouse(); pMouse = Mouse end)
+                end
                 if self == pMouse then
                     if key == "Hit" then
                         return CFrame.new(pm.CurrentAimPos)
@@ -180,10 +194,11 @@ function PolarMastery:SetAimTarget(targetRoot)
     self.CurrentTargetRoot = targetRoot
 
     -- Sincronizar ReplicatedStorage.Mouse con coordenadas del objetivo
-    if MouseModule and type(MouseModule) == "table" then
+    local mm = getMouseModule()
+    if mm and type(mm) == "table" then
         pcall(function()
-            MouseModule.Hit = CFrame.new(aimPos)
-            MouseModule.Target = targetRoot
+            mm.Hit = CFrame.new(aimPos)
+            mm.Target = targetRoot
         end)
     end
 
@@ -449,11 +464,12 @@ table.insert(PolarMastery._Connections, RunService.RenderStepped:Connect(functio
         local targetRoot = pm.CurrentTargetRoot
 
         -- Sincronizar ReplicatedStorage.Mouse
-        if MouseModule and type(MouseModule) == "table" then
+        local mm = getMouseModule()
+        if mm and type(mm) == "table" then
             pcall(function()
-                MouseModule.Hit = CFrame.new(aimPos)
+                mm.Hit = CFrame.new(aimPos)
                 if targetRoot then
-                    MouseModule.Target = targetRoot
+                    mm.Target = targetRoot
                 end
             end)
         end
@@ -614,7 +630,11 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
                 mousePos.Value = hitPart.Position
             end
             local remFunc = tool:FindFirstChild("RemoteFunction") or tool:FindFirstChildWhichIsA("RemoteFunction")
-            if remFunc then remFunc:InvokeServer("TAP", nil, hitPart.Position) end
+            if remFunc then
+                task.spawn(function()
+                    pcall(function() remFunc:InvokeServer("TAP", nil, hitPart.Position) end)
+                end)
+            end
             local remEvent = tool:FindFirstChild("RemoteEvent") or tool:FindFirstChildWhichIsA("RemoteEvent")
             if remEvent then remEvent:FireServer(hitPart.Position) end
             tool:Activate()
