@@ -724,11 +724,19 @@ end
 -- ==================== INTERFAZ Y CONTROLES SEA 3 ====================
 
 local BossNamesList = {}
-for _, b in ipairs(Polar.Data.Bosses) do table.insert(BossNamesList, b.name) end
+for _, b in ipairs(Polar.Data.Bosses) do
+    -- Excluir jefes de raid de la lista principal de Boss Hunter para evitar bugs
+    if b.q or b.name == "Longma" then
+        table.insert(BossNamesList, b.name)
+    end
+end
 
 -- Sync Sea 3 bosses with Boss Hunter dropdown in TabHome
 if Polar.BossDropdown and Polar.BossDropdown.SetValues then
     Polar.BossDropdown:SetValues(BossNamesList)
+end
+if Polar.UpdateBossHunterStatus then
+    Polar.UpdateBossHunterStatus()
 end
 
 if TabQuest then

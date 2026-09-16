@@ -1060,16 +1060,21 @@ PolarMastery.IsTraveling = false
             local Polar = getgenv().Polar
             if Polar and Polar.Data and Polar.Data.Bosses then
                 for _, b in ipairs(Polar.Data.Bosses) do
-                    local bObj = enemies:FindFirstChild(b.name) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(b.name))
-                    if bObj and bObj:FindFirstChild("HumanoidRootPart") and bObj:FindFirstChildOfClass("Humanoid") and bObj.Humanoid.Health > 0 then
-                        targetBossName = b.name
-                        break
+                    if b.q or b.name == "Longma" then
+                        local BS = Polar.BossSystem
+                        local bObj = (BS and BS.FindLiveBoss and BS.FindLiveBoss(b.name)) or enemies:FindFirstChild(b.name) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(b.name))
+                        if bObj and bObj:FindFirstChild("HumanoidRootPart") and bObj:FindFirstChildOfClass("Humanoid") and bObj.Humanoid.Health > 0 then
+                            targetBossName = b.name
+                            break
+                        end
                     end
                 end
             end
         end
 
-        local boss = enemies:FindFirstChild(targetBossName) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(targetBossName))
+        local Polar = getgenv().Polar
+        local BS = Polar and Polar.BossSystem
+        local boss = (BS and BS.FindLiveBoss and BS.FindLiveBoss(targetBossName)) or enemies:FindFirstChild(targetBossName) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(targetBossName))
         if boss and boss:FindFirstChild("HumanoidRootPart") and boss:FindFirstChildOfClass("Humanoid") and boss.Humanoid.Health > 0 then
             local tRoot = boss.HumanoidRootPart
             local tHum = boss.Humanoid

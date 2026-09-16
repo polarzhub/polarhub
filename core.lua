@@ -630,141 +630,227 @@ function Polar.BossSystem.FindBossData(bossName)
 end
 
 function Polar.BossSystem.GetOfficialBossMarker(bossName)
- local origin = workspace:FindFirstChild("_WorldOrigin")
- if not origin then return nil end
- local targetNorm = Polar.BossSystem.NormalizeBossName(bossName)
- if #targetNorm == 0 then return nil end
- for _, child in ipairs(origin:GetChildren()) do
- if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
- local cNorm = Polar.BossSystem.NormalizeBossName(child.Name)
- local timerGui = child:FindFirstChild("RespawnTimer")
- local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
- local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
- local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or child.Name:gsub(" Respawn Marker", "")
- local internalNorm = Polar.BossSystem.NormalizeBossName(internalName)
- if cNorm == targetNorm or internalNorm == targetNorm or cNorm:find(targetNorm, 1, true) or targetNorm:find(cNorm, 1, true) then
- local rawTimer = timerLabel and timerLabel.Text or nil
- local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
- return {
- part = child,
- name = internalName ~= "" and internalName or child.Name:gsub(" Respawn Marker", ""),
- timerText = cleanTimer,
- position = child.Position
- }
- end
- end
- end
- return nil
+	local origin = workspace:FindFirstChild("_WorldOrigin")
+	if not origin then return nil end
+	local targetNorm = Polar.BossSystem.NormalizeBossName(bossName)
+	if #targetNorm == 0 then return nil end
+
+	local containers = { origin, origin:FindFirstChild("EnemySpawns") }
+	for _, cont in ipairs(containers) do
+		if cont then
+			for _, child in ipairs(cont:GetChildren()) do
+				if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+					local cNorm = Polar.BossSystem.NormalizeBossName(child.Name)
+					local timerGui = child:FindFirstChild("RespawnTimer")
+					local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
+					local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
+					local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or child.Name:gsub(" Respawn Marker", "")
+					local internalNorm = Polar.BossSystem.NormalizeBossName(internalName)
+					if cNorm == targetNorm or internalNorm == targetNorm or cNorm:find(targetNorm, 1, true) or targetNorm:find(cNorm, 1, true) then
+						local rawTimer = timerLabel and timerLabel.Text or nil
+						local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
+						return {
+							part = child,
+							name = internalName ~= "" and internalName or child.Name:gsub(" Respawn Marker", ""),
+							timerText = cleanTimer,
+							position = child.Position
+						}
+					end
+				end
+			end
+		end
+	end
+	return nil
 end
 
 function Polar.BossSystem.GetAllActiveMarkers()
- local origin = workspace:FindFirstChild("_WorldOrigin")
- if not origin then return {} end
- local list = {}
- for _, child in ipairs(origin:GetChildren()) do
- if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
- local timerGui = child:FindFirstChild("RespawnTimer")
- local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
- local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
- local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or child.Name:gsub(" Respawn Marker", "")
- local rawTimer = timerLabel and timerLabel.Text or nil
- local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
- table.insert(list, {
- name = internalName,
- timer = cleanTimer,
- part = child
- })
- end
- end
- return list
+	local origin = workspace:FindFirstChild("_WorldOrigin")
+	if not origin then return {} end
+	local list = {}
+	local containers = { origin, origin:FindFirstChild("EnemySpawns") }
+	for _, cont in ipairs(containers) do
+		if cont then
+			for _, child in ipairs(cont:GetChildren()) do
+				if child.Name:find("Marker") or child:FindFirstChild("RespawnTimer") then
+					local timerGui = child:FindFirstChild("RespawnTimer")
+					local timerLabel = timerGui and (timerGui:FindFirstChild("Timer", true) or timerGui:FindFirstChildWhichIsA("TextLabel", true))
+					local nameLabel = timerGui and timerGui:FindFirstChild("Name", true)
+					local internalName = nameLabel and nameLabel.Text:gsub("<[^>]->", "") or child.Name:gsub(" Respawn Marker", "")
+					local rawTimer = timerLabel and timerLabel.Text or nil
+					local cleanTimer = rawTimer and rawTimer:gsub("<[^>]->", "") or "[00:00]"
+					table.insert(list, {
+						name = internalName,
+						timer = cleanTimer,
+						part = child
+					})
+				end
+			end
+		end
+	end
+	return list
 end
 
 function Polar.BossSystem.FindLiveBoss(bossName)
- local Norm = Polar.BossSystem.NormalizeBossName
- local targetNorm = Norm(bossName)
- local enemies = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("Characters")
- if not enemies then return nil end
- for _, e in ipairs(enemies:GetChildren()) do
- local eName = e.Name:lower()
- local hum = e:FindFirstChild("Humanoid")
- if hum and hum.Health > 0 then
- if targetNorm == "gorillaking" then
- if (eName:find("gorilla") and eName:find("king")) or eName == "the gorilla king" then return e end
- elseif targetNorm == "bobby" then
- if eName == "bobby" or eName:find("bobby") or eName == "chef" or eName:find("chef") then return e end
- elseif targetNorm == "yeti" then
- if eName == "yeti" or eName:find("yeti") then return e end
- elseif targetNorm == "mobleader" then
- if eName:find("mob") and (eName:find("leader") or eName:find("boss")) then return e end
- elseif targetNorm == "viceadmiral" then
- if eName:find("vice") and eName:find("admiral") then return e end
- elseif targetNorm == "warden" then
- if (eName == "warden" or eName:find("warden")) and not eName:find("chief") then return e end
- elseif targetNorm == "chiefwarden" then
- if eName:find("chief") and eName:find("warden") then return e end
- elseif targetNorm == "swan" then
- if eName == "swan" or eName:find("swan") then return e end
- elseif targetNorm == "magmaadmiral" then
- if eName:find("magma") and (eName:find("admiral") or eName:find("general")) then return e end
- elseif targetNorm == "fishmanlord" then
- if eName:find("fishman") and eName:find("lord") then return e end
- elseif targetNorm == "wysper" then
- if eName == "wysper" or eName:find("wysper") or (eName:find("sky") and eName:find("warlord")) then return e end
- elseif targetNorm == "thundergod" then
- if (eName:find("thunder") or eName:find("lightning")) and eName:find("god") and not eName:find("guard") then return e end
- elseif targetNorm == "cyborg" then
- if eName == "cyborg" or eName:find("cyborg") then return e end
- elseif targetNorm == "iceadmiral" then
- if eName:find("ice") and eName:find("admiral") then return e end
- elseif targetNorm == "saberexpert" then
- if eName:find("saber") or eName:find("shanks") then return e end
- elseif targetNorm == "saw" then
- if eName == "the saw" or eName == "saw" then return e end
- elseif targetNorm == "greybeard" then
- if eName:find("greybeard") or eName:find("whitebeard") then return e end
- end
- end
- end
- return nil
-end
+	local Norm = Polar.BossSystem.NormalizeBossName
+	local targetNorm = Norm(bossName)
+	if #targetNorm == 0 then return nil end
 
-function Polar.BossSystem.GetBossStatusCard(bossName)
-	local BS = Polar.BossSystem
-	local bData = BS.FindBossData(bossName)
-	if not bData then return "Boss no encontrado" end
-	local trk = BossTracker[bData.name] or {}
-
-	local marker = BS.GetOfficialBossMarker(bData.name)
-	if marker then
-		trk.status = "DEAD"
-		return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %s", bData.name, bData.island, tostring(marker.timerText))
+	local enemies = workspace:FindFirstChild("Enemies")
+	local chars = workspace:FindFirstChild("Characters")
+	local pool = {}
+	if enemies then
+		for _, e in ipairs(enemies:GetChildren()) do table.insert(pool, e) end
+	end
+	if chars then
+		for _, e in ipairs(chars:GetChildren()) do table.insert(pool, e) end
 	end
 
+	for _, e in ipairs(pool) do
+		local hum = e:FindFirstChildOfClass("Humanoid")
+		if hum and hum.Health > 0 then
+			local eNorm = Norm(e.Name)
+			local eName = e.Name:lower()
+
+			-- Aliases específicos de Sea 1
+			if targetNorm == "gorillaking" and ((eName:find("gorilla") and eName:find("king")) or eName == "the gorilla king") then
+				return e
+			elseif targetNorm == "bobby" and (eName:find("bobby") or eName:find("chef")) then
+				return e
+			elseif targetNorm == "saberexpert" and (eName:find("saber") or eName:find("shanks")) then
+				return e
+			elseif targetNorm == "saw" and (eName == "the saw" or eName:find("saw")) then
+				return e
+			elseif targetNorm == "greybeard" and (eName:find("greybeard") or eName:find("whitebeard")) then
+				return e
+			elseif targetNorm == "iceadmiral" and (eName:find("ice") and eName:find("admiral")) then
+				return e
+			elseif targetNorm == "magmaadmiral" and (eName:find("magma") and (eName:find("admiral") or eName:find("general"))) then
+				return e
+			elseif targetNorm == "fishmanlord" and (eName:find("fishman") and eName:find("lord")) then
+				return e
+			elseif targetNorm == "wysper" and (eName:find("wysper") or (eName:find("sky") and eName:find("warlord"))) then
+				return e
+			elseif targetNorm == "thundergod" and ((eName:find("thunder") or eName:find("lightning")) and eName:find("god") and not eName:find("guard")) then
+				return e
+			elseif targetNorm == "warden" and ((eName == "warden" or eName:find("warden")) and not eName:find("chief")) then
+				return e
+			elseif targetNorm == "chiefwarden" and (eName:find("chief") and eName:find("warden")) then
+				return e
+			elseif targetNorm == "mobleader" and (eName:find("mob") and (eName:find("leader") or eName:find("boss"))) then
+				return e
+			-- Coincidencia general para Sea 1, Sea 2 y Sea 3
+			elseif eNorm == targetNorm or eNorm:find(targetNorm, 1, true) or targetNorm:find(eNorm, 1, true) or eName:find(bossName:lower(), 1, true) then
+				return e
+			end
+		end
+	end
+	return nil
+end
+
+function Polar.BossSystem.GetBossStatusInfo(bossName)
+	local BS = Polar.BossSystem
+	local bData = BS.FindBossData(bossName)
+	if not bData then
+		return {
+			status = "UNKNOWN",
+			name = tostring(bossName),
+			island = "Desconocida",
+			remainingSeconds = 0,
+			timerText = "00:00",
+			hpPercent = 0
+		}
+	end
+	local trk = BossTracker[bData.name] or {}
+
+	-- 1. Verificar si está vivo en el mapa
 	local liveBoss = BS.FindLiveBoss(bData.name)
 	if liveBoss then
 		trk.status = "ALIVE"
 		trk.aliveAt = os.time()
-		local hum = liveBoss:FindFirstChild("Humanoid")
+		local hum = liveBoss:FindFirstChildOfClass("Humanoid")
 		local hp = hum and math.floor(hum.Health) or 0
 		local maxHp = hum and math.floor(hum.MaxHealth) or 1
 		local pct = math.floor((hp / math.max(1, maxHp)) * 100)
-		return string.format("Nombre: %s\nIsla: %s\nEstado: Vivo\nVida: %d%%", bData.name, bData.island, pct)
+		return {
+			status = "ALIVE",
+			name = bData.name,
+			island = bData.island,
+			remainingSeconds = 0,
+			timerText = "00:00",
+			hpPercent = pct,
+			model = liveBoss
+		}
 	end
 
+	-- 2. Verificar marker oficial en _WorldOrigin
+	local marker = BS.GetOfficialBossMarker(bData.name)
+	if marker then
+		trk.status = "DEAD"
+		local remainSec = 0
+		if marker.timerText then
+			local clean = marker.timerText:gsub("[%[%]]", "")
+			local m, s = clean:match("(%d+):(%d+)")
+			if m and s then
+				remainSec = (tonumber(m) or 0) * 60 + (tonumber(s) or 0)
+			end
+		end
+		return {
+			status = "DEAD",
+			name = bData.name,
+			island = bData.island,
+			remainingSeconds = remainSec,
+			timerText = marker.timerText or "00:00",
+			hpPercent = 0
+		}
+	end
+
+	-- 3. Verificar tiempo transcurrido desde la muerte registrada
 	if trk.deadAt then
 		trk.status = "DEAD"
 		local elapsed = os.time() - trk.deadAt
-		local remaining = math.max(0, bData.cd - elapsed)
+		local remaining = math.max(0, (bData.cd or 300) - elapsed)
 		local remainM = math.floor(remaining / 60)
 		local remainS = remaining % 60
 		if remaining > 0 then
-			return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %02d:%02d", bData.name, bData.island, remainM, remainS)
-		else
-			return string.format("Nombre: %s\nIsla: %s\nEstado: Listo para aparecer\nFaltan: 0s", bData.name, bData.island)
+			return {
+				status = "DEAD",
+				name = bData.name,
+				island = bData.island,
+				remainingSeconds = remaining,
+				timerText = string.format("%02d:%02d", remainM, remainS),
+				hpPercent = 0
+			}
 		end
 	end
 
-	return string.format("Nombre: %s\nIsla: %s\nEstado: Listo para aparecer\nFaltan: 0s", bData.name, bData.island)
+	-- 4. Listo para aparecer / No detectado vivo
+	return {
+		status = "READY",
+		name = bData.name,
+		island = bData.island,
+		remainingSeconds = 0,
+		timerText = "00:00",
+		hpPercent = 0
+	}
+end
+
+function Polar.BossSystem.GetBossStatusCard(bossName)
+	local BS = Polar.BossSystem
+	local info = BS.GetBossStatusInfo(bossName)
+	if not info then return "Boss no encontrado" end
+	if info.status == "ALIVE" then
+		return string.format("Nombre: %s\nIsla: %s\nEstado: Vivo\nVida: %d%%", info.name, info.island, info.hpPercent or 100)
+	elseif info.status == "DEAD" then
+		if info.remainingSeconds and info.remainingSeconds > 0 then
+			local m = math.floor(info.remainingSeconds / 60)
+			local s = info.remainingSeconds % 60
+			return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %02d:%02d", info.name, info.island, m, s)
+		else
+			return string.format("Nombre: %s\nIsla: %s\nEstado: Muerto\nFaltan: %s", info.name, info.island, tostring(info.timerText or "00:00"))
+		end
+	else
+		return string.format("Nombre: %s\nIsla: %s\nEstado: Listo para aparecer\nFaltan: 0s", info.name, info.island)
+	end
 end
 
 function Polar.BossSystem.SetupReactiveListeners()
@@ -3001,7 +3087,7 @@ SecSkills:AddSlider({
 local SecBossFarm = TabHome:AddSection("Boss Hunter")
 Polar.SecBossFarm = SecBossFarm
 
-local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Longma", "Tyrant of the Skies", "Soul Reaper", "Cake Prince", "Dough King", "rip_indra"}
+local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Longma"}
 local BossDropdown = SecBossFarm:AddDropdown({
 	Name = "Select Boss",
 	Options = bossList,
@@ -3009,9 +3095,58 @@ local BossDropdown = SecBossFarm:AddDropdown({
 	Callback = function(Value)
 		getgenv().PolarSelectedBossToFarm = Value
 		if PolarMastery then PolarMastery.SelectedBoss = Value end
+		if Polar.UpdateBossHunterStatus then
+			Polar.UpdateBossHunterStatus(Value)
+		end
 	end
 })
 Polar.BossDropdown = BossDropdown
+
+local BossStatusBar = SecBossFarm:AddParagraph({
+	Title = "Estado: Stone",
+	Text = "Consultando estado..."
+})
+Polar.BossStatusBar = BossStatusBar
+
+function Polar.UpdateBossHunterStatus(bossName)
+	local target = bossName or getgenv().PolarSelectedBossToFarm or (PolarMastery and PolarMastery.SelectedBoss) or "Stone"
+	if not Polar.BossStatusBar then return end
+	local BS = Polar.BossSystem
+	if not BS or not BS.GetBossStatusInfo then return end
+
+	local info = BS.GetBossStatusInfo(target)
+	if not info then return end
+
+	if info.status == "ALIVE" then
+		Polar.BossStatusBar:SetTitle("Estado: " .. target)
+		Polar.BossStatusBar:SetDesc(string.format("🟢 Vivo (%d%% HP) | Isla: %s", info.hpPercent or 100, info.island or "Desconocida"))
+	elseif info.status == "DEAD" then
+		if info.remainingSeconds and info.remainingSeconds > 0 then
+			local m = math.floor(info.remainingSeconds / 60)
+			local s = info.remainingSeconds % 60
+			Polar.BossStatusBar:SetTitle("Estado: " .. target)
+			Polar.BossStatusBar:SetDesc(string.format("🔴 Muerto | Faltan: %02d:%02d (%d min %d s)\nIsla: %s", m, s, m, s, info.island or "Desconocida"))
+		else
+			Polar.BossStatusBar:SetTitle("Estado: " .. target)
+			Polar.BossStatusBar:SetDesc(string.format("🔴 Muerto | Faltan: %s\nIsla: %s", tostring(info.timerText or "00:00"), info.island or "Desconocida"))
+		end
+	else
+		Polar.BossStatusBar:SetTitle("Estado: " .. target)
+		Polar.BossStatusBar:SetDesc(string.format("🟡 Listo para aparecer | Faltan: 0s\nIsla: %s", info.island or "Desconocida"))
+	end
+end
+
+-- Actualización periódica en tiempo real del status del boss seleccionado en Home
+task.spawn(function()
+	while true do
+		task.wait(2)
+		pcall(function()
+			if Polar.UpdateBossHunterStatus then
+				Polar.UpdateBossHunterStatus()
+			end
+		end)
+	end
+end)
 
 Polar.Registry:BindToggle(SecBossFarm, {
 	Name = "Auto Farm Selected Boss",
@@ -3024,6 +3159,48 @@ Polar.Registry:BindToggle(SecBossFarm, {
 				PolarMastery.AutoFarmBoss = true
 			else
 				PolarMastery:StopAll()
+			end
+		end
+
+		-- Notificación al activar si el boss no está disponible o cuánto le falta
+		if Value then
+			local target = getgenv().PolarSelectedBossToFarm or (PolarMastery and PolarMastery.SelectedBoss) or "Stone"
+			local BS = Polar.BossSystem
+			if BS and BS.GetBossStatusInfo then
+				local info = BS.GetBossStatusInfo(target)
+				if info then
+					if info.status == "ALIVE" then
+						if PolarUI and PolarUI.Notify then
+							PolarUI:Notify({
+								Title = "Boss Hunter",
+								Content = string.format("✅ ¡%s está VIVO (%d%% HP)!\n⚔️ Farmeando en %s...", target, info.hpPercent or 100, info.island or "Isla"),
+								Duration = 4
+							})
+						end
+					elseif info.status == "DEAD" then
+						local m = math.floor((info.remainingSeconds or 0) / 60)
+						local s = (info.remainingSeconds or 0) % 60
+						local timeMsg = (info.remainingSeconds and info.remainingSeconds > 0)
+							and string.format("Faltan %d min y %d seg para reaparecer", m, s)
+							or string.format("Faltan: %s", tostring(info.timerText or "00:00"))
+
+						if PolarUI and PolarUI.Notify then
+							PolarUI:Notify({
+								Title = "Boss Hunter",
+								Content = string.format("❌ %s NO está disponible.\n⏳ %s.\n📍 Isla: %s", target, timeMsg, info.island or "Isla"),
+								Duration = 5
+							})
+						end
+					else
+						if PolarUI and PolarUI.Notify then
+							PolarUI:Notify({
+								Title = "Boss Hunter",
+								Content = string.format("⚠️ %s no está generado actualmente.\n⏳ Estado: Listo para reaparecer (0s).\n📍 Isla: %s", target, info.island or "Isla"),
+								Duration = 4
+							})
+						end
+					end
+				end
 			end
 		end
 	end
