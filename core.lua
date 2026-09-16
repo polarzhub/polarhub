@@ -1791,7 +1791,7 @@ getgenv().PolarAutoFarmBossEnabled = false
 getgenv().PolarAutoFarmAllBossesEnabled = false
 getgenv().PolarBossWithQuest = false
 getgenv().PolarLastBossCheckedIndex = 1
-getgenv().PolarSelectedBossToFarm = "Gorilla King"
+getgenv().PolarSelectedBossToFarm = getgenv().PolarSelectedBossToFarm or "Stone"
 getgenv().PolarAutoMobLeaderEnabled = false
 getgenv().PolarAutoSaberExpertEnabled = false
 getgenv().PolarCurrentBotState = "IDLE"
@@ -3088,10 +3088,14 @@ local SecBossFarm = TabHome:AddSection("Boss Hunter")
 Polar.SecBossFarm = SecBossFarm
 
 local bossList = {"Stone", "Hydra Leader", "Kilo Admiral", "Captain Elephant", "Beautiful Pirate", "Cake Queen", "Longma"}
+local defaultBoss = (PolarMastery and PolarMastery.SelectedBoss) or (Polar.Data and Polar.Data.Bosses and Polar.Data.Bosses[1] and Polar.Data.Bosses[1].name) or "Stone"
+getgenv().PolarSelectedBossToFarm = defaultBoss
+if PolarMastery then PolarMastery.SelectedBoss = defaultBoss end
+
 local BossDropdown = SecBossFarm:AddDropdown({
 	Name = "Select Boss",
 	Options = bossList,
-	Default = PolarMastery.SelectedBoss or "Stone",
+	Default = defaultBoss,
 	Callback = function(Value)
 		getgenv().PolarSelectedBossToFarm = Value
 		if PolarMastery then PolarMastery.SelectedBoss = Value end
@@ -3109,7 +3113,7 @@ local BossStatusBar = SecBossFarm:AddParagraph({
 Polar.BossStatusBar = BossStatusBar
 
 function Polar.UpdateBossHunterStatus(bossName)
-	local target = bossName or getgenv().PolarSelectedBossToFarm or (PolarMastery and PolarMastery.SelectedBoss) or "Stone"
+	local target = bossName or (Polar.BossDropdown and Polar.BossDropdown.GetValue and Polar.BossDropdown:GetValue()) or getgenv().PolarSelectedBossToFarm or (PolarMastery and PolarMastery.SelectedBoss) or "Stone"
 	if not Polar.BossStatusBar then return end
 	local BS = Polar.BossSystem
 	if not BS or not BS.GetBossStatusInfo then return end

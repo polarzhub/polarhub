@@ -734,9 +734,14 @@ end
 -- Sync Sea 3 bosses with Boss Hunter dropdown in TabHome
 if Polar.BossDropdown and Polar.BossDropdown.SetValues then
     Polar.BossDropdown:SetValues(BossNamesList)
+    if Polar.BossDropdown.Set then
+        Polar.BossDropdown:Set("Stone")
+    end
 end
+getgenv().PolarSelectedBossToFarm = "Stone"
+if PolarMastery then PolarMastery.SelectedBoss = "Stone" end
 if Polar.UpdateBossHunterStatus then
-    Polar.UpdateBossHunterStatus()
+    Polar.UpdateBossHunterStatus("Stone")
 end
 
 if TabQuest then
