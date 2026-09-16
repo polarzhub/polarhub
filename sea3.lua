@@ -223,14 +223,45 @@ end)
 local EliteNames = {"Urban", "Deandre", "Diablo"}
 local AutoEliteRunning = false
 
+Polar.LastEliteRawResponse = nil
+Polar.LastEliteInfo = nil
+
+function Polar.HasEliteQuest()
+    local pgui = LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")
+    if not pgui then return false end
+    if pgui:FindFirstChild("TrackedQuestFrame") then return true end
+    for _, name in ipairs(EliteNames) do
+        if pgui:FindFirstChild(name) then return true end
+    end
+    return false
+end
+
+function Polar.IsNearEliteNPC()
+    local char = LocalPlayer and LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return false end
+    local npcPos = Vector3.new(-5417.6, 313.1, -2822.9)
+    return (hrp.Position - npcPos).Magnitude < 45
+end
+
 function Polar.SafeQueryEliteHunter(allowQuest)
     if not CommF then return false, nil end
+
+    -- 1. Si el usuario ya tiene la misión activa (tomada manual o automáticamente), no interferir
+    if Polar.HasEliteQuest() then
+        return true, Polar.LastEliteRawResponse or "Active Quest"
+    end
+
+    -- 2. Si el jugador está físicamente al lado del NPC interactuando manualmente, pausar escaneo para no reiniciar el diálogo
+    if Polar.IsNearEliteNPC() then
+        return true, Polar.LastEliteRawResponse or "Interacting With NPC"
+    end
+
     local disabledConns = {}
-    local childBlockConn = nil
-    local pgui = LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")
     local remotes = ReplicatedStorage:FindFirstChild("Remotes")
     local questUpdate = remotes and remotes:FindFirstChild("QuestUpdate")
 
+    -- 3. Interceptar OnClientEvent sólo durante la consulta para que el cliente no dibuje UI
     if not allowQuest and getconnections and questUpdate then
         pcall(function()
             local conns = getconnections(questUpdate.OnClientEvent)
@@ -246,29 +277,19 @@ function Polar.SafeQueryEliteHunter(allowQuest)
                 end)
             end
         end)
-
-        if pgui then
-            pcall(function()
-                childBlockConn = pgui.ChildAdded:Connect(function(child)
-                    if child.Name == "TrackedQuestFrame" or child.Name == "Urban" or child.Name == "Diablo" or child.Name == "Deandre" then
-                        task.defer(function()
-                            pcall(function() child:Destroy() end)
-                        end)
-                    end
-                end)
-            end)
-        end
     end
 
     local ok, res = pcall(function()
         return CommF:InvokeServer("EliteHunter", "Check")
     end)
 
+    if ok and type(res) == "string" then
+        Polar.LastEliteRawResponse = res
+    end
+
+    -- 4. Reactivar conexiones inmediatamente (JAMÁS destruir frames de PlayerGui)
     if not allowQuest then
-        task.wait(0.05)
-        if childBlockConn then
-            pcall(function() childBlockConn:Disconnect() end)
-        end
+        task.wait(0.03)
         for _, c in ipairs(disabledConns) do
             pcall(function()
                 if c.Enable then
@@ -277,12 +298,6 @@ function Polar.SafeQueryEliteHunter(allowQuest)
                     c.Enabled = true
                 end
             end)
-        end
-        if pgui then
-            for _, name in ipairs({"TrackedQuestFrame", "Urban", "Diablo", "Deandre"}) do
-                local f = pgui:FindFirstChild(name)
-                if f then pcall(function() f:Destroy() end) end
-            end
         end
     end
 
@@ -1031,6 +1046,7 @@ if TabStatus then
 
                 -- 4. Elite Hunter (Consulta directa a remoto sin activar mision ni abrir dialogos)
                 local eliteInfo = nil
+                local hasQuest = Polar.HasEliteQuest and Polar.HasEliteQuest()
                 pcall(function()
                     if CommF then
                         local ok, res = Polar.SafeQueryEliteHunter(false)
@@ -1055,10 +1071,15 @@ if TabStatus then
                                     name = foundName,
                                     island = foundIsland
                                 }
+                                Polar.LastEliteInfo = eliteInfo
                             end
                         end
                     end
                 end)
+
+                if not eliteInfo and hasQuest and Polar.LastEliteInfo then
+                    eliteInfo = Polar.LastEliteInfo
+                end
 
                 if eliteInfo then
                     local liveMob = nil
@@ -1071,14 +1092,15 @@ if TabStatus then
                         end
                     end
 
+                    local suffix = hasQuest and " (Misión Activa)" or ""
                     if liveMob then
                         local hum = liveMob:FindFirstChildOfClass("Humanoid")
                         local hp = hum and math.floor(hum.Health) or 0
                         local maxHp = hum and math.floor(hum.MaxHealth) or 1
                         local pct = math.floor((hp / math.max(1, maxHp)) * 100)
-                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo\nVida: %d%%", eliteInfo.name, eliteInfo.island, pct))
+                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo%s\nVida: %d%%", eliteInfo.name, eliteInfo.island, suffix, pct))
                     else
-                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo", eliteInfo.name, eliteInfo.island))
+                        UpdatePara(LabelElitePirates, string.format("Nombre: %s\nIsla: %s\nEstado: Vivo%s", eliteInfo.name, eliteInfo.island, suffix))
                     end
                 else
                     UpdatePara(LabelElitePirates, "Nombre: Elite Hunter\nIsla: Desconocida\nEstado: Muerto")
