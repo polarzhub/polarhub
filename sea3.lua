@@ -223,6 +223,72 @@ end)
 local EliteNames = {"Urban", "Deandre", "Diablo"}
 local AutoEliteRunning = false
 
+function Polar.SafeQueryEliteHunter(allowQuest)
+    if not CommF then return false, nil end
+    local disabledConns = {}
+    local childBlockConn = nil
+    local pgui = LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    local questUpdate = remotes and remotes:FindFirstChild("QuestUpdate")
+
+    if not allowQuest and getconnections and questUpdate then
+        pcall(function()
+            local conns = getconnections(questUpdate.OnClientEvent)
+            for _, c in ipairs(conns) do
+                pcall(function()
+                    if c.Disable then
+                        c:Disable()
+                        table.insert(disabledConns, c)
+                    elseif c.Enabled ~= nil then
+                        c.Enabled = false
+                        table.insert(disabledConns, c)
+                    end
+                end)
+            end
+        end)
+
+        if pgui then
+            pcall(function()
+                childBlockConn = pgui.ChildAdded:Connect(function(child)
+                    if child.Name == "TrackedQuestFrame" or child.Name == "Urban" or child.Name == "Diablo" or child.Name == "Deandre" then
+                        task.defer(function()
+                            pcall(function() child:Destroy() end)
+                        end)
+                    end
+                end)
+            end)
+        end
+    end
+
+    local ok, res = pcall(function()
+        return CommF:InvokeServer("EliteHunter", "Check")
+    end)
+
+    if not allowQuest then
+        task.wait(0.05)
+        if childBlockConn then
+            pcall(function() childBlockConn:Disconnect() end)
+        end
+        for _, c in ipairs(disabledConns) do
+            pcall(function()
+                if c.Enable then
+                    c:Enable()
+                elseif c.Enabled ~= nil then
+                    c.Enabled = true
+                end
+            end)
+        end
+        if pgui then
+            for _, name in ipairs({"TrackedQuestFrame", "Urban", "Diablo", "Deandre"}) do
+                local f = pgui:FindFirstChild(name)
+                if f then pcall(function() f:Destroy() end) end
+            end
+        end
+    end
+
+    return ok, res
+end
+
 local EliteIslandFallbacks = {
     ["Floating Turtle"] = CFrame.new(-2014, 250, -10238),
     ["Hydra Island"] = CFrame.new(5230, 150, 763),
@@ -241,9 +307,7 @@ task.spawn(function()
                         if not CommF then return end
 
                         -- 1. Consultar estado del Elite de forma no intrusiva (sin activar quest)
-                        local ok, checkRes = pcall(function()
-                            return CommF:InvokeServer("EliteHunter", "Check")
-                        end)
+                        local ok, checkRes = Polar.SafeQueryEliteHunter(false)
 
                         local activeEliteName = nil
                         local activeIsland = nil
@@ -969,9 +1033,7 @@ if TabStatus then
                 local eliteInfo = nil
                 pcall(function()
                     if CommF then
-                        local ok, res = pcall(function()
-                            return CommF:InvokeServer("EliteHunter", "Check")
-                        end)
+                        local ok, res = Polar.SafeQueryEliteHunter(false)
                         if ok and type(res) == "string" then
                             local foundName = nil
                             for _, ename in ipairs(EliteNames) do
