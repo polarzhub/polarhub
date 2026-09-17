@@ -225,13 +225,40 @@ local AutoEliteRunning = false
 
 Polar.LastEliteRawResponse = nil
 Polar.LastEliteInfo = nil
+getgenv().PolarSuppressQuestUpdate = false
+
+-- Interceptor quirúrgico avanzado: NO desactiva conexiones de engine, preserva 100% de llamadas
+local function EnsureQuestUpdateHook()
+    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
+    local questUpdate = remotes and remotes:FindFirstChild("QuestUpdate")
+    if not questUpdate or not getconnections or not hookfunction then return end
+
+    pcall(function()
+        local conns = getconnections(questUpdate.OnClientEvent)
+        for _, c in ipairs(conns) do
+            if c.Function and not c._PolarHooked then
+                local oldFn = c.Function
+                pcall(function()
+                    hookfunction(oldFn, function(...)
+                        if getgenv().PolarSuppressQuestUpdate then
+                            return
+                        end
+                        return oldFn(...)
+                    end)
+                    c._PolarHooked = true
+                end)
+            end
+        end
+    end)
+end
 
 function Polar.HasEliteQuest()
     local pgui = LocalPlayer and LocalPlayer:FindFirstChild("PlayerGui")
     if not pgui then return false end
     if pgui:FindFirstChild("TrackedQuestFrame") then return true end
     for _, name in ipairs(EliteNames) do
-        if pgui:FindFirstChild(name) then return true end
+        local f = pgui:FindFirstChild(name)
+        if f and not f:IsA("Model") then return true end
     end
     return false
 end
@@ -247,58 +274,34 @@ end
 function Polar.SafeQueryEliteHunter(allowQuest)
     if not CommF then return false, nil end
 
-    -- 1. Si el usuario ya tiene la misión activa (tomada manual o automáticamente), no interferir
-    if Polar.HasEliteQuest() then
+    -- 1. Si el usuario ya tiene la misión activa (tomada manual o automáticamente), no consultar ni interferir
+    if Polar.HasEliteQuest and Polar.HasEliteQuest() then
         return true, Polar.LastEliteRawResponse or "Active Quest"
     end
 
-    -- 2. Si el jugador está físicamente al lado del NPC interactuando manualmente, pausar escaneo para no reiniciar el diálogo
-    if Polar.IsNearEliteNPC() then
+    -- 2. Si el jugador está físicamente al lado del NPC interactuando manualmente, pausar escaneo automático
+    if Polar.IsNearEliteNPC and Polar.IsNearEliteNPC() then
         return true, Polar.LastEliteRawResponse or "Interacting With NPC"
     end
 
-    local disabledConns = {}
-    local remotes = ReplicatedStorage:FindFirstChild("Remotes")
-    local questUpdate = remotes and remotes:FindFirstChild("QuestUpdate")
+    -- 3. Asegurar hook en el cliente para interceptar de forma limpia y transparente
+    EnsureQuestUpdateHook()
 
-    -- 3. Interceptar OnClientEvent sólo durante la consulta para que el cliente no dibuje UI
-    if not allowQuest and getconnections and questUpdate then
-        pcall(function()
-            local conns = getconnections(questUpdate.OnClientEvent)
-            for _, c in ipairs(conns) do
-                pcall(function()
-                    if c.Disable then
-                        c:Disable()
-                        table.insert(disabledConns, c)
-                    elseif c.Enabled ~= nil then
-                        c.Enabled = false
-                        table.insert(disabledConns, c)
-                    end
-                end)
-            end
-        end)
+    if not allowQuest then
+        getgenv().PolarSuppressQuestUpdate = true
     end
 
     local ok, res = pcall(function()
         return CommF:InvokeServer("EliteHunter", "Check")
     end)
 
-    if ok and type(res) == "string" then
-        Polar.LastEliteRawResponse = res
+    if not allowQuest then
+        task.wait(0.02)
+        getgenv().PolarSuppressQuestUpdate = false
     end
 
-    -- 4. Reactivar conexiones inmediatamente (JAMÁS destruir frames de PlayerGui)
-    if not allowQuest then
-        task.wait(0.03)
-        for _, c in ipairs(disabledConns) do
-            pcall(function()
-                if c.Enable then
-                    c:Enable()
-                elseif c.Enabled ~= nil then
-                    c.Enabled = true
-                end
-            end)
-        end
+    if ok and type(res) == "string" then
+        Polar.LastEliteRawResponse = res
     end
 
     return ok, res
