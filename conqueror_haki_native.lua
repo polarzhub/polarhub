@@ -27,9 +27,11 @@
          - Sacudida de impacto pesada con CERO balanceo lateral (roll = 0).
     ================================================================================
     Controles:
+      - Tecla [G]: ¡Detona directamente el NIVEL MÁXIMO (100% de la H, 120s) al instante!
       - Mantén presionada [H]: Concentra el Haki hasta por 120 segundos.
       - Suelta [H]: Desata el Estallido Proporcional al tiempo cargado (57% a 1 min).
       - Equipar/Desequipar espadas: El aura se transfiere automáticamente.
+      - _G.ConquerorMaxBurst(): Detonar instantáneamente el nivel máximo vía código.
       - _G.ConquerorBurst(mult, ratio): Detonar directamente vía código.
       - _G.ConquerorHakiCleanup(): Desmontar y limpiar todo.
     ================================================================================
@@ -1047,11 +1049,15 @@ end
 -- 10. BINDINGS Y ESCUCHADORES EN VIVO
 -- ================================================================================
 function Engine:Init()
-    -- InputBegan: Iniciar carga al presionar [H]
+    -- InputBegan: Iniciar carga al presionar [H], o detonar instantáneamente al presionar [G]
     local pressConn = UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == Enum.KeyCode.H then
             self:StartCharging()
+        elseif input.KeyCode == Enum.KeyCode.G then
+            -- Detonar instantáneamente el nivel MÁXIMO absoluto (100% de la H, 120 segundos)
+            local mult, powerRatio, blastRadius = GetChargeStats(120)
+            self:TriggerBurst(mult, 1.0, blastRadius)
         end
     end)
     table.insert(self.Connections, pressConn)
@@ -1126,15 +1132,20 @@ end
 -- Exportar a ambos entornos globales
 G.ConquerorHakiCleanup = function() Engine:Cleanup() end
 G.ConquerorBurst = function(mult, ratio) Engine:TriggerBurst(mult, ratio) end
+G.ConquerorMaxBurst = function()
+    local mult, powerRatio, blastRadius = GetChargeStats(120)
+    Engine:TriggerBurst(mult, 1.0, blastRadius)
+end
 _G.ConquerorHakiCleanup = G.ConquerorHakiCleanup
 _G.ConquerorBurst = G.ConquerorBurst
+_G.ConquerorMaxBurst = G.ConquerorMaxBurst
 
 Engine:Init()
 
 print("================================================================================")
 print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V7 (ISLAND-WIDE STORM) ACTIVADO")
-print("  ⚡ CERCA: Rayos de alta tensión chocan contra paredes y reptan en superficies")
-print("  🌩️ LEJOS: Rayos colosales cubren la isla entera en radio creciente (hasta 2500+ studs)")
+print("  ⚡ TECLA [G]: ¡Detonación instantánea del NIVEL MÁXIMO (100% Cataclismo de la H)!")
+print("  ⚡ MANTÉN [H]: Carga continua de 0 a 120s con rayos en paredes e isla completa")
 print("  📐 ESCALADO EXACTO: A 1 minuto = 57% de potencia | A 120s = 100% Absurdamente Colosal")
 print("  🌓 ILUMINACIÓN SOMBRÍA Y VIVA: 100% de visibilidad con contraste nítido")
 print("  🎥 Cámara ultra-estabilizada sin volteo ni balanceo lateral")
