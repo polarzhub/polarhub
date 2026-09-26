@@ -27,8 +27,9 @@
          - Sacudida de impacto pesada con CERO balanceo lateral (roll = 0).
     ================================================================================
     Controles:
-      - Tecla [G]: ¡Detona directamente el NIVEL MÁXIMO (100% de la H, 120s) al instante!
-      - Mantén presionada [H]: Concentra el Haki hasta por 120 segundos.
+      - Mantén presionada [G]: ¡Carga y sostiene la ETAPA MÁXIMA de la H permanentemente!
+      - Suelta [G]: Desata el Estallido Máximo Absoluto (100% de la H, 120s colosal).
+      - Mantén presionada [H]: Concentra el Haki progresivamente (0 a 120 segundos).
       - Suelta [H]: Desata el Estallido Proporcional al tiempo cargado (57% a 1 min).
       - Equipar/Desequipar espadas: El aura se transfiere automáticamente.
       - _G.ConquerorMaxBurst(): Detonar instantáneamente el nivel máximo vía código.
@@ -658,7 +659,7 @@ end
 -- ================================================================================
 -- 7. SISTEMA DE CARGA DINÁMICA: RAYOS CERCANOS + RAYOS LEJANOS EN TODA LA ISLA
 -- ================================================================================
-function Engine:StartCharging()
+function Engine:StartCharging(mode)
     if self.IsCharging then return end
     if os.clock() - self.LastBurstTime < self.Cooldown then return end
 
@@ -666,6 +667,7 @@ function Engine:StartCharging()
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
     if not hrp then return end
 
+    self.ChargeMode = mode or "H"
     self.IsCharging = true
     self.ChargeStartTime = os.clock()
 
@@ -675,8 +677,8 @@ function Engine:StartCharging()
         s.Name = "PolarChargeSound"
         s.SoundId = "rbxassetid://6026998623"
         s.Looped = true
-        s.Volume = 0.9
-        s.PlaybackSpeed = 0.75
+        s.Volume = (self.ChargeMode == "G" and 3.5) or 0.9
+        s.PlaybackSpeed = (self.ChargeMode == "G" and 1.6) or 0.75
         s.Parent = hrp
         s:Play()
         self.ChargeSound = s
@@ -703,8 +705,14 @@ function Engine:StartCharging()
         rayParams.FilterDescendantsInstances = {char}
 
         while self.IsCharging and self.Active do
-            local elapsed = os.clock() - self.ChargeStartTime
-            local mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
+            local mult, powerRatio, blastRadius, linearProgress
+            if self.ChargeMode == "G" then
+                -- Modo G: ¡La etapa de carga se mantiene fija al 100% MÁXIMO ABSOLUTO de la H!
+                mult, powerRatio, blastRadius, linearProgress = GetChargeStats(120)
+            else
+                local elapsed = os.clock() - self.ChargeStartTime
+                mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
+            end
 
             -- 1. Oscurecimiento sombrío equilibrado (Brightness -0.35 máx a los 120s)
             if self.ActiveColorCorr then
@@ -803,10 +811,16 @@ end
 
 function Engine:ReleaseCharge()
     if not self.IsCharging then return end
+    local currentMode = self.ChargeMode or "H"
     self.IsCharging = false
 
-    local elapsed = os.clock() - self.ChargeStartTime
-    local mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
+    local mult, powerRatio, blastRadius
+    if currentMode == "G" then
+        mult, powerRatio, blastRadius = GetChargeStats(120)
+    else
+        local elapsed = os.clock() - self.ChargeStartTime
+        mult, powerRatio, blastRadius = GetChargeStats(elapsed)
+    end
 
     -- Detener audio de carga
     if self.ChargeSound then
@@ -1049,22 +1063,24 @@ end
 -- 10. BINDINGS Y ESCUCHADORES EN VIVO
 -- ================================================================================
 function Engine:Init()
-    -- InputBegan: Iniciar carga al presionar [H], o detonar instantáneamente al presionar [G]
+    -- InputBegan: Iniciar carga con [H] (progresiva 0-120s) o con [G] (etapa máxima fija al 100%)
     local pressConn = UserInputService.InputBegan:Connect(function(input, gp)
         if gp then return end
         if input.KeyCode == Enum.KeyCode.H then
-            self:StartCharging()
+            self:StartCharging("H")
         elseif input.KeyCode == Enum.KeyCode.G then
-            -- Detonar instantáneamente el nivel MÁXIMO absoluto (100% de la H, 120 segundos)
-            local mult, powerRatio, blastRadius = GetChargeStats(120)
-            self:TriggerBurst(mult, 1.0, blastRadius)
+            -- Al mantener G: se activa directamente la ETAPA MÁXIMA de carga (tormenta colosal permanente)
+            self:StartCharging("G")
         end
     end)
     table.insert(self.Connections, pressConn)
 
-    -- InputEnded: Soltar carga al liberar [H]
+    -- InputEnded: Soltar carga al liberar [H] o [G] (detona el estallido correspondiente)
     local releaseConn = UserInputService.InputEnded:Connect(function(input, gp)
-        if input.KeyCode == Enum.KeyCode.H then
+        if input.KeyCode == Enum.KeyCode.H and self.ChargeMode == "H" then
+            self:ReleaseCharge()
+        elseif input.KeyCode == Enum.KeyCode.G and self.ChargeMode == "G" then
+            -- Al soltar G: detona el Estallido Máximo Absoluto (100%)
             self:ReleaseCharge()
         end
     end)
@@ -1144,7 +1160,8 @@ Engine:Init()
 
 print("================================================================================")
 print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V7 (ISLAND-WIDE STORM) ACTIVADO")
-print("  ⚡ TECLA [G]: ¡Detonación instantánea del NIVEL MÁXIMO (100% Cataclismo de la H)!")
+print("  ⚡ MANTÉN [G]: ¡Carga y sostiene la ETAPA MÁXIMA de la H (Tormenta 100% permanente)!")
+print("  💥 SUELTA [G]: ¡Detona el Estallido Máximo Absoluto (Cataclismo 100% de la H)!")
 print("  ⚡ MANTÉN [H]: Carga continua de 0 a 120s con rayos en paredes e isla completa")
 print("  📐 ESCALADO EXACTO: A 1 minuto = 57% de potencia | A 120s = 100% Absurdamente Colosal")
 print("  🌓 ILUMINACIÓN SOMBRÍA Y VIVA: 100% de visibilidad con contraste nítido")
