@@ -167,48 +167,10 @@ local function GetGChargeStats(elapsed)
 end
 
 -- ================================================================================
--- 1.2 DEGRADADO NEGRO CINEMÁTICO AL SOLTAR (IMPACT FRAME ULTRA RÁPIDO)
+-- 1.2 DEGRADADO NEGRO (DESACTIVADO PARA VISIBILIDAD MÁXIMA DE LOS EFECTOS)
 -- ================================================================================
 local function PlayCinematicBlackGradient(duration)
-    local d = duration or 0.24
-    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
-    if not playerGui then return end
-
-    local sg = Instance.new("ScreenGui")
-    sg.Name = "PolarConquerorBlackGradient"
-    sg.ResetOnSpawn = false
-    sg.IgnoreGuiInset = true
-    sg.DisplayOrder = 999999
-
-    local frame = Instance.new("Frame")
-    frame.Name = "BlackGradientFrame"
-    frame.Size = UDim2.new(1, 0, 1, 0)
-    frame.Position = UDim2.new(0, 0, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    frame.BackgroundTransparency = 0.08
-    frame.BorderSizePixel = 0
-    frame.Parent = sg
-
-    local gradient = Instance.new("UIGradient")
-    gradient.Transparency = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 0.05),
-        NumberSequenceKeypoint.new(0.5, 0.22),
-        NumberSequenceKeypoint.new(1, 0.65)
-    })
-    gradient.Rotation = 45
-    gradient.Parent = frame
-
-    sg.Parent = playerGui
-
-    -- Desvanecimiento rápido y suave
-    local tw = TweenService:Create(frame, TweenInfo.new(d, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-        BackgroundTransparency = 1.0
-    })
-    tw:Play()
-    tw.Completed:Connect(function()
-        pcall(function() sg:Destroy() end)
-    end)
-    Debris:AddItem(sg, d + 0.1)
+    -- Desactivado para que la pantalla nunca se vuelva negra ni tape los efectos
 end
 
 -- ================================================================================
@@ -278,8 +240,9 @@ end
 -- ================================================================================
 -- 4. ELECTRICIDAD PURA NATIVA: VIGAS GRUESAS Y CHOQUE EN PAREDES
 -- ================================================================================
-local function SpawnThickBeam(posA, posB, widthMult)
+local function SpawnThickBeam(posA, posB, widthMult, duration)
     local wMult = widthMult or 1.0
+    local beamLifetime = duration or 0.38
 
     local pA = Instance.new("Part")
     pA.Anchored = true
@@ -338,8 +301,8 @@ local function SpawnThickBeam(posA, posB, widthMult)
     beamBlack.Attachment1 = attB
     beamBlack.Parent = pA
 
-    Debris:AddItem(pA, 0.22)
-    Debris:AddItem(pB, 0.22)
+    Debris:AddItem(pA, beamLifetime)
+    Debris:AddItem(pB, beamLifetime)
 end
 
 -- Detona el impacto de electricidad pura que choca contra una pared o superficie
@@ -412,10 +375,11 @@ end
 -- ================================================================================
 -- 5. COLUMNAS DE RELÁMPAGOS LEJANOS EN TODA LA ISLA (DISTANT LIGHTNING PILLARS)
 -- ================================================================================
-local function SpawnIslandDistantLightning(targetGround, skyHeight, widthMult, distance)
+local function SpawnIslandDistantLightning(targetGround, skyHeight, widthMult, distance, duration)
     local sH = skyHeight or 260.0
     local wM = widthMult or 1.0
     local dist = distance or 300.0
+    local beamLifetime = duration or 0.65
 
     -- Escalar grosor según la distancia para que no se vea delgado a lo lejos
     local distFactor = math.clamp(dist / 320.0, 1.0, 3.8)
@@ -498,8 +462,8 @@ local function SpawnIslandDistantLightning(targetGround, skyHeight, widthMult, d
         end
     end
 
-    Debris:AddItem(pG, 0.35)
-    Debris:AddItem(pS, 0.35)
+    Debris:AddItem(pG, beamLifetime)
+    Debris:AddItem(pS, beamLifetime)
 end
 
 -- Relámpagos que rasgan las esquinas de la pantalla
@@ -928,8 +892,13 @@ function Engine:ReleaseCharge()
         self.ChargeSound = nil
     end
 
-    -- Restaurar tasas base del aura
-    self:RefreshAura()
+    -- Mantener el aura en su máxima expresión durante toda la explosión (3.5 segundos)
+    -- y recién ahí restaurar a nivel base para que no se corte ni desaparezca de golpe
+    task.delay(3.5, function()
+        if not self.IsCharging and self.Active then
+            self:RefreshAura()
+        end
+    end)
 
     -- Detonar el Cataclismo a escala exacta
     self:TriggerBurst(mult, powerRatio, blastRadius)
@@ -959,7 +928,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
     -- 2. Sacudida de impacto pesada ultra-estabilizada (CERO ROLL)
     ShakeScreenStabilized(1.9 + p * 3.8, 0.70 + p * 0.85)
 
-    -- 3. Destello de energía carmesí con degradado inicial y retorno suave
+    -- 3. Destello de energía carmesí pura con visibilidad 100% clara
     task.spawn(function()
         local cc = self.ActiveColorCorr
         self.ActiveColorCorr = nil
@@ -970,15 +939,12 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             cc.Parent = Lighting
         end
 
-        -- Breve degradado / oscurecimiento al primer impacto
-        cc.Brightness = -0.22
-        task.wait(0.05)
+        -- Destello de energía nítido sin ningún oscurecimiento que tape los efectos
+        cc.Brightness = 0.16 + (p * 0.22)
+        cc.Contrast = 0.18 + (p * 0.20)
+        cc.TintColor = Color3.fromRGB(255, 230, 230)
 
-        cc.Brightness = 0.20 + (p * 0.28)
-        cc.Contrast = 0.22 + (p * 0.25)
-        cc.TintColor = Color3.fromRGB(255, 225, 225)
-
-        local tweenTime = 1.0 + (p * 1.6)
+        local tweenTime = 1.4 + (p * 1.6)
         local tw = TweenService:Create(cc, TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Brightness = 0,
             Contrast = 0,
@@ -997,7 +963,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         burstClone.CanCollide = false
         burstClone.Transparency = 1
         burstClone.Parent = Workspace
-        Debris:AddItem(burstClone, 12.0)
+        Debris:AddItem(burstClone, 15.0)
 
         for _, desc in ipairs(burstClone:GetDescendants()) do
             if desc:IsA("ParticleEmitter") then
@@ -1008,20 +974,20 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                         NumberSequenceKeypoint.new(0, 10.8 * (1 + p * 3.5)),
                         NumberSequenceKeypoint.new(1, 99.0 + (p * 765.0))
                     })
-                    desc.Lifetime = NumberRange.new(1.2, 2.2) -- Dura más tiempo
+                    desc.Lifetime = NumberRange.new(1.8, 3.0) -- Dura de 1.8 a 3.0s
                     desc:Emit(math.floor(120 + p * 600))
                 elseif desc.Name == "Burst" then
                     desc.Size = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 12.6 * (1 + p * 3.0)),
                         NumberSequenceKeypoint.new(1, 81.0 + (p * 423.0))
                     })
-                    desc.Lifetime = NumberRange.new(1.0, 1.8)
+                    desc.Lifetime = NumberRange.new(1.4, 2.4)
                     desc:Emit(math.floor(95 + p * 340))
                 elseif desc.Name == "Shocks" then
-                    desc.Lifetime = NumberRange.new(0.8, 1.6)
+                    desc.Lifetime = NumberRange.new(1.2, 2.2)
                     desc:Emit(math.floor(220 + p * 850))
                 elseif desc.Name == "InRays" then
-                    desc.Lifetime = NumberRange.new(0.8, 1.5)
+                    desc.Lifetime = NumberRange.new(1.0, 2.0)
                     desc:Emit(math.floor(75 + p * 300))
                 elseif desc.Name == "AirWaves" then
                     -- +80% más grande: de 126 studs hasta 1350 studs!
@@ -1030,16 +996,14 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                         NumberSequenceKeypoint.new(0, 14.4 * (1 + p * 3.0)),
                         NumberSequenceKeypoint.new(1, 126.0 + (p * 1224.0))
                     })
-                    desc.Lifetime = NumberRange.new(2.2, 3.8) -- Dura mucho más tiempo barriendo la isla
-                    desc:Emit(math.floor(55 + p * 200))
+                    desc.Lifetime = NumberRange.new(2.8, 4.5) -- Dura de 2.8 a 4.5s barriendo la isla
+                    desc:Emit(math.floor(65 + p * 220))
                 elseif desc.Name == "Sparks" then
-                    desc.Lifetime = NumberRange.new(1.0, 2.0)
+                    desc.Lifetime = NumberRange.new(1.4, 2.6)
                     desc:Emit(math.floor(140 + p * 550))
                 else
                     desc:Emit(math.floor(40 + p * 140))
                 end
-
-                task.delay(1.8 + (p * 2.0), function() pcall(function() desc.Enabled = false end) end)
             end
         end
 
@@ -1056,14 +1020,14 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             NumberSequenceKeypoint.new(0, 12.0 * (1 + p * 3)),
             NumberSequenceKeypoint.new(1, 60.0 + (p * 270.0))
         })
-        voidCrescents.Lifetime = NumberRange.new(1.5, 2.8)
+        voidCrescents.Lifetime = NumberRange.new(2.0, 3.5)
         voidCrescents.Speed = NumberRange.new(50 + p * 150, 110 + p * 280)
         voidCrescents.SpreadAngle = Vector2.new(180, 20)
         voidCrescents.RotSpeed = NumberRange.new(180, 360)
         voidCrescents.LightEmission = 0
         voidCrescents.Brightness = 0
         voidCrescents.Parent = burstClone
-        voidCrescents:Emit(math.floor(35 + p * 120))
+        voidCrescents:Emit(math.floor(45 + p * 140))
 
         -- Extra VFX Blox Fruits: Líneas de Impacto Radial (FX/Dark/BlackHole rbxassetid://6763809313)
         local radialLines = Instance.new("ParticleEmitter")
@@ -1077,13 +1041,13 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             NumberSequenceKeypoint.new(0, 15.0),
             NumberSequenceKeypoint.new(1, 90.0 + (p * 480.0))
         })
-        radialLines.Lifetime = NumberRange.new(1.2, 2.2)
+        radialLines.Lifetime = NumberRange.new(1.8, 3.0)
         radialLines.Speed = NumberRange.new(80 + p * 240, 160 + p * 420)
         radialLines.SpreadAngle = Vector2.new(180, 15)
         radialLines.LightEmission = 1
         radialLines.Brightness = 8
         radialLines.Parent = burstClone
-        radialLines:Emit(math.floor(40 + p * 140))
+        radialLines:Emit(math.floor(50 + p * 160))
 
         -- Extra VFX Blox Fruits: Anillo de Relámpago Expansivo (FX/RaceAwakenings/LightningRing rbxassetid://9760500840)
         local electricPulseRing = Instance.new("ParticleEmitter")
@@ -1094,37 +1058,66 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             NumberSequenceKeypoint.new(0, 20.0),
             NumberSequenceKeypoint.new(1, 135.0 + (p * 825.0))
         })
-        electricPulseRing.Lifetime = NumberRange.new(1.8, 3.2)
+        electricPulseRing.Lifetime = NumberRange.new(2.2, 3.8)
         electricPulseRing.Speed = NumberRange.new(30, 80)
         electricPulseRing.LightEmission = 1
         electricPulseRing.Brightness = 8
         electricPulseRing.Parent = burstClone
-        electricPulseRing:Emit(math.floor(25 + p * 100))
+        electricPulseRing:Emit(math.floor(35 + p * 120))
+
+        -- Emisiones sostenidas en oleadas (duran entre 3.0s y 4.5s)
+        task.spawn(function()
+            local burstEndTime = os.clock() + (2.8 + p * 1.5)
+            while os.clock() < burstEndTime and burstClone.Parent do
+                task.wait(0.40)
+                for _, desc in ipairs(burstClone:GetDescendants()) do
+                    if desc:IsA("ParticleEmitter") and desc.Enabled then
+                        if desc.Name == "Lightning_Squash" then
+                            desc:Emit(math.floor(25 + p * 80))
+                        elseif desc.Name == "AirWaves" then
+                            desc:Emit(math.floor(15 + p * 45))
+                        elseif desc.Name == "Shocks" then
+                            desc:Emit(math.floor(35 + p * 110))
+                        elseif desc.Name == "Burst" then
+                            desc:Emit(math.floor(20 + p * 60))
+                        end
+                    end
+                end
+            end
+            for _, desc in ipairs(burstClone:GetDescendants()) do
+                if desc:IsA("ParticleEmitter") then
+                    pcall(function() desc.Enabled = false end)
+                end
+            end
+        end)
     end
 
-    -- 4.1 ONDA DE CHOQUE 3D FÍSICA EXPANSIVA (+80% MÁS GRANDE Y HASTA 9500 STUDS)
-    local waveDuration = 2.4 + (p * 1.6) -- Expansión activa de 2.4s a 4.0s
+    -- 4.1 ONDA DE CHOQUE 3D FÍSICA EXPANSIVA MULTICAPA (HASTA 4.5 SEGUNDOS)
+    local waveDuration = 3.0 + (p * 1.6) -- Expansión activa de 3.0s a 4.6s
     task.spawn(function()
-        local shockPart = Instance.new("Part")
-        shockPart.Name = "PolarConqueror3DShockwave"
-        shockPart.Shape = Enum.PartType.Cylinder
-        shockPart.Material = Enum.Material.Neon
-        shockPart.Color = Color3.fromRGB(180, 15, 25)
-        shockPart.Transparency = 0.35
-        shockPart.CanCollide = false
-        shockPart.Anchored = true
-        shockPart.CFrame = rootCF * CFrame.Angles(0, 0, math.rad(90))
-        shockPart.Size = Vector3.new(2, 10, 10)
-        shockPart.Parent = Workspace
-        Debris:AddItem(shockPart, 6.0)
-
         local targetDiameter = math.min(radius * 2.2, 9500)
-        local tw = TweenService:Create(shockPart, TweenInfo.new(waveDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-            Size = Vector3.new(2, targetDiameter, targetDiameter),
-            Transparency = 1.0,
-            Color = Color3.fromRGB(35, 0, 5)
-        })
-        tw:Play()
+        for ringIdx = 1, 3 do
+            local shockPart = Instance.new("Part")
+            shockPart.Name = "PolarConqueror3DShockwave_" .. ringIdx
+            shockPart.Shape = Enum.PartType.Cylinder
+            shockPart.Material = Enum.Material.Neon
+            shockPart.Color = Color3.fromRGB(180, 15, 25)
+            shockPart.Transparency = 0.30
+            shockPart.CanCollide = false
+            shockPart.Anchored = true
+            shockPart.CFrame = rootCF * CFrame.Angles(0, 0, math.rad(90))
+            shockPart.Size = Vector3.new(2, 10, 10)
+            shockPart.Parent = Workspace
+            Debris:AddItem(shockPart, waveDuration + 2.0)
+
+            local tw = TweenService:Create(shockPart, TweenInfo.new(waveDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Size = Vector3.new(2.5, targetDiameter, targetDiameter),
+                Transparency = 1.0,
+                Color = Color3.fromRGB(35, 0, 5)
+            })
+            tw:Play()
+            task.wait(0.25)
+        end
     end)
 
     -- 4.2 RAYOS EN EL FRENTE DE ONDA (SOLO MIENTRAS SE ESTÁ EXPANDIENDO LA ONDA)
@@ -1134,7 +1127,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         rayParams.FilterDescendantsInstances = {char}
 
         -- Mientras la onda se expande hacia afuera, disparamos relámpagos a lo largo del perímetro móvil
-        local totalSteps = 26 + math.floor(p * 22) -- de 26 a 48 pasos en el perímetro
+        local totalSteps = 28 + math.floor(p * 24) -- de 28 a 52 pasos en el perímetro
         local stepDelay = waveDuration / totalSteps
 
         for step = 1, totalSteps do
@@ -1144,7 +1137,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             local currentWaveRadius = math.clamp(eased * radius, 25, radius)
 
             -- Número de rayos en el frente de onda según avanza
-            local boltsThisStep = math.clamp(math.floor(5 + (eased * 30) * (0.8 + p * 0.7)), 5, 42)
+            local boltsThisStep = math.clamp(math.floor(6 + (eased * 32) * (0.8 + p * 0.7)), 6, 45)
             local waveWidthMult = (1.5 + p * 3.0) * (1.15 - eased * 0.35)
 
             for b = 1, boltsThisStep do
@@ -1155,9 +1148,9 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                 local groundHit = Workspace:Raycast(skyOrigin, Vector3.new(0, -520, 0), rayParams)
                 local groundPos = groundHit and groundHit.Position or (rootCF.Position + Vector3.new(math.cos(angle) * distJitter, -2.5, math.sin(angle) * distJitter))
 
-                -- 1. Relámpago que cae directo en el perímetro de choque de la onda expansiva
+                -- 1. Relámpago que cae directo en el perímetro de choque de la onda expansiva (dura 0.85s a 1.35s!)
                 local boltHeight = math.random(200, 360)
-                SpawnThickBeam(groundPos + Vector3.new(0, boltHeight, 0), groundPos, waveWidthMult)
+                SpawnThickBeam(groundPos + Vector3.new(0, boltHeight, 0), groundPos, waveWidthMult, 0.85 + (p * 0.5))
 
                 -- 2. Descargas horizontales que conectan el anillo de choque a lo largo de la superficie
                 if b % 2 == 0 then
@@ -1165,7 +1158,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                     local nextPos = rootCF.Position + Vector3.new(math.cos(nextAngle) * distJitter, 0, math.sin(nextAngle) * distJitter)
                     local nextHit = Workspace:Raycast(nextPos + Vector3.new(0, 120, 0), Vector3.new(0, -240, 0), rayParams)
                     local nextGround = nextHit and nextHit.Position or nextPos
-                    SpawnThickBeam(groundPos + Vector3.new(0, 5, 0), nextGround + Vector3.new(0, 5, 0), waveWidthMult * 0.8)
+                    SpawnThickBeam(groundPos + Vector3.new(0, 5, 0), nextGround + Vector3.new(0, 5, 0), waveWidthMult * 0.8, 0.75 + (p * 0.4))
                 end
 
                 -- 3. Chispas de alta tensión en el punto de contacto de la onda
@@ -1173,7 +1166,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                     local sp = YamaGroundSparks:Clone()
                     sp.Parent = Workspace
                     sp.CFrame = CFrame.new(groundPos)
-                    Debris:AddItem(sp, 1.2)
+                    Debris:AddItem(sp, 1.8)
                     for _, pe in ipairs(sp:GetDescendants()) do
                         if pe:IsA("ParticleEmitter") then
                             pe:Emit(math.random(6, 16))
@@ -1262,7 +1255,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                 local rayHit = Workspace:Raycast(rayOrigin, Vector3.new(0, -350, 0), rayParams)
                 local groundPos = rayHit and rayHit.Position or (rayOrigin - Vector3.new(0, 180, 0))
 
-                SpawnThickBeam(groundPos + Vector3.new(0, 50, 0), groundPos, ringWidthMult)
+                SpawnThickBeam(groundPos + Vector3.new(0, 50, 0), groundPos, ringWidthMult, 0.95 + (p * 0.6))
             end
 
             -- Mayor duración entre oleadas para que el estallido se sienta como un terremoto prolongado
@@ -1282,7 +1275,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         for i = 1, maxDet do
             local part = parts[i]
             if part and part:IsA("BasePart") and part.Transparency < 0.95 then
-                SpawnThickBeam(part.Position + Vector3.new(0, 40, 0), part.Position, detWidth)
+                SpawnThickBeam(part.Position + Vector3.new(0, 40, 0), part.Position, detWidth, 0.90 + (p * 0.5))
             end
         end
     end)
