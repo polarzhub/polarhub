@@ -141,8 +141,8 @@ local function GetChargeStats(elapsed)
     -- Multiplicador de potencia (de 1.0x hasta 35.0x)
     local mult = 1.0 + (powerRatio * 34.0)
 
-    -- Radio del estallido: desde 60 studs hasta 2500+ studs (isla entera)
-    local blastRadius = 60.0 + (powerRatio * 2440.0)
+    -- Radio del estallido (+20% MÁS GRANDE): desde 72 studs hasta 3000+ studs (isla entera)
+    local blastRadius = (60.0 + (powerRatio * 2440.0)) * 1.20
 
     return mult, powerRatio, blastRadius, linearProgress
 end
@@ -160,9 +160,55 @@ local function GetGChargeStats(elapsed)
     local linearProgress = 0.724 + (fraction * 0.276) -- Rango: 0.724 -> 1.00
 
     local mult = 1.0 + (powerRatio * 34.0) -- Rango: 27.18x -> 35.0x
-    local blastRadius = 60.0 + (powerRatio * 2440.0) -- Rango: 1938.8 studs -> 2500+ studs
+    -- Radio del estallido (+20% MÁS GRANDE): de 2326 studs a 3000+ studs
+    local blastRadius = (60.0 + (powerRatio * 2440.0)) * 1.20
 
     return mult, powerRatio, blastRadius, linearProgress
+end
+
+-- ================================================================================
+-- 1.2 DEGRADADO NEGRO CINEMÁTICO AL SOLTAR (IMPACT FRAME ULTRA RÁPIDO)
+-- ================================================================================
+local function PlayCinematicBlackGradient(duration)
+    local d = duration or 0.24
+    local playerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
+    if not playerGui then return end
+
+    local sg = Instance.new("ScreenGui")
+    sg.Name = "PolarConquerorBlackGradient"
+    sg.ResetOnSpawn = false
+    sg.IgnoreGuiInset = true
+    sg.DisplayOrder = 999999
+
+    local frame = Instance.new("Frame")
+    frame.Name = "BlackGradientFrame"
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.Position = UDim2.new(0, 0, 0, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0.08
+    frame.BorderSizePixel = 0
+    frame.Parent = sg
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Transparency = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 0.05),
+        NumberSequenceKeypoint.new(0.5, 0.22),
+        NumberSequenceKeypoint.new(1, 0.65)
+    })
+    gradient.Rotation = 45
+    gradient.Parent = frame
+
+    sg.Parent = playerGui
+
+    -- Desvanecimiento rápido y suave
+    local tw = TweenService:Create(frame, TweenInfo.new(d, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        BackgroundTransparency = 1.0
+    })
+    tw:Play()
+    tw.Completed:Connect(function()
+        pcall(function() sg:Destroy() end)
+    end)
+    Debris:AddItem(sg, d + 0.1)
 end
 
 -- ================================================================================
@@ -635,6 +681,41 @@ local function ApplyConquerorAura(targetPart)
     cdkShocks.Brightness = 7
     cdkShocks.Parent = clonedAtt
 
+    -- Vortex Espiral Negro Nativo (FX/Dark/BlackHole rbxassetid://7745657443)
+    local blackSpiral = Instance.new("ParticleEmitter")
+    blackSpiral.Name = "OverloadBlackSpiral"
+    blackSpiral.Texture = "rbxassetid://7745657443"
+    blackSpiral.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+    blackSpiral.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1.2),
+        NumberSequenceKeypoint.new(0.5, 4.5),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    blackSpiral.Lifetime = NumberRange.new(0.22, 0.42)
+    blackSpiral.Rate = 24
+    blackSpiral.Speed = NumberRange.new(2, 6)
+    blackSpiral.RotSpeed = NumberRange.new(120, 240)
+    blackSpiral.LightEmission = 0
+    blackSpiral.Brightness = 0
+    blackSpiral.Parent = clonedAtt
+
+    -- Anillo Eléctrico Rojo Nativo (FX/RaceAwakenings/LightningRing rbxassetid://6127835958)
+    local electricRing = Instance.new("ParticleEmitter")
+    electricRing.Name = "OverloadElectricRing"
+    electricRing.Texture = "rbxassetid://6127835958"
+    electricRing.Color = ColorSequence.new(Color3.fromRGB(255, 30, 45))
+    electricRing.Size = NumberSequence.new({
+        NumberSequenceKeypoint.new(0, 1.5),
+        NumberSequenceKeypoint.new(0.6, 6.0),
+        NumberSequenceKeypoint.new(1, 0)
+    })
+    electricRing.Lifetime = NumberRange.new(0.18, 0.35)
+    electricRing.Rate = 22
+    electricRing.Speed = NumberRange.new(3, 10)
+    electricRing.LightEmission = 1
+    electricRing.Brightness = 8
+    electricRing.Parent = clonedAtt
+
     table.insert(Engine.ActiveAttachments, clonedAtt)
 end
 
@@ -732,12 +813,12 @@ function Engine:StartCharging(mode)
                 mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
             end
 
-            -- 1. Oscurecimiento sombrío equilibrado (Brightness -0.35 máx a los 120s)
+            -- 1. Oscurecimiento sombrío suave y equilibrado (Mucho más sutil: Brillo máx -0.12 para visibilidad perfecta)
             if self.ActiveColorCorr then
-                self.ActiveColorCorr.Brightness = -linearProgress * 0.35
-                self.ActiveColorCorr.Contrast = 0.05 + (linearProgress * 0.18)
-                self.ActiveColorCorr.Saturation = 0.08 + (linearProgress * 0.12)
-                self.ActiveColorCorr.TintColor = Color3.fromRGB(255, math.floor(245 - linearProgress * 25), math.floor(245 - linearProgress * 25))
+                self.ActiveColorCorr.Brightness = -linearProgress * 0.12
+                self.ActiveColorCorr.Contrast = 0.04 + (linearProgress * 0.10)
+                self.ActiveColorCorr.Saturation = 0.06 + (linearProgress * 0.08)
+                self.ActiveColorCorr.TintColor = Color3.fromRGB(255, math.floor(250 - linearProgress * 12), math.floor(250 - linearProgress * 12))
             end
 
             -- 2. Modulación de sonido de carga
@@ -860,7 +941,7 @@ end
 function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
     local mult = multiplier or 1.0
     local p = powerRatio or 0.0
-    local radius = customRadius or (60.0 + (p * 2440.0))
+    local radius = customRadius or ((60.0 + (p * 2440.0)) * 1.20)
     self.LastBurstTime = os.clock()
 
     local char = LocalPlayer.Character
@@ -869,13 +950,16 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
 
     local rootCF = hrp.CFrame
 
+    -- 0. DEGRADADO NEGRO CINEMÁTICO AL INICIO (IMPACT FRAME ULTRA RÁPIDO)
+    PlayCinematicBlackGradient(0.24)
+
     -- 1. Sonidos demoledores
     PlayConquerorBurstAudio(hrp, mult)
 
     -- 2. Sacudida de impacto pesada ultra-estabilizada (CERO ROLL)
     ShakeScreenStabilized(1.9 + p * 3.8, 0.70 + p * 0.85)
 
-    -- 3. Destello de energía carmesí viva y clara con retorno suave
+    -- 3. Destello de energía carmesí con degradado inicial y retorno suave
     task.spawn(function()
         local cc = self.ActiveColorCorr
         self.ActiveColorCorr = nil
@@ -886,11 +970,15 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
             cc.Parent = Lighting
         end
 
-        cc.Brightness = 0.20 + (p * 0.30)
-        cc.Contrast = 0.25 + (p * 0.30)
-        cc.TintColor = Color3.fromRGB(255, 220, 220)
+        -- Breve degradado / oscurecimiento al primer impacto
+        cc.Brightness = -0.22
+        task.wait(0.05)
 
-        local tweenTime = 0.85 + (p * 1.4)
+        cc.Brightness = 0.20 + (p * 0.28)
+        cc.Contrast = 0.22 + (p * 0.25)
+        cc.TintColor = Color3.fromRGB(255, 225, 225)
+
+        local tweenTime = 1.0 + (p * 1.6)
         local tw = TweenService:Create(cc, TweenInfo.new(tweenTime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
             Brightness = 0,
             Contrast = 0,
@@ -901,7 +989,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         tw.Completed:Connect(function() pcall(function() cc:Destroy() end) end)
     end)
 
-    -- 4. PILAR CENTRAL GIGANTESCO (TORNADO EXPLOSION ABSURDAMENTE COLOSAL)
+    -- 4. PILAR CENTRAL GIGANTESCO (+20% MÁS GRANDE Y MAYOR DURACIÓN)
     if TornadoExplosionTemplate then
         local burstClone = TornadoExplosionTemplate:Clone()
         burstClone.CFrame = rootCF * CFrame.new(0, -2.5, 0)
@@ -909,45 +997,135 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         burstClone.CanCollide = false
         burstClone.Transparency = 1
         burstClone.Parent = Workspace
-        Debris:AddItem(burstClone, 7.0)
+        Debris:AddItem(burstClone, 10.0)
 
         for _, desc in ipairs(burstClone:GetDescendants()) do
             if desc:IsA("ParticleEmitter") then
                 desc.Enabled = true
                 if desc.Name == "Lightning_Squash" then
-                    -- Escala exacta con powerRatio: de 55 studs hasta 480 studs!
+                    -- 20% más grande: de 66 studs hasta 576 studs! (antes 55 a 480)
                     desc.Size = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 6.0 * (1 + p * 3.5)),
-                        NumberSequenceKeypoint.new(1, 55.0 + (p * 425.0))
+                        NumberSequenceKeypoint.new(0, 7.2 * (1 + p * 3.5)),
+                        NumberSequenceKeypoint.new(1, 66.0 + (p * 510.0))
                     })
-                    desc:Emit(math.floor(80 + p * 420))
+                    desc.Lifetime = NumberRange.new(0.9, 1.6) -- Dura más tiempo
+                    desc:Emit(math.floor(100 + p * 500))
                 elseif desc.Name == "Burst" then
                     desc.Size = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 7.0 * (1 + p * 3.0)),
-                        NumberSequenceKeypoint.new(1, 45.0 + (p * 235.0))
+                        NumberSequenceKeypoint.new(0, 8.4 * (1 + p * 3.0)),
+                        NumberSequenceKeypoint.new(1, 54.0 + (p * 282.0))
                     })
-                    desc:Emit(math.floor(60 + p * 220))
+                    desc.Lifetime = NumberRange.new(0.8, 1.5)
+                    desc:Emit(math.floor(80 + p * 280))
                 elseif desc.Name == "Shocks" then
-                    desc:Emit(math.floor(150 + p * 650))
+                    desc.Lifetime = NumberRange.new(0.7, 1.4)
+                    desc:Emit(math.floor(180 + p * 750))
                 elseif desc.Name == "InRays" then
-                    desc:Emit(math.floor(50 + p * 200))
+                    desc.Lifetime = NumberRange.new(0.7, 1.3)
+                    desc:Emit(math.floor(60 + p * 260))
                 elseif desc.Name == "AirWaves" then
-                    -- Anillos de onda de choque colosales barriendo la isla (hasta 750 studs)
+                    -- 20% más grande: de 84 studs hasta 900 studs! (antes 70 a 750)
+                    -- Y dura significativamente más tiempo para barrer toda la isla
                     desc.Size = NumberSequence.new({
-                        NumberSequenceKeypoint.new(0, 8.0 * (1 + p * 3.0)),
-                        NumberSequenceKeypoint.new(1, 70.0 + (p * 680.0))
+                        NumberSequenceKeypoint.new(0, 9.6 * (1 + p * 3.0)),
+                        NumberSequenceKeypoint.new(1, 84.0 + (p * 816.0))
                     })
-                    desc:Emit(math.floor(30 + p * 120))
+                    desc.Lifetime = NumberRange.new(1.6, 2.8) -- Dura mucho más tiempo
+                    desc:Emit(math.floor(45 + p * 160))
                 elseif desc.Name == "Sparks" then
-                    desc:Emit(math.floor(100 + p * 400))
+                    desc.Lifetime = NumberRange.new(0.8, 1.6)
+                    desc:Emit(math.floor(120 + p * 480))
                 else
-                    desc:Emit(math.floor(30 + p * 100))
+                    desc:Emit(math.floor(35 + p * 120))
                 end
 
-                task.delay(0.60, function() pcall(function() desc.Enabled = false end) end)
+                task.delay(1.2 + (p * 1.5), function() pcall(function() desc.Enabled = false end) end)
             end
         end
+
+        -- Extra VFX Blox Fruits: Ondas Cortantes Negras de Vacío (FX/Dark/BlackHole rbxassetid://8924016133)
+        local voidCrescents = Instance.new("ParticleEmitter")
+        voidCrescents.Name = "ExtraDarkCrescents"
+        voidCrescents.Texture = "rbxassetid://8924016133"
+        voidCrescents.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 0, 0)),
+            ColorSequenceKeypoint.new(0.5, Color3.fromRGB(190, 20, 30)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 0))
+        })
+        voidCrescents.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 8.0 * (1 + p * 3)),
+            NumberSequenceKeypoint.new(1, 40.0 + (p * 180.0))
+        })
+        voidCrescents.Lifetime = NumberRange.new(1.2, 2.2)
+        voidCrescents.Speed = NumberRange.new(40 + p * 120, 80 + p * 220)
+        voidCrescents.SpreadAngle = Vector2.new(180, 20)
+        voidCrescents.RotSpeed = NumberRange.new(180, 360)
+        voidCrescents.LightEmission = 0
+        voidCrescents.Brightness = 0
+        voidCrescents.Parent = burstClone
+        voidCrescents:Emit(math.floor(25 + p * 90))
+
+        -- Extra VFX Blox Fruits: Líneas de Impacto Radial (FX/Dark/BlackHole rbxassetid://6763809313)
+        local radialLines = Instance.new("ParticleEmitter")
+        radialLines.Name = "ExtraRadialLines"
+        radialLines.Texture = "rbxassetid://6763809313"
+        radialLines.Color = ColorSequence.new({
+            ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 30, 45)),
+            ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 0, 0))
+        })
+        radialLines.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 10.0),
+            NumberSequenceKeypoint.new(1, 60.0 + (p * 320.0))
+        })
+        radialLines.Lifetime = NumberRange.new(1.0, 1.8)
+        radialLines.Speed = NumberRange.new(60 + p * 180, 120 + p * 340)
+        radialLines.SpreadAngle = Vector2.new(180, 15)
+        radialLines.LightEmission = 1
+        radialLines.Brightness = 8
+        radialLines.Parent = burstClone
+        radialLines:Emit(math.floor(30 + p * 110))
+
+        -- Extra VFX Blox Fruits: Anillo de Relámpago Expansivo (FX/RaceAwakenings/LightningRing rbxassetid://9760500840)
+        local electricPulseRing = Instance.new("ParticleEmitter")
+        electricPulseRing.Name = "ExtraElectricPulseRing"
+        electricPulseRing.Texture = "rbxassetid://9760500840"
+        electricPulseRing.Color = ColorSequence.new(Color3.fromRGB(255, 40, 50))
+        electricPulseRing.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 15.0),
+            NumberSequenceKeypoint.new(1, 90.0 + (p * 550.0))
+        })
+        electricPulseRing.Lifetime = NumberRange.new(1.4, 2.5)
+        electricPulseRing.Speed = NumberRange.new(20, 60)
+        electricPulseRing.LightEmission = 1
+        electricPulseRing.Brightness = 8
+        electricPulseRing.Parent = burstClone
+        electricPulseRing:Emit(math.floor(20 + p * 80))
     end
+
+    -- 4.1 ONDA DE CHOQUE 3D FÍSICA EXPANSIVA (BARRE LA ISLA POR 2 A 3+ SEGUNDOS)
+    task.spawn(function()
+        local shockPart = Instance.new("Part")
+        shockPart.Name = "PolarConqueror3DShockwave"
+        shockPart.Shape = Enum.PartType.Cylinder
+        shockPart.Material = Enum.Material.Neon
+        shockPart.Color = Color3.fromRGB(180, 15, 25)
+        shockPart.Transparency = 0.35
+        shockPart.CanCollide = false
+        shockPart.Anchored = true
+        shockPart.CFrame = rootCF * CFrame.Angles(0, 0, math.rad(90))
+        shockPart.Size = Vector3.new(2, 10, 10)
+        shockPart.Parent = Workspace
+        Debris:AddItem(shockPart, 4.5)
+
+        local targetDiameter = math.min(radius * 1.8, 5000)
+        local waveDuration = 1.8 + (p * 1.4)
+        local tw = TweenService:Create(shockPart, TweenInfo.new(waveDuration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            Size = Vector3.new(2, targetDiameter, targetDiameter),
+            Transparency = 1.0,
+            Color = Color3.fromRGB(35, 0, 5)
+        })
+        tw:Play()
+    end)
 
     -- 5. CDK SLAYER HIT IMPACT (ESTRELLAS DE DESTELLO EN CRUZ)
     if SlayerHitTemplate then
@@ -1008,8 +1186,9 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
         rayParams.FilterDescendantsInstances = {char}
 
         local maxRings = math.clamp(1 + math.floor(p * 7), 1, 8)
-        local ringRadii = {30, 85, 200, 420, 850, 1400, 1950, 2500}
-        local strikesPerRing = {8, 12, 16, 22, 28, 34, 40, 48}
+        -- Radios +20% más grandes: de 36 hasta 3000 studs barriendo toda la isla
+        local ringRadii = {36, 105, 240, 505, 1020, 1680, 2340, 3000}
+        local strikesPerRing = {10, 14, 18, 26, 32, 38, 46, 56}
 
         for ringIdx = 1, maxRings do
             local currentRadius = math.min(ringRadii[ringIdx], radius)
@@ -1025,7 +1204,8 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
                 SpawnThickBeam(groundPos + Vector3.new(0, 50, 0), groundPos, ringWidthMult)
             end
 
-            task.wait(0.20)
+            -- Mayor duración entre oleadas para que el estallido se sienta como un terremoto prolongado
+            task.wait(0.24 + (ringIdx * 0.025))
         end
     end)
 
