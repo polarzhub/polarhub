@@ -148,6 +148,24 @@ local function GetChargeStats(elapsed)
 end
 
 -- ================================================================================
+-- 1.1 FÓRMULA DE CARGA ACELERADA PARA [G] (COMIENZA AL 77% Y LLEGA RÁPIDO AL MÁXIMO)
+-- ================================================================================
+local function GetGChargeStats(elapsed)
+    -- G comienza directamente al 77% (0.77 del poder máximo de la H)
+    -- Al mantenerlo, escala rápidamente hasta el 100% Máximo Absoluto en ~7 segundos
+    local rampDuration = 7.0 -- segundos para pasar del 77% al 100%
+    local fraction = math.clamp(elapsed / rampDuration, 0, 1)
+
+    local powerRatio = 0.77 + (fraction * 0.23) -- Rango: 0.77 -> 1.00 (100%)
+    local linearProgress = 0.724 + (fraction * 0.276) -- Rango: 0.724 -> 1.00
+
+    local mult = 1.0 + (powerRatio * 34.0) -- Rango: 27.18x -> 35.0x
+    local blastRadius = 60.0 + (powerRatio * 2440.0) -- Rango: 1938.8 studs -> 2500+ studs
+
+    return mult, powerRatio, blastRadius, linearProgress
+end
+
+-- ================================================================================
 -- 2. AUDIO SÍSMICO Y RETUMBE DE ISLA
 -- ================================================================================
 local function PlayConquerorBurstAudio(parent, multiplier)
@@ -677,8 +695,8 @@ function Engine:StartCharging(mode)
         s.Name = "PolarChargeSound"
         s.SoundId = "rbxassetid://6026998623"
         s.Looped = true
-        s.Volume = (self.ChargeMode == "G" and 3.5) or 0.9
-        s.PlaybackSpeed = (self.ChargeMode == "G" and 1.6) or 0.75
+        s.Volume = (self.ChargeMode == "G" and 2.8) or 0.9
+        s.PlaybackSpeed = (self.ChargeMode == "G" and 1.35) or 0.75
         s.Parent = hrp
         s:Play()
         self.ChargeSound = s
@@ -705,12 +723,12 @@ function Engine:StartCharging(mode)
         rayParams.FilterDescendantsInstances = {char}
 
         while self.IsCharging and self.Active do
+            local elapsed = os.clock() - self.ChargeStartTime
             local mult, powerRatio, blastRadius, linearProgress
             if self.ChargeMode == "G" then
-                -- Modo G: ¡La etapa de carga se mantiene fija al 100% MÁXIMO ABSOLUTO de la H!
-                mult, powerRatio, blastRadius, linearProgress = GetChargeStats(120)
+                -- Modo G: Comienza al 77% del máximo de la H y llega rápidamente al 100% en ~7s
+                mult, powerRatio, blastRadius, linearProgress = GetGChargeStats(elapsed)
             else
-                local elapsed = os.clock() - self.ChargeStartTime
                 mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
             end
 
@@ -814,11 +832,12 @@ function Engine:ReleaseCharge()
     local currentMode = self.ChargeMode or "H"
     self.IsCharging = false
 
+    local elapsed = os.clock() - self.ChargeStartTime
     local mult, powerRatio, blastRadius
     if currentMode == "G" then
-        mult, powerRatio, blastRadius = GetChargeStats(120)
+        -- Detona proporcional a lo cargado en G (desde 77% al toque hasta 100% Colosal si se mantuvo ~7s)
+        mult, powerRatio, blastRadius = GetGChargeStats(elapsed)
     else
-        local elapsed = os.clock() - self.ChargeStartTime
         mult, powerRatio, blastRadius = GetChargeStats(elapsed)
     end
 
@@ -1160,8 +1179,8 @@ Engine:Init()
 
 print("================================================================================")
 print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V7 (ISLAND-WIDE STORM) ACTIVADO")
-print("  ⚡ MANTÉN [G]: ¡Carga y sostiene la ETAPA MÁXIMA de la H (Tormenta 100% permanente)!")
-print("  💥 SUELTA [G]: ¡Detona el Estallido Máximo Absoluto (Cataclismo 100% de la H)!")
+print("  ⚡ MANTÉN [G]: Comienza al 77% del máximo de la H y llega al 100% rápidamente en ~7s")
+print("  💥 SUELTA [G]: ¡Detona el Estallido (desde 77% al toque hasta 100% Colosal)!")
 print("  ⚡ MANTÉN [H]: Carga continua de 0 a 120s con rayos en paredes e isla completa")
 print("  📐 ESCALADO EXACTO: A 1 minuto = 57% de potencia | A 120s = 100% Absurdamente Colosal")
 print("  🌓 ILUMINACIÓN SOMBRÍA Y VIVA: 100% de visibilidad con contraste nítido")
