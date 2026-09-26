@@ -65,7 +65,7 @@ local State = {
     ChargeStartTime = 0,
     MaxHoldDuration = 3.5,
     DefaultChargeTime = 0.95,
-    DomainRadius = 504, -- Colossal Control Room (+80% larger area: 504 studs)
+    DomainRadius = 280,
     RoomTag = nil,
     FreezeBodyVel = nil,
     OriginalWalkSpeed = 16,
@@ -260,7 +260,7 @@ local function ExpandDomain()
 
     State.RoomTag = roomTag
     State.IsOpen = true
-    Notify("Control [Z] Colosal", "Dominio +80% Expandido (504s)! [M] para desactivar", 3.5)
+    Notify("Control [Z]", "Dominio Expandido! [M] para desactivar", 3)
 
     task.wait(0.3)
     State.IsTransitioning = false
