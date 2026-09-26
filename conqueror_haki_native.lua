@@ -1,35 +1,37 @@
 --[[
     ================================================================================
-    POLAR HUB | NATIVE CONQUEROR'S HAKI (HAOSHOKU INFUSION) V5 - TITANIC OVERLOAD
+    POLAR HUB | NATIVE CONQUEROR'S HAKI (HAOSHOKU INFUSION) V6 - PURE ELECTRICITY
     ================================================================================
-    Novedades V5:
-      1. RAYOS CONSTANTES, GIGANTESCOS Y MULTIPLICÁNDOSE EN PARTES:
-         - Los rayos NO son pocos ni pequeños: son masivos (grosor de 5 a 25 studs).
-         - Red eléctrica constante que conecta el personaje con partes cercanas,
-           y salta entre objeto y objeto por todo el entorno.
-         - Entre más tiempo se mantiene [H], más rayos se multiplican simultáneamente
-           (de 4 rayos iniciales hasta más de 70 rayos gigantescos activos a la vez).
-         - Rayos de doble capa canónica: Núcleo Rojo Carmesí + Silueta de Vacío Negro.
-      2. OSCURECIMIENTO EQUILIBRADO Y PERFECTO:
-         - Se ajustó el tono oscuro: ahora es un eclipse sombrío cinematográfico
-           (Brightness -0.35 máx, Contraste +0.22, Tinte rojizo suave).
-         - Permite ver el entorno y hace que los rayos rojos y negros resalten
-           con un contraste y nitidez absoluta (CERO pantalla ciega).
-      3. AURA GIGANTE QUE CRECE HASTA CONVERTIRSE EN UN SOL DE RAYOS:
-         - El aura de la espada/manos escala de 2.5 studs hasta más de 25 studs.
-         - Tasa de emisión multiplicada de 130 hasta más de 400 partículas/s.
-      4. CARGA DE HASTA 120 SEGUNDOS Y ESTALLIDO ABSURDAMENTE COLOSAL:
-         - Si se carga al máximo (o cerca de él), la detonación es cataclísmica:
-           * Rayos Lightning_Squash de hasta 450 studs de grosor y altura.
-           * Anillos de ondas expansivas AirWaves de hasta 1200 studs.
-           * 8 anillos concéntricos en cascada con más de 220 columnas de rayos
-             propagándose por toda la isla hasta más de 2000 studs.
-           * Detonación simultánea en decenas de objetos del mapa.
-           * Sacudida de impacto sísmica estabilizada (CERO ROLL / Sin mareos).
+    Novedades V6:
+      1. ELECTRICIDAD PURA NATIVA (CDK & YAMA ASSETS):
+         - Incorporación directa de ElectroSmog.Shocks de CDK (rbxassetid://2043130629),
+           rayos dentados de Yama (13002793471), arcos de alta tensión (13380253135)
+           y ramificaciones eléctricas (13001442706).
+         - Red eléctrica viva de puro voltaje rojo carmesí y vacío negro.
+      2. INTERACCIÓN FÍSICA CON PAREDES Y ENTORNO (CHOQUE EN SUPERFICIES):
+         - Raycasting 3D radial continuo alrededor del jugador:
+           * Los rayos buscan y chocan contra paredes, techos, suelos y columnas.
+           * Al chocar contra una pared o superficie:
+             - Se clavan arcos de relámpago gigantescos desde el jugador a la pared.
+             - Se detona un impacto de chispas y shocks orientados a la normal de la pared.
+             - Salen arcos secundarios que reptan por la superficie de la pared.
+             - Sonido de crujido y rotura eléctrica en el punto de impacto.
+      3. ESCALADO EXACTO AL SOLTAR [H] (FÓRMULA 57% AL MINUTO):
+         - Duración máxima: 120 segundos.
+         - Potencia proporcional y continua segundo a segundo:
+           * A 1 minuto (50% de tiempo): La explosión es exactamente el 57% del máximo
+             (Fórmula f(t) = (t / 120)^0.81, con radio de ~1450 studs y 5 anillos).
+           * A 120 segundos: 100% ABSURDAMENTE COLOSAL (2500+ studs, 8 anillos concéntricos,
+             Squash de 450 studs, 500+ relámpagos, cubriendo toda la isla y el mar).
+      4. ILUMINACIÓN SOMBRÍA CINEMATOGRÁFICA Y EQUILIBRADA:
+         - Oscurecimiento controlado (Brightness -0.35 máx, Contraste +0.22) que mantiene
+           100% visible el entorno y hace que los rayos rojos y negros resalten con nitidez.
+      5. CÁMARA ULTRA-ESTABILIZADA:
+         - Sacudida profunda de terremoto con CERO balanceo lateral (roll = 0).
     ================================================================================
     Controles:
       - Mantén presionada [H]: Concentra el Haki hasta por 120 segundos.
-      - Suelta [H]: Desata el Estallido Proporcional al tiempo cargado.
+      - Suelta [H]: Desata el Estallido Proporcional al tiempo cargado (57% a 1 min).
       - Equipar/Desequipar espadas: El aura se transfiere automáticamente.
       - _G.ConquerorBurst(mult, ratio): Detonar directamente vía código.
       - _G.ConquerorHakiCleanup(): Desmontar y limpiar todo.
@@ -115,6 +117,9 @@ local TornadoExplosionTemplate = CDK_Z and CDK_Z:FindFirstChild("TornadoExplosio
 local StaticImpactTemplate = CDK_Z and CDK_Z:FindFirstChild("StaticImpact")
 local SlayerHitTemplate = CDK_X and CDK_X:FindFirstChild("SlayerHit")
 
+local ElectroSmog = CDK_X and CDK_X:FindFirstChild("ElectroSmog")
+local CDKElectricShocks = ElectroSmog and ElectroSmog:FindFirstChild("Shocks")
+
 -- Yama
 local Yama_FX = FX and FX:FindFirstChild("Yama")
 local YamaSkill1 = Yama_FX and Yama_FX:FindFirstChild("YamaSkill1")
@@ -126,19 +131,27 @@ local Phase1 = ActivateAuraFolder and ActivateAuraFolder:FindFirstChild("Assets"
 local StartImpactTemplate = Phase1 and Phase1:FindFirstChild("StartImpact")
 
 -- ================================================================================
--- 1. FÓRMULA DE ESCALADO DINÁMICO (0 a 120 Segundos)
+-- 1. FÓRMULA DE ESCALADO DINÁMICO PROPORCIONAL (57% A 1 MINUTO)
 -- ================================================================================
+-- La fórmula (t / 120)^0.81 asegura:
+--   - t = 0s:    0%
+--   - t = 10s:   13.3%
+--   - t = 30s:   32.5%
+--   - t = 60s:   57.0% (Exactamente el 57% pedido por el usuario a 1 minuto)
+--   - t = 90s:   79.2%
+--   - t = 120s:  100% (Absurdamente colosal a escala isla completa)
 local function GetChargeStats(elapsed)
     local t = math.clamp(elapsed, 0, 120)
-    local progress = t / 120.0
+    local linearProgress = t / 120.0
+    local powerRatio = (linearProgress) ^ 0.81
 
-    -- Multiplicador de potencia: de 1.0x hasta 35.0x
-    local mult = 1.0 + 34.0 * (progress ^ 0.58)
+    -- Multiplicador de potencia (de 1.0x hasta 35.0x)
+    local mult = 1.0 + (powerRatio * 34.0)
 
-    -- Radio del estallido: desde 50 studs hasta 2200+ studs (isla completa)
-    local blastRadius = 50.0 + 2150.0 * (progress ^ 0.65)
+    -- Radio del estallido: desde 60 studs hasta 2500+ studs (isla entera)
+    local blastRadius = 60.0 + (powerRatio * 2440.0)
 
-    return mult, progress, blastRadius
+    return mult, powerRatio, blastRadius, linearProgress
 end
 
 -- ================================================================================
@@ -150,8 +163,8 @@ local function PlayConquerorBurstAudio(parent, multiplier)
     -- Sonido 1: Bajo de Haki del Conquistador (Blox Fruits)
     local s1 = Instance.new("Sound")
     s1.SoundId = "rbxassetid://9069609200"
-    s1.Volume = math.clamp(3.8 + (mult * 0.18), 3.8, 8.5)
-    s1.PlaybackSpeed = math.clamp(0.90 - (mult * 0.006), 0.68, 0.95)
+    s1.Volume = math.clamp(4.0 + (mult * 0.18), 4.0, 9.0)
+    s1.PlaybackSpeed = math.clamp(0.90 - (mult * 0.006), 0.65, 0.95)
     s1.Parent = parent or Workspace
     s1:Play()
     Debris:AddItem(s1, 6)
@@ -159,7 +172,7 @@ local function PlayConquerorBurstAudio(parent, multiplier)
     -- Sonido 2: Impacto CDK
     local s2 = Instance.new("Sound")
     s2.SoundId = "rbxassetid://6026998623"
-    s2.Volume = math.clamp(2.8 + (mult * 0.15), 2.8, 7.5)
+    s2.Volume = math.clamp(2.8 + (mult * 0.15), 2.8, 8.0)
     s2.PlaybackSpeed = 0.94
     s2.Parent = parent or Workspace
     s2:Play()
@@ -168,7 +181,7 @@ local function PlayConquerorBurstAudio(parent, multiplier)
     -- Sonido 3: Trueno expansivo de alta tensión
     local s3 = Instance.new("Sound")
     s3.SoundId = "rbxassetid://5801257793"
-    s3.Volume = math.clamp(2.2 + (mult * 0.12), 2.2, 6.5)
+    s3.Volume = math.clamp(2.2 + (mult * 0.12), 2.2, 7.0)
     s3.PlaybackSpeed = 1.0
     s3.Parent = parent or Workspace
     s3:Play()
@@ -206,10 +219,9 @@ local function ShakeScreenStabilized(intensity, duration)
 end
 
 -- ================================================================================
--- 4. RAYOS MASIVOS Y GRUESOS (THICK CONQUEROR BOLTS)
+-- 4. ELECTRICIDAD PURA NATIVA: CHOQUE Y REPTADO EN PAREDES Y SUPERFICIES
 -- ================================================================================
--- Crea un rayo potente, grueso y caótico entre dos puntos
-local function SpawnThickLightning(posA, posB, widthMult)
+local function SpawnThickBeam(posA, posB, widthMult)
     local wMult = widthMult or 1.0
 
     local pA = Instance.new("Part")
@@ -231,20 +243,19 @@ local function SpawnThickLightning(posA, posB, widthMult)
     local attA = Instance.new("Attachment", pA)
     local attB = Instance.new("Attachment", pB)
 
-    -- Curvatura caótica de relámpago
-    local curveA = math.random(-6, 6) * math.clamp(wMult * 0.8, 1, 3.5)
-    local curveB = math.random(-6, 6) * math.clamp(wMult * 0.8, 1, 3.5)
+    local curveA = math.random(-8, 8) * math.clamp(wMult * 0.75, 1, 3.5)
+    local curveB = math.random(-8, 8) * math.clamp(wMult * 0.75, 1, 3.5)
 
-    -- Capa 1: Núcleo Rojo Carmesí Brillante
+    -- Capa 1: Núcleo Rojo Carmesí Eléctrico
     local beamRed = Instance.new("Beam")
     beamRed.Texture = "rbxassetid://13002793471"
     beamRed.Color = ColorSequence.new({
-        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 40, 50)),
-        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 10, 20)),
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 45, 55)),
+        ColorSequenceKeypoint.new(0.5, Color3.fromRGB(255, 15, 25)),
         ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 10))
     })
-    beamRed.Width0 = math.clamp(4.5 * wMult, 4.5, 24.0)
-    beamRed.Width1 = math.clamp(2.8 * wMult, 2.8, 16.0)
+    beamRed.Width0 = math.clamp(4.8 * wMult, 4.8, 25.0)
+    beamRed.Width1 = math.clamp(3.0 * wMult, 3.0, 18.0)
     beamRed.FaceCamera = true
     beamRed.Segments = 10
     beamRed.CurveSize0 = curveA
@@ -254,12 +265,12 @@ local function SpawnThickLightning(posA, posB, widthMult)
     beamRed.Attachment1 = attB
     beamRed.Parent = pA
 
-    -- Capa 2: Silueta de Vacío Negro de Conquistador
+    -- Capa 2: Vacío Negro de Conquistador
     local beamBlack = Instance.new("Beam")
     beamBlack.Texture = "rbxassetid://13002793471"
     beamBlack.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
-    beamBlack.Width0 = math.clamp(6.8 * wMult, 6.8, 34.0)
-    beamBlack.Width1 = math.clamp(4.2 * wMult, 4.2, 22.0)
+    beamBlack.Width0 = math.clamp(7.2 * wMult, 7.2, 35.0)
+    beamBlack.Width1 = math.clamp(4.5 * wMult, 4.5, 24.0)
     beamBlack.FaceCamera = true
     beamBlack.Segments = 10
     beamBlack.CurveSize0 = curveA
@@ -270,10 +281,33 @@ local function SpawnThickLightning(posA, posB, widthMult)
     beamBlack.Attachment1 = attB
     beamBlack.Parent = pA
 
-    -- Chispas en el punto de impacto B
+    Debris:AddItem(pA, 0.22)
+    Debris:AddItem(pB, 0.22)
+end
+
+-- Detona el impacto de electricidad pura que choca contra una pared o superficie
+local function SpawnWallImpactElectricity(originPos, hitPos, hitNormal, widthMult)
+    local wMult = widthMult or 1.0
+
+    -- 1. Rayo grueso que viaja del jugador/arma al punto de impacto en la pared
+    SpawnThickBeam(originPos, hitPos, wMult)
+
+    -- 2. Parte de anclaje orientada según la superficie de la pared
+    local pWall = Instance.new("Part")
+    pWall.Anchored = true
+    pWall.CanCollide = false
+    pWall.Transparency = 1
+    pWall.Size = Vector3.new(1, 1, 1)
+    pWall.CFrame = CFrame.lookAt(hitPos, hitPos + hitNormal)
+    pWall.Parent = Workspace
+    Debris:AddItem(pWall, 0.8)
+
+    local attWall = Instance.new("Attachment", pWall)
+
+    -- 3. Chispas de Yama orientadas a la pared
     if YamaGroundSparks then
         local sparks = YamaGroundSparks:Clone()
-        sparks.CFrame = CFrame.new(posB)
+        sparks.CFrame = pWall.CFrame
         sparks.Anchored = true
         sparks.CanCollide = false
         sparks.Transparency = 1
@@ -283,14 +317,39 @@ local function SpawnThickLightning(posA, posB, widthMult)
         for _, pe in ipairs(sparks:GetDescendants()) do
             if pe:IsA("ParticleEmitter") then
                 pe.Enabled = true
-                pe:Emit(15)
+                pe:Emit(math.floor(15 * math.clamp(wMult, 1, 3)))
                 task.delay(0.2, function() pcall(function() pe.Enabled = false end) end)
             end
         end
     end
 
-    Debris:AddItem(pA, 0.22)
-    Debris:AddItem(pB, 0.22)
+    -- 4. CDK ElectroSmog Shocks nativo (electricidad pura) explotando contra la pared
+    if CDKElectricShocks then
+        local cdkShockClone = CDKElectricShocks:Clone()
+        cdkShockClone.Enabled = true
+        cdkShockClone.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 6.0 * math.clamp(wMult, 1, 3.5)),
+            NumberSequenceKeypoint.new(1, 0)
+        })
+        cdkShockClone.Parent = attWall
+        cdkShockClone:Emit(math.floor(12 * math.clamp(wMult, 1, 3)))
+        task.delay(0.25, function() pcall(function() cdkShockClone.Enabled = false end) end)
+    end
+
+    -- 5. Rayos secundarios reptando por la superficie de la pared
+    task.spawn(function()
+        local up = math.abs(hitNormal.Y) < 0.9 and Vector3.new(0, 1, 0) or Vector3.new(1, 0, 0)
+        local tangent = hitNormal:Cross(up).Unit
+        local bitangent = hitNormal:Cross(tangent).Unit
+
+        local crawlCount = math.random(2, 3)
+        for _ = 1, crawlCount do
+            local offsetDist = math.random(4, math.floor(8 * math.clamp(wMult, 1, 2.5)))
+            local angle = math.random() * math.pi * 2
+            local crawlTarget = hitPos + (tangent * (math.cos(angle) * offsetDist)) + (bitangent * (math.sin(angle) * offsetDist))
+            SpawnThickBeam(hitPos, crawlTarget, wMult * 0.55)
+        end
+    end)
 end
 
 -- Relámpagos que rasgan las esquinas de la pantalla
@@ -322,8 +381,8 @@ local function SpawnScreenLightning(widthMult)
     local bRed = Instance.new("Beam")
     bRed.Texture = "rbxassetid://13002793471"
     bRed.Color = ColorSequence.new(Color3.fromRGB(255, 45, 55))
-    bRed.Width0 = math.clamp(1.8 * w, 1.8, 6.0)
-    bRed.Width1 = math.clamp(1.0 * w, 1.0, 3.5)
+    bRed.Width0 = math.clamp(2.0 * w, 2.0, 6.5)
+    bRed.Width1 = math.clamp(1.2 * w, 1.2, 4.0)
     bRed.FaceCamera = true
     bRed.Attachment0 = a1
     bRed.Attachment1 = a2
@@ -333,8 +392,8 @@ local function SpawnScreenLightning(widthMult)
     local bBlack = Instance.new("Beam")
     bBlack.Texture = "rbxassetid://13002793471"
     bBlack.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
-    bBlack.Width0 = math.clamp(2.6 * w, 2.6, 8.5)
-    bBlack.Width1 = math.clamp(1.5 * w, 1.5, 5.0)
+    bBlack.Width0 = math.clamp(3.0 * w, 3.0, 9.5)
+    bBlack.Width1 = math.clamp(1.8 * w, 1.8, 6.0)
     bBlack.FaceCamera = true
     bBlack.Attachment0 = a1
     bBlack.Attachment1 = a2
@@ -347,7 +406,7 @@ local function SpawnScreenLightning(widthMult)
 end
 
 -- ================================================================================
--- 5. AURA NATIVA ULTRA-POTENCIADA (ESPADA Y MANOS)
+-- 5. AURA NATIVA CON ELECTRICIDAD PURA (ESPADA Y MANOS)
 -- ================================================================================
 local function ApplyConquerorAura(targetPart)
     if not targetPart or targetPart:FindFirstChild("PolarNativeHaki") then return end
@@ -379,7 +438,7 @@ local function ApplyConquerorAura(targetPart)
         end
     end
 
-    -- Relámpago Rojo Dentado de Yama (Mucho más grande)
+    -- Relámpago Rojo Dentado de Yama (Gigante)
     local redLightning = Instance.new("ParticleEmitter")
     redLightning.Name = "OverloadRedLightning"
     redLightning.Texture = "rbxassetid://13002793471"
@@ -389,12 +448,12 @@ local function ApplyConquerorAura(targetPart)
         ColorSequenceKeypoint.new(1, Color3.fromRGB(160, 0, 15))
     })
     redLightning.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1.2),
-        NumberSequenceKeypoint.new(0.3, 5.5),
+        NumberSequenceKeypoint.new(0, 1.4),
+        NumberSequenceKeypoint.new(0.3, 6.0),
         NumberSequenceKeypoint.new(1, 0)
     })
     redLightning.Lifetime = NumberRange.new(0.2, 0.42)
-    redLightning.Rate = 45
+    redLightning.Rate = 50
     redLightning.Speed = NumberRange.new(10, 26)
     redLightning.SpreadAngle = Vector2.new(75, 75)
     redLightning.LightEmission = 1
@@ -407,18 +466,32 @@ local function ApplyConquerorAura(targetPart)
     blackLightning.Texture = "rbxassetid://13002793471"
     blackLightning.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
     blackLightning.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1.5),
-        NumberSequenceKeypoint.new(0.3, 6.2),
+        NumberSequenceKeypoint.new(0, 1.8),
+        NumberSequenceKeypoint.new(0.3, 6.8),
         NumberSequenceKeypoint.new(1, 0)
     })
     blackLightning.Lifetime = NumberRange.new(0.2, 0.42)
-    blackLightning.Rate = 45
+    blackLightning.Rate = 50
     blackLightning.Speed = NumberRange.new(10, 26)
     blackLightning.SpreadAngle = Vector2.new(75, 75)
     blackLightning.LightEmission = 0
     blackLightning.Brightness = 0
     blackLightning.ZOffset = -0.5
     blackLightning.Parent = clonedAtt
+
+    -- Shocks de Electricidad Pura CDK (rbxassetid://2043130629)
+    if CDKElectricShocks then
+        local cdkShockInAura = CDKElectricShocks:Clone()
+        cdkShockInAura.Name = "CDKPureElectricShocks"
+        cdkShockInAura.Enabled = true
+        cdkShockInAura.Rate = 35
+        cdkShockInAura.Size = NumberSequence.new({
+            NumberSequenceKeypoint.new(0, 5.0),
+            NumberSequenceKeypoint.new(1, 0)
+        })
+        cdkShockInAura.Brightness = 7
+        cdkShockInAura.Parent = clonedAtt
+    end
 
     -- Ramificaciones Eléctricas
     local branchSparks = Instance.new("ParticleEmitter")
@@ -446,8 +519,8 @@ local function ApplyConquerorAura(targetPart)
         ColorSequenceKeypoint.new(1, Color3.fromRGB(90, 0, 0))
     })
     cdkShocks.Size = NumberSequence.new({
-        NumberSequenceKeypoint.new(0, 1.0),
-        NumberSequenceKeypoint.new(0.5, 5.0),
+        NumberSequenceKeypoint.new(0, 1.2),
+        NumberSequenceKeypoint.new(0.5, 5.5),
         NumberSequenceKeypoint.new(1, 0)
     })
     cdkShocks.Lifetime = NumberRange.new(0.18, 0.32)
@@ -498,7 +571,7 @@ function Engine:RefreshAura()
 end
 
 -- ================================================================================
--- 6. SISTEMA DE CARGA DINÁMICA CON RAYOS MULTIPLICÁNDOSE EN PARTES
+-- 6. SISTEMA DE CARGA DINÁMICA CON RAYOS CHOQUEN EN PAREDES Y ENTORNO
 -- ================================================================================
 function Engine:StartCharging()
     if self.IsCharging then return end
@@ -524,7 +597,7 @@ function Engine:StartCharging()
         self.ChargeSound = s
     end)
 
-    -- ILUMINACIÓN EQUILIBRADA (SOMBRÍA PERO NÍTIDA, SIN PANTALLA CIEGA)
+    -- ILUMINACIÓN SOMBRÍA Y NÍTIDA (SIN PANTALLA CIEGA)
     pcall(function()
         if not self.ActiveColorCorr then
             local cc = Instance.new("ColorCorrectionEffect")
@@ -538,7 +611,7 @@ function Engine:StartCharging()
         end
     end)
 
-    -- BUCLE DE TORMENTA ELÉCTRICA EN TIEMPO REAL
+    -- BUCLE DE RAYOS CONSTANTES INTERACTUANDO CON PAREDES Y PARTES
     task.spawn(function()
         local rayParams = RaycastParams.new()
         rayParams.FilterType = Enum.RaycastFilterType.Exclude
@@ -550,35 +623,34 @@ function Engine:StartCharging()
 
         while self.IsCharging and self.Active do
             local elapsed = os.clock() - self.ChargeStartTime
-            local mult, progress, blastRadius = GetChargeStats(elapsed)
+            local mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
 
-            -- 1. Oscurecimiento sombrío y nítido (de 0 a -0.35 máx)
+            -- 1. Oscurecimiento sombrío equilibrado (Brightness -0.35 máx a los 120s)
             if self.ActiveColorCorr then
-                self.ActiveColorCorr.Brightness = -progress * 0.35
-                self.ActiveColorCorr.Contrast = 0.05 + (progress * 0.18)
-                self.ActiveColorCorr.Saturation = 0.08 + (progress * 0.12)
-                self.ActiveColorCorr.TintColor = Color3.fromRGB(255, math.floor(245 - progress * 25), math.floor(245 - progress * 25))
+                self.ActiveColorCorr.Brightness = -linearProgress * 0.35
+                self.ActiveColorCorr.Contrast = 0.05 + (linearProgress * 0.18)
+                self.ActiveColorCorr.Saturation = 0.08 + (linearProgress * 0.12)
+                self.ActiveColorCorr.TintColor = Color3.fromRGB(255, math.floor(245 - linearProgress * 25), math.floor(245 - linearProgress * 25))
             end
 
-            -- 2. Modulación de sonido
+            -- 2. Modulación de sonido de carga
             if self.ChargeSound and self.ChargeSound.Parent then
-                self.ChargeSound.PlaybackSpeed = math.clamp(0.75 + progress * 0.85, 0.75, 1.6)
-                self.ChargeSound.Volume = math.clamp(0.9 + progress * 2.6, 0.9, 3.5)
+                self.ChargeSound.PlaybackSpeed = math.clamp(0.75 + linearProgress * 0.85, 0.75, 1.6)
+                self.ChargeSound.Volume = math.clamp(0.9 + linearProgress * 2.6, 0.9, 3.5)
             end
 
-            -- 3. Crecimiento gigante del aura en armas y manos
+            -- 3. Crecimiento gigante del aura en espadas y manos
             for _, att in ipairs(self.ActiveAttachments) do
                 if att and att.Parent then
                     for _, pe in ipairs(att:GetChildren()) do
                         if pe:IsA("ParticleEmitter") then
-                            if pe.Name:find("Lightning") or pe.Name:find("Red") or pe.Name:find("Black") then
-                                pe.Rate = math.clamp(pe.Name:find("Lightning") and (45 + progress * 160) or (140 + progress * 260), 45, 420)
+                            if pe.Name:find("Lightning") or pe.Name:find("Red") or pe.Name:find("Black") or pe.Name:find("Shocks") then
+                                pe.Rate = math.clamp(pe.Name:find("Lightning") and (50 + linearProgress * 180) or (140 + linearProgress * 280), 45, 450)
                             end
-                            -- Agrandar tamaño de los rayos del aura
                             if pe.Name == "OverloadRedLightning" or pe.Name == "OverloadBlackLightning" then
-                                local sz = 5.5 * (1 + progress * 3.5) -- De 5.5 hasta 25 studs!
+                                local sz = 6.0 * (1 + linearProgress * 3.5) -- De 6 a 27 studs!
                                 pe.Size = NumberSequence.new({
-                                    NumberSequenceKeypoint.new(0, 1.2 * (1 + progress * 2)),
+                                    NumberSequenceKeypoint.new(0, 1.4 * (1 + linearProgress * 2)),
                                     NumberSequenceKeypoint.new(0.3, sz),
                                     NumberSequenceKeypoint.new(1, 0)
                                 })
@@ -588,67 +660,54 @@ function Engine:StartCharging()
                 end
             end
 
-            -- 4. Micro-vibración sísmica progresiva (CERO balanceo de cámara)
-            ShakeScreenStabilized(0.25 + progress * 1.3, 0.05)
+            -- 4. Micro-vibración sísmica progresiva (CERO ROLL)
+            ShakeScreenStabilized(0.25 + linearProgress * 1.3, 0.05)
 
-            -- 5. MULTIPLICACIÓN CONSTANTE DE RAYOS EN PARTES DEL ENTORNO
-            -- Escanear partes cercanas dentro del radio expansivo
-            local searchRadius = 25.0 + (progress * 300.0)
-            local nearbyParts = Workspace:GetPartBoundsInRadius(hrp.Position, searchRadius, op)
+            -- 5. RAYOS FÍSICOS QUE CHOCAN CON PAREDES Y PARTES EN 3D
+            local origin = hrp.Position + Vector3.new(0, 2.5, 0)
+            local widthMult = 1.0 + (powerRatio * 3.0)
 
-            -- Filtrar partes visibles
-            local validParts = {}
-            for _, p in ipairs(nearbyParts) do
-                if p:IsA("BasePart") and p.Transparency < 0.95 and not p:IsDescendantOf(char) then
-                    table.insert(validParts, p)
-                end
-            end
+            -- Disparar múltiples rayos radiales buscando paredes y superficies
+            local rayCount = math.random(3, math.clamp(math.floor(5 + linearProgress * 22), 5, 26))
 
-            -- Número de rayos simultáneos que se disparan en este frame
-            -- Crece de 2-4 al inicio hasta 12-25 por frame en carga alta!
-            local boltsThisTick = math.random(2, math.clamp(math.floor(4 + progress * 22), 4, 25))
-            local widthMult = 1.0 + (progress * 3.0) -- Grosor escala de 1.0x a 4.0x
+            for _ = 1, rayCount do
+                local action = math.random(1, 3)
 
-            for _ = 1, boltsThisTick do
-                local mode = math.random(1, 3)
+                if action == 1 or action == 2 then
+                    -- Acción 1 y 2: Rayo radial que busca chocar contra una pared o superficie
+                    local randomDir = (CFrame.Angles(
+                        (math.random() - 0.5) * math.pi * 1.6,
+                        (math.random() - 0.5) * math.pi * 2.0,
+                        0
+                    ).LookVector) * math.random(15, math.floor(35 + linearProgress * 65))
 
-                if mode == 1 and #validParts > 0 then
-                    -- Modo 1: Del jugador hacia una parte del entorno
-                    local targetPart = validParts[math.random(1, #validParts)]
-                    local pPos = targetPart.Position + Vector3.new(
-                        (math.random() - 0.5) * math.min(targetPart.Size.X, 8),
-                        targetPart.Size.Y * 0.5,
-                        (math.random() - 0.5) * math.min(targetPart.Size.Z, 8)
-                    )
-                    SpawnThickLightning(hrp.Position + Vector3.new(0, 2.5, 0), pPos, widthMult)
-
-                elseif mode == 2 and #validParts >= 2 then
-                    -- Modo 2: Rayos saltando ENTRE PARTES del entorno (Red eléctrica viva)
-                    local p1 = validParts[math.random(1, #validParts)]
-                    local p2 = validParts[math.random(1, #validParts)]
-                    if p1 ~= p2 and (p1.Position - p2.Position).Magnitude < 180 then
-                        SpawnThickLightning(p1.Position, p2.Position, widthMult * 0.85)
+                    local rayResult = Workspace:Raycast(origin, randomDir, rayParams)
+                    if rayResult then
+                        -- ¡CHOCA CONTRA LA PARED! Detona electricidad pura y chispas
+                        SpawnWallImpactElectricity(origin, rayResult.Position, rayResult.Normal, widthMult)
                     else
-                        SpawnThickLightning(hrp.Position + Vector3.new(0, 2.5, 0), p1.Position, widthMult)
+                        -- Si no hay pared en esa dirección, impactar suelo o aire cercano
+                        local endPt = origin + randomDir
+                        SpawnThickBeam(origin, endPt, widthMult * 0.75)
                     end
 
                 else
-                    -- Modo 3: Rayo colosal desde el cielo al suelo o montaña distante
+                    -- Acción 3: Rayo colosal desde el cielo cayendo a la isla lejana
                     local angle = math.random() * math.pi * 2
-                    local dist = math.random(15, math.floor(blastRadius))
-                    local rayOrigin = hrp.Position + Vector3.new(math.cos(angle) * dist, 180, math.sin(angle) * dist)
-                    local rayHit = Workspace:Raycast(rayOrigin, Vector3.new(0, -350, 0), rayParams)
-                    local groundPos = rayHit and rayHit.Position or (rayOrigin - Vector3.new(0, 180, 0))
+                    local dist = math.random(20, math.floor(blastRadius))
+                    local skyPos = hrp.Position + Vector3.new(math.cos(angle) * dist, 180, math.sin(angle) * dist)
+                    local groundHit = Workspace:Raycast(skyPos, Vector3.new(0, -350, 0), rayParams)
+                    local gPos = groundHit and groundHit.Position or (skyPos - Vector3.new(0, 180, 0))
 
-                    SpawnThickLightning(rayOrigin, groundPos, widthMult * 1.2)
+                    SpawnThickBeam(skyPos, gPos, widthMult * 1.25)
                 end
             end
 
             -- 6. Relámpagos rasgando la pantalla
             SpawnScreenLightning(widthMult)
 
-            -- Frecuencia muy rápida (cada 0.05 a 0.08s) para que sea CONSTANTE
-            task.wait(math.max(0.04, 0.09 - progress * 0.05))
+            -- Frecuencia muy rápida (cada 0.04 a 0.08s) para que sea CONSTANTE
+            task.wait(math.max(0.04, 0.08 - linearProgress * 0.04))
         end
     end)
 end
@@ -658,7 +717,7 @@ function Engine:ReleaseCharge()
     self.IsCharging = false
 
     local elapsed = os.clock() - self.ChargeStartTime
-    local mult, progress, blastRadius = GetChargeStats(elapsed)
+    local mult, powerRatio, blastRadius, linearProgress = GetChargeStats(elapsed)
 
     -- Detener audio de carga
     if self.ChargeSound then
@@ -669,17 +728,17 @@ function Engine:ReleaseCharge()
     -- Restaurar tasas base del aura
     self:RefreshAura()
 
-    -- Detonar el Cataclismo a escala calculada
-    self:TriggerBurst(mult, progress, blastRadius)
+    -- Detonar el Cataclismo a escala exacta
+    self:TriggerBurst(mult, powerRatio, blastRadius)
 end
 
 -- ================================================================================
--- 7. ESTALLIDO ABSURDAMENTE COLOSAL (ESCALA ISLA)
+-- 7. ESTALLIDO PROPORCIONAL Y ABSURDAMENTE COLOSAL (57% A 1 MINUTO)
 -- ================================================================================
-function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
+function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
     local mult = multiplier or 1.0
-    local p = progressRatio or 0.0
-    local radius = customRadius or (50 + 2150 * (p ^ 0.65))
+    local p = powerRatio or 0.0
+    local radius = customRadius or (60.0 + (p * 2440.0))
     self.LastBurstTime = os.clock()
 
     local char = LocalPlayer.Character
@@ -734,33 +793,33 @@ function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
             if desc:IsA("ParticleEmitter") then
                 desc.Enabled = true
                 if desc.Name == "Lightning_Squash" then
-                    -- Rayos colosales alcanzando hasta 450 studs de grosor y altura
+                    -- Escala exacta con powerRatio: de 55 studs hasta 480 studs!
                     desc.Size = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 6.0 * (1 + p * 3.5)),
-                        NumberSequenceKeypoint.new(1, 65.0 * (1 + p * 6.0)) -- Hasta 450 studs!
+                        NumberSequenceKeypoint.new(1, 55.0 + (p * 425.0))
                     })
-                    desc:Emit(math.clamp(math.floor(90 * mult), 90, 500))
+                    desc:Emit(math.floor(80 + p * 420))
                 elseif desc.Name == "Burst" then
                     desc.Size = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 7.0 * (1 + p * 3.0)),
-                        NumberSequenceKeypoint.new(1, 55.0 * (1 + p * 4.5))
+                        NumberSequenceKeypoint.new(1, 45.0 + (p * 235.0))
                     })
-                    desc:Emit(math.clamp(math.floor(65 * mult), 65, 280))
+                    desc:Emit(math.floor(60 + p * 220))
                 elseif desc.Name == "Shocks" then
-                    desc:Emit(math.clamp(math.floor(160 * mult), 160, 650))
+                    desc:Emit(math.floor(150 + p * 650))
                 elseif desc.Name == "InRays" then
-                    desc:Emit(math.clamp(math.floor(60 * mult), 60, 220))
+                    desc:Emit(math.floor(50 + p * 200))
                 elseif desc.Name == "AirWaves" then
-                    -- Anillos de onda de choque colosales barriendo la isla (hasta 650 studs)
+                    -- Anillos de onda de choque colosales barriendo la isla (hasta 750 studs)
                     desc.Size = NumberSequence.new({
                         NumberSequenceKeypoint.new(0, 8.0 * (1 + p * 3.0)),
-                        NumberSequenceKeypoint.new(1, 85.0 * (1 + p * 6.5))
+                        NumberSequenceKeypoint.new(1, 70.0 + (p * 680.0))
                     })
-                    desc:Emit(math.clamp(math.floor(35 * mult), 35, 150))
+                    desc:Emit(math.floor(30 + p * 120))
                 elseif desc.Name == "Sparks" then
-                    desc:Emit(math.clamp(math.floor(120 * mult), 120, 450))
+                    desc:Emit(math.floor(100 + p * 400))
                 else
-                    desc:Emit(math.clamp(math.floor(35 * mult), 35, 120))
+                    desc:Emit(math.floor(30 + p * 100))
                 end
 
                 task.delay(0.60, function() pcall(function() desc.Enabled = false end) end)
@@ -782,15 +841,15 @@ function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
             if desc:IsA("ParticleEmitter") then
                 desc.Enabled = true
                 if desc.Name == "RedShine" then
-                    desc:Emit(math.clamp(math.floor(35 * mult), 35, 150))
+                    desc:Emit(math.floor(30 + p * 120))
                 elseif desc.Name == "BlackShine" then
-                    desc:Emit(math.clamp(math.floor(35 * mult), 35, 150))
+                    desc:Emit(math.floor(30 + p * 120))
                 elseif desc.Name == "FlashStar" then
-                    desc:Emit(math.clamp(math.floor(12 * mult), 12, 50))
+                    desc:Emit(math.floor(10 + p * 40))
                 elseif desc.Name == "FlashStarRays" then
-                    desc:Emit(math.clamp(math.floor(45 * mult), 45, 200))
+                    desc:Emit(math.floor(40 + p * 160))
                 elseif desc.Name == "NeonEmbers" then
-                    desc:Emit(math.clamp(math.floor(120 * mult), 120, 500))
+                    desc:Emit(math.floor(100 + p * 400))
                 end
                 task.delay(0.55, function() pcall(function() desc.Enabled = false end) end)
             end
@@ -814,21 +873,21 @@ function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
                     ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 40, 50)),
                     ColorSequenceKeypoint.new(1, Color3.fromRGB(15, 0, 5))
                 })
-                desc:Emit(math.clamp(math.floor(30 * mult), 30, 130))
+                desc:Emit(math.floor(25 + p * 105))
                 task.delay(0.5, function() pcall(function() desc.Enabled = false end) end)
             end
         end
     end
 
-    -- 7. ONDAS SÍSMICAS DE RAYOS EN CASCADA (HASTA 8 ANILLOS CONCÉNTRICOS)
+    -- 7. ONDAS SÍSMICAS DE RAYOS EN CASCADA (1 a 8 ANILLOS CONCÉNTRICOS)
     task.spawn(function()
         local rayParams = RaycastParams.new()
         rayParams.FilterType = Enum.RaycastFilterType.Exclude
         rayParams.FilterDescendantsInstances = {char}
 
         local maxRings = math.clamp(1 + math.floor(p * 7), 1, 8)
-        local ringRadii = {30, 85, 200, 420, 800, 1300, 1850, 2400}
-        local strikesPerRing = {8, 12, 16, 20, 26, 32, 38, 44}
+        local ringRadii = {30, 85, 200, 420, 850, 1400, 1950, 2500}
+        local strikesPerRing = {8, 12, 16, 22, 28, 34, 40, 48}
 
         for ringIdx = 1, maxRings do
             local currentRadius = math.min(ringRadii[ringIdx], radius)
@@ -841,11 +900,9 @@ function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
                 local rayHit = Workspace:Raycast(rayOrigin, Vector3.new(0, -350, 0), rayParams)
                 local groundPos = rayHit and rayHit.Position or (rayOrigin - Vector3.new(0, 180, 0))
 
-                -- Rayo grueso vertical
-                SpawnThickLightning(groundPos + Vector3.new(0, 50, 0), groundPos, ringWidthMult)
+                SpawnThickBeam(groundPos + Vector3.new(0, 50, 0), groundPos, ringWidthMult)
             end
 
-            -- Retardo para crear la onda de choque en expansión
             task.wait(0.20)
         end
     end)
@@ -862,7 +919,7 @@ function Engine:TriggerBurst(multiplier, progressRatio, customRadius)
         for i = 1, maxDet do
             local part = parts[i]
             if part and part:IsA("BasePart") and part.Transparency < 0.95 then
-                SpawnThickLightning(part.Position + Vector3.new(0, 40, 0), part.Position, detWidth)
+                SpawnThickBeam(part.Position + Vector3.new(0, 40, 0), part.Position, detWidth)
             end
         end
     end)
@@ -892,7 +949,7 @@ function Engine:StartAmbientPresence()
                     local rayHit = Workspace:Raycast(rayOrigin, Vector3.new(0, -120, 0), rayParams)
                     local pos = rayHit and rayHit.Position or (rayOrigin - Vector3.new(0, 60, 0))
 
-                    SpawnThickLightning(hrp.Position + Vector3.new(0, 4, 0), pos, 1.0)
+                    SpawnThickBeam(hrp.Position + Vector3.new(0, 4, 0), pos, 1.0)
                 end
             end
         end
@@ -976,7 +1033,7 @@ function Engine:Cleanup()
     end
     self.ActiveAttachments = {}
 
-    print("[Polar Hub] ⚡ Haki del Conquistador V5 (Titanic Overload) desmontado limpiamente.")
+    print("[Polar Hub] ⚡ Haki del Conquistador V6 (Pure Electricity) desmontado limpiamente.")
 end
 
 -- Exportar a ambos entornos globales
@@ -988,10 +1045,10 @@ _G.ConquerorBurst = G.ConquerorBurst
 Engine:Init()
 
 print("================================================================================")
-print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V5 (TITANIC OVERLOAD) ACTIVADO")
-print("  ⚡ RAYOS CONSTANTES Y GIGANTESCOS: Se multiplican en todas las partes del entorno")
-print("  🌓 OSCURECIMIENTO SOMBRÍO EQUILIBRADO: Atmósfera ominosa con 100% visibilidad")
-print("  💥 MANTÉN [H] (hasta 120s) y SUELTA: Estallido Absurdamente Colosal")
+print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V6 (PURE ELECTRICITY & WALL IMPACT) ACTIVADO")
+print("  ⚡ ELECTRICIDAD PURA NATIVA: Rayos masivos chocan contra paredes y reptan en superficies")
+print("  📐 ESCALADO EXACTO: A 1 minuto = 57% de potencia | A 120s = 100% Absurdamente Colosal")
+print("  🌓 OSCURECIMIENTO SOMBRÍO EQUILIBRADO: Atmósfera ominosa con 100% de visibilidad")
 print("  🎥 Cámara ultra-estabilizada sin volteo ni balanceo lateral")
 print("================================================================================")
 
