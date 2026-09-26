@@ -1,33 +1,30 @@
 --[[
     ================================================================================
-    POLAR HUB | NATIVE CONQUEROR'S HAKI (HAOSHOKU INFUSION) V6 - PURE ELECTRICITY
+    POLAR HUB | NATIVE CONQUEROR'S HAKI (HAOSHOKU INFUSION) V7 - ISLAND-WIDE STORM
     ================================================================================
-    Novedades V6:
-      1. ELECTRICIDAD PURA NATIVA (CDK & YAMA ASSETS):
-         - Incorporación directa de ElectroSmog.Shocks de CDK (rbxassetid://2043130629),
-           rayos dentados de Yama (13002793471), arcos de alta tensión (13380253135)
-           y ramificaciones eléctricas (13001442706).
-         - Red eléctrica viva de puro voltaje rojo carmesí y vacío negro.
-      2. INTERACCIÓN FÍSICA CON PAREDES Y ENTORNO (CHOQUE EN SUPERFICIES):
-         - Raycasting 3D radial continuo alrededor del jugador:
-           * Los rayos buscan y chocan contra paredes, techos, suelos y columnas.
-           * Al chocar contra una pared o superficie:
-             - Se clavan arcos de relámpago gigantescos desde el jugador a la pared.
-             - Se detona un impacto de chispas y shocks orientados a la normal de la pared.
-             - Salen arcos secundarios que reptan por la superficie de la pared.
-             - Sonido de crujido y rotura eléctrica en el punto de impacto.
-      3. ESCALADO EXACTO AL SOLTAR [H] (FÓRMULA 57% AL MINUTO):
+    Novedades V7:
+      1. RAYOS CERCANOS Y LEJANOS SIMULTÁNEOS (COBERTURA TOTAL DE LA ISLA):
+         - DE CERCA (CONSERVADO AL 100%):
+           * Rayos de alta tensión que chocan contra paredes, columnas y techos.
+           * Chispas de Yama y ElectroSmog.Shocks de CDK en el punto de contacto.
+           * Arcos secundarios reptantes por la superficie de las paredes.
+         - DE LEJOS (EXPANSIÓN SEGUNDO A SEGUNDO):
+           * Cada segundo de carga genera MÁS rayos lejanos a mayor distancia.
+           * Desde 120 studs hasta más de 2500 studs (toda la isla y el horizonte).
+           * Columnas colosales de relámpago de 250-320 studs de altura descendiendo
+             de las nubes sobre montañas, bosques, castillos y el océano.
+           * En carga alta, más de 30-50 rayos gigantescos azotan la isla a la vez.
+      2. ESCALADO EXACTO AL SOLTAR [H] (57% AL MINUTO):
          - Duración máxima: 120 segundos.
-         - Potencia proporcional y continua segundo a segundo:
-           * A 1 minuto (50% de tiempo): La explosión es exactamente el 57% del máximo
-             (Fórmula f(t) = (t / 120)^0.81, con radio de ~1450 studs y 5 anillos).
+         - Potencia proporcional continua segundo a segundo: f(t) = (t / 120)^0.81
+           * A 1 minuto: Exactamente el 57% de potencia (radio ~1450 studs, 5 anillos).
            * A 120 segundos: 100% ABSURDAMENTE COLOSAL (2500+ studs, 8 anillos concéntricos,
-             Squash de 450 studs, 500+ relámpagos, cubriendo toda la isla y el mar).
-      4. ILUMINACIÓN SOMBRÍA CINEMATOGRÁFICA Y EQUILIBRADA:
-         - Oscurecimiento controlado (Brightness -0.35 máx, Contraste +0.22) que mantiene
-           100% visible el entorno y hace que los rayos rojos y negros resalten con nitidez.
-      5. CÁMARA ULTRA-ESTABILIZADA:
-         - Sacudida profunda de terremoto con CERO balanceo lateral (roll = 0).
+             Squash de 480 studs, 550+ relámpagos, cubriendo toda la isla y el mar).
+      3. VISIBILIDAD CRISTALINA Y SOMBRÍA:
+         - Eclipse atmosférico sombrío (Brightness -0.35 máx, Contraste +0.22).
+         - 100% visible: los rayos rojos carmesí y negros de vacío resaltan al máximo.
+      4. CÁMARA ULTRA-ESTABILIZADA:
+         - Sacudida de impacto pesada con CERO balanceo lateral (roll = 0).
     ================================================================================
     Controles:
       - Mantén presionada [H]: Concentra el Haki hasta por 120 segundos.
@@ -133,13 +130,6 @@ local StartImpactTemplate = Phase1 and Phase1:FindFirstChild("StartImpact")
 -- ================================================================================
 -- 1. FÓRMULA DE ESCALADO DINÁMICO PROPORCIONAL (57% A 1 MINUTO)
 -- ================================================================================
--- La fórmula (t / 120)^0.81 asegura:
---   - t = 0s:    0%
---   - t = 10s:   13.3%
---   - t = 30s:   32.5%
---   - t = 60s:   57.0% (Exactamente el 57% pedido por el usuario a 1 minuto)
---   - t = 90s:   79.2%
---   - t = 120s:  100% (Absurdamente colosal a escala isla completa)
 local function GetChargeStats(elapsed)
     local t = math.clamp(elapsed, 0, 120)
     local linearProgress = t / 120.0
@@ -219,7 +209,7 @@ local function ShakeScreenStabilized(intensity, duration)
 end
 
 -- ================================================================================
--- 4. ELECTRICIDAD PURA NATIVA: CHOQUE Y REPTADO EN PAREDES Y SUPERFICIES
+-- 4. ELECTRICIDAD PURA NATIVA: VIGAS GRUESAS Y CHOQUE EN PAREDES
 -- ================================================================================
 local function SpawnThickBeam(posA, posB, widthMult)
     local wMult = widthMult or 1.0
@@ -352,6 +342,99 @@ local function SpawnWallImpactElectricity(originPos, hitPos, hitNormal, widthMul
     end)
 end
 
+-- ================================================================================
+-- 5. COLUMNAS DE RELÁMPAGOS LEJANOS EN TODA LA ISLA (DISTANT LIGHTNING PILLARS)
+-- ================================================================================
+local function SpawnIslandDistantLightning(targetGround, skyHeight, widthMult, distance)
+    local sH = skyHeight or 260.0
+    local wM = widthMult or 1.0
+    local dist = distance or 300.0
+
+    -- Escalar grosor según la distancia para que no se vea delgado a lo lejos
+    local distFactor = math.clamp(dist / 320.0, 1.0, 3.8)
+    local finalWidth = wM * distFactor
+
+    local skyPos = targetGround + Vector3.new(math.random(-20, 20), sH, math.random(-20, 20))
+
+    local pG = Instance.new("Part")
+    pG.Anchored = true
+    pG.CanCollide = false
+    pG.Transparency = 1
+    pG.Size = Vector3.new(1, 1, 1)
+    pG.Position = targetGround
+    pG.Parent = Workspace
+
+    local pS = Instance.new("Part")
+    pS.Anchored = true
+    pS.CanCollide = false
+    pS.Transparency = 1
+    pS.Size = Vector3.new(1, 1, 1)
+    pS.Position = skyPos
+    pS.Parent = Workspace
+
+    local aG = Instance.new("Attachment", pG)
+    local aS = Instance.new("Attachment", pS)
+
+    local cA = math.random(-12, 12) * math.clamp(finalWidth * 0.4, 1, 4)
+    local cB = math.random(-12, 12) * math.clamp(finalWidth * 0.4, 1, 4)
+
+    -- Viga Roja Lejana
+    local bRed = Instance.new("Beam")
+    bRed.Texture = "rbxassetid://13002793471"
+    bRed.Color = ColorSequence.new({
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 40, 50)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(180, 0, 10))
+    })
+    bRed.Width0 = math.clamp(8.0 * finalWidth, 8.0, 40.0)
+    bRed.Width1 = math.clamp(4.5 * finalWidth, 4.5, 24.0)
+    bRed.FaceCamera = true
+    bRed.Segments = 12
+    bRed.CurveSize0 = cA
+    bRed.CurveSize1 = cB
+    bRed.LightEmission = 1
+    bRed.Attachment0 = aS
+    bRed.Attachment1 = aG
+    bRed.Parent = pG
+
+    -- Viga Negra de Vacío Lejana
+    local bBlack = Instance.new("Beam")
+    bBlack.Texture = "rbxassetid://13002793471"
+    bBlack.Color = ColorSequence.new(Color3.fromRGB(0, 0, 0))
+    bBlack.Width0 = math.clamp(12.0 * finalWidth, 12.0, 55.0)
+    bBlack.Width1 = math.clamp(6.8 * finalWidth, 6.8, 32.0)
+    bBlack.FaceCamera = true
+    bBlack.Segments = 12
+    bBlack.CurveSize0 = cA
+    bBlack.CurveSize1 = cB
+    bBlack.LightEmission = 0
+    bBlack.ZOffset = -0.3
+    bBlack.Attachment0 = aS
+    bBlack.Attachment1 = aG
+    bBlack.Parent = pG
+
+    -- Chispas de impacto de Yama en el suelo lejano
+    if YamaGroundSparks then
+        local sparks = YamaGroundSparks:Clone()
+        sparks.CFrame = CFrame.new(targetGround)
+        sparks.Anchored = true
+        sparks.CanCollide = false
+        sparks.Transparency = 1
+        sparks.Parent = Workspace
+        Debris:AddItem(sparks, 1.0)
+
+        for _, pe in ipairs(sparks:GetDescendants()) do
+            if pe:IsA("ParticleEmitter") then
+                pe.Enabled = true
+                pe:Emit(20)
+                task.delay(0.25, function() pcall(function() pe.Enabled = false end) end)
+            end
+        end
+    end
+
+    Debris:AddItem(pG, 0.35)
+    Debris:AddItem(pS, 0.35)
+end
+
 -- Relámpagos que rasgan las esquinas de la pantalla
 local function SpawnScreenLightning(widthMult)
     local w = widthMult or 1.0
@@ -406,7 +489,7 @@ local function SpawnScreenLightning(widthMult)
 end
 
 -- ================================================================================
--- 5. AURA NATIVA CON ELECTRICIDAD PURA (ESPADA Y MANOS)
+-- 6. AURA NATIVA CON ELECTRICIDAD PURA (ESPADA Y MANOS)
 -- ================================================================================
 local function ApplyConquerorAura(targetPart)
     if not targetPart or targetPart:FindFirstChild("PolarNativeHaki") then return end
@@ -571,7 +654,7 @@ function Engine:RefreshAura()
 end
 
 -- ================================================================================
--- 6. SISTEMA DE CARGA DINÁMICA CON RAYOS CHOQUEN EN PAREDES Y ENTORNO
+-- 7. SISTEMA DE CARGA DINÁMICA: RAYOS CERCANOS + RAYOS LEJANOS EN TODA LA ISLA
 -- ================================================================================
 function Engine:StartCharging()
     if self.IsCharging then return end
@@ -611,15 +694,11 @@ function Engine:StartCharging()
         end
     end)
 
-    -- BUCLE DE RAYOS CONSTANTES INTERACTUANDO CON PAREDES Y PARTES
+    -- BUCLE DE TORMENTA ELÉCTRICA DUAL: CERCA (PAREDES) + LEJOS (ISLA COMPLETA)
     task.spawn(function()
         local rayParams = RaycastParams.new()
         rayParams.FilterType = Enum.RaycastFilterType.Exclude
         rayParams.FilterDescendantsInstances = {char}
-
-        local op = OverlapParams.new()
-        op.FilterType = Enum.RaycastFilterType.Exclude
-        op.FilterDescendantsInstances = {char}
 
         while self.IsCharging and self.Active do
             local elapsed = os.clock() - self.ChargeStartTime
@@ -663,50 +742,58 @@ function Engine:StartCharging()
             -- 4. Micro-vibración sísmica progresiva (CERO ROLL)
             ShakeScreenStabilized(0.25 + linearProgress * 1.3, 0.05)
 
-            -- 5. RAYOS FÍSICOS QUE CHOCAN CON PAREDES Y PARTES EN 3D
             local origin = hrp.Position + Vector3.new(0, 2.5, 0)
             local widthMult = 1.0 + (powerRatio * 3.0)
 
-            -- Disparar múltiples rayos radiales buscando paredes y superficies
-            local rayCount = math.random(3, math.clamp(math.floor(5 + linearProgress * 22), 5, 26))
+            -- ====================================================================
+            -- SUB-SISTEMA A: RAYOS CERCANOS CHOCANDO CON PAREDES Y SUPERFICIES (3D)
+            -- ====================================================================
+            local closeRayCount = math.random(3, math.clamp(math.floor(4 + linearProgress * 16), 4, 18))
+            for _ = 1, closeRayCount do
+                local randomDir = (CFrame.Angles(
+                    (math.random() - 0.5) * math.pi * 1.6,
+                    (math.random() - 0.5) * math.pi * 2.0,
+                    0
+                ).LookVector) * math.random(15, math.floor(35 + linearProgress * 65))
 
-            for _ = 1, rayCount do
-                local action = math.random(1, 3)
-
-                if action == 1 or action == 2 then
-                    -- Acción 1 y 2: Rayo radial que busca chocar contra una pared o superficie
-                    local randomDir = (CFrame.Angles(
-                        (math.random() - 0.5) * math.pi * 1.6,
-                        (math.random() - 0.5) * math.pi * 2.0,
-                        0
-                    ).LookVector) * math.random(15, math.floor(35 + linearProgress * 65))
-
-                    local rayResult = Workspace:Raycast(origin, randomDir, rayParams)
-                    if rayResult then
-                        -- ¡CHOCA CONTRA LA PARED! Detona electricidad pura y chispas
-                        SpawnWallImpactElectricity(origin, rayResult.Position, rayResult.Normal, widthMult)
-                    else
-                        -- Si no hay pared en esa dirección, impactar suelo o aire cercano
-                        local endPt = origin + randomDir
-                        SpawnThickBeam(origin, endPt, widthMult * 0.75)
-                    end
-
+                local rayResult = Workspace:Raycast(origin, randomDir, rayParams)
+                if rayResult then
+                    -- ¡CHOCA CONTRA LA PARED! Detona chispas, shocks y arcos reptantes
+                    SpawnWallImpactElectricity(origin, rayResult.Position, rayResult.Normal, widthMult)
                 else
-                    -- Acción 3: Rayo colosal desde el cielo cayendo a la isla lejana
-                    local angle = math.random() * math.pi * 2
-                    local dist = math.random(20, math.floor(blastRadius))
-                    local skyPos = hrp.Position + Vector3.new(math.cos(angle) * dist, 180, math.sin(angle) * dist)
-                    local groundHit = Workspace:Raycast(skyPos, Vector3.new(0, -350, 0), rayParams)
-                    local gPos = groundHit and groundHit.Position or (skyPos - Vector3.new(0, 180, 0))
-
-                    SpawnThickBeam(skyPos, gPos, widthMult * 1.25)
+                    SpawnThickBeam(origin, origin + randomDir, widthMult * 0.7)
                 end
             end
 
-            -- 6. Relámpagos rasgando la pantalla
+            -- ====================================================================
+            -- SUB-SISTEMA B: RAYOS LEJANOS EN TODA LA ISLA (CADA SEGUNDO MÁS LEJOS Y MÁS CANTIDAD)
+            -- ====================================================================
+            -- Radio de cobertura lejano: de 120 studs hasta 2500+ studs (toda la isla!)
+            local distantCoverageRadius = 120.0 + (linearProgress * 2380.0)
+
+            -- Cantidad de rayos lejanos simultáneos por tick: se multiplica segundo a segundo
+            local distantBoltCount = math.random(2, math.clamp(math.floor(3 + linearProgress * 28), 3, 30))
+
+            for _ = 1, distantBoltCount do
+                local angle = math.random() * math.pi * 2
+                -- Distribuir en toda la extensión de la isla (desde 60 studs hasta el límite actual)
+                local dist = math.random(60, math.floor(distantCoverageRadius))
+                local skyPos = hrp.Position + Vector3.new(math.cos(angle) * dist, 280, math.sin(angle) * dist)
+
+                -- Raycast hacia abajo buscando suelo, montaña, techo o mar
+                local groundHit = Workspace:Raycast(skyPos, Vector3.new(0, -480, 0), rayParams)
+                local targetGround = groundHit and groundHit.Position or (hrp.Position + Vector3.new(math.cos(angle) * dist, -2.5, math.sin(angle) * dist))
+
+                -- Disparar columna de relámpago colosal en la distancia
+                SpawnIslandDistantLightning(targetGround, math.random(240, 320), widthMult, dist)
+            end
+
+            -- ====================================================================
+            -- SUB-SISTEMA C: RELÁMPAGOS RASGANDO LA PANTALLA
+            -- ====================================================================
             SpawnScreenLightning(widthMult)
 
-            -- Frecuencia muy rápida (cada 0.04 a 0.08s) para que sea CONSTANTE
+            -- Frecuencia muy rápida (cada 0.04 a 0.08s) para que la tormenta sea constante
             task.wait(math.max(0.04, 0.08 - linearProgress * 0.04))
         end
     end)
@@ -733,7 +820,7 @@ function Engine:ReleaseCharge()
 end
 
 -- ================================================================================
--- 7. ESTALLIDO PROPORCIONAL Y ABSURDAMENTE COLOSAL (57% A 1 MINUTO)
+-- 8. ESTALLIDO PROPORCIONAL Y ABSURDAMENTE COLOSAL (57% A 1 MINUTO)
 -- ================================================================================
 function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
     local mult = multiplier or 1.0
@@ -926,7 +1013,7 @@ function Engine:TriggerBurst(multiplier, powerRatio, customRadius)
 end
 
 -- ================================================================================
--- 8. DESCARGAS AMBIENTALES PERIÓDICAS (PRESENCIA PASIVA)
+-- 9. DESCARGAS AMBIENTALES PERIÓDICAS (PRESENCIA PASIVA)
 -- ================================================================================
 function Engine:StartAmbientPresence()
     task.spawn(function()
@@ -957,7 +1044,7 @@ function Engine:StartAmbientPresence()
 end
 
 -- ================================================================================
--- 9. BINDINGS Y ESCUCHADORES EN VIVO
+-- 10. BINDINGS Y ESCUCHADORES EN VIVO
 -- ================================================================================
 function Engine:Init()
     -- InputBegan: Iniciar carga al presionar [H]
@@ -1010,7 +1097,7 @@ function Engine:Init()
 end
 
 -- ================================================================================
--- 10. LIMPIEZA SEGURA
+-- 11. LIMPIEZA SEGURA
 -- ================================================================================
 function Engine:Cleanup()
     self.Active = false
@@ -1033,7 +1120,7 @@ function Engine:Cleanup()
     end
     self.ActiveAttachments = {}
 
-    print("[Polar Hub] ⚡ Haki del Conquistador V6 (Pure Electricity) desmontado limpiamente.")
+    print("[Polar Hub] ⚡ Haki del Conquistador V7 (Island-Wide Storm) desmontado limpiamente.")
 end
 
 -- Exportar a ambos entornos globales
@@ -1045,10 +1132,11 @@ _G.ConquerorBurst = G.ConquerorBurst
 Engine:Init()
 
 print("================================================================================")
-print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V6 (PURE ELECTRICITY & WALL IMPACT) ACTIVADO")
-print("  ⚡ ELECTRICIDAD PURA NATIVA: Rayos masivos chocan contra paredes y reptan en superficies")
+print("  👑 [POLAR HUB] HAKI DEL CONQUISTADOR V7 (ISLAND-WIDE STORM) ACTIVADO")
+print("  ⚡ CERCA: Rayos de alta tensión chocan contra paredes y reptan en superficies")
+print("  🌩️ LEJOS: Rayos colosales cubren la isla entera en radio creciente (hasta 2500+ studs)")
 print("  📐 ESCALADO EXACTO: A 1 minuto = 57% de potencia | A 120s = 100% Absurdamente Colosal")
-print("  🌓 OSCURECIMIENTO SOMBRÍO EQUILIBRADO: Atmósfera ominosa con 100% de visibilidad")
+print("  🌓 ILUMINACIÓN SOMBRÍA Y VIVA: 100% de visibilidad con contraste nítido")
 print("  🎥 Cámara ultra-estabilizada sin volteo ni balanceo lateral")
 print("================================================================================")
 
