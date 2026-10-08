@@ -846,7 +846,7 @@ TabQuest:AddButton({
 
 -- ==================== TAB QUEST: SECRETS MASTER & COMBAT ====================
 -- ==================== TAB QUEST: SECRET LEVELS (LV. 2800 -> 3000) & AWAKENED BOSSES ====================
-TabQuest:AddSection("Secret Levels & Awakened Bosses (Update 30)")
+TabQuest:AddSection("Niveles Secretos")
 
 local PolarSecrets = getgenv().PolarSecrets
 if not PolarSecrets then
@@ -867,24 +867,24 @@ if not PolarSecrets then
 end
 
 local SecretsProgressPara = TabQuest:AddParagraph({
-	Title = "📊 Progreso de Niveles Secretos",
-	Text = "Cargando datos del servidor..."
+	Title = "Progreso de Secretos",
+	Text = "Cargando datos..."
 })
 
 local BossRadarPara = TabQuest:AddParagraph({
-	Title = "📡 Radar de Jefes Despertados",
+	Title = "Radar de Jefes",
 	Text = "Consultando radar..."
 })
 
--- Hilo de actualización en tiempo real de UI
+-- Hilo de actualizacion en tiempo real de UI
 task.spawn(function()
 	while true do
 		task.wait(3)
 		pcall(function()
 			if PolarSecrets and PolarSecrets.GetSummary then
 				local s = PolarSecrets.GetSummary()
-				local progressText = string.format("Completados: %d / %d (%.1f%%)\nLímite de Nivel Actual: Lv. %d / 3000\nNiveles Secretos Pendientes: +%d niveles",
-					s.Completed, s.Total, (s.Completed / s.Total) * 100, s.LevelCap, s.Pending * 5)
+				local progressText = string.format("Completados: %d/40 (%.1f%%)\nCap Actual: Lv. %d/3000\nPendientes: +%d niveles",
+					s.Completed, (s.Completed / s.Total) * 100, s.LevelCap, s.Pending * 5)
 				UpdatePara(SecretsProgressPara, progressText)
 			end
 
@@ -892,12 +892,12 @@ task.spawn(function()
 				local r = PolarSecrets.Radar
 				local mins = math.floor((r.TimeLeft or 0) / 60)
 				local secs = (r.TimeLeft or 0) % 60
-				local radarText = string.format("Próximo Jefe: %s\nIsla: %s\nEstado: %s\nTiempo Restante: %02d:%02d\nAuto-Hunt: %s",
+				local radarText = string.format("Jefe: %s | Isla: %s\nEstado: %s | Tiempo: %02d:%02d\nAuto-Hunt: %s",
 					tostring(r.NextBoss or "En reposo"),
 					tostring(r.NextIsland or "Ninguna"),
 					tostring(r.State or "Dormant"),
 					mins, secs,
-					r.AutoHuntEnabled and "ACTIVADO" or "DESACTIVADO")
+					r.AutoHuntEnabled and "Activo" or "Inactivo")
 				UpdatePara(BossRadarPara, radarText)
 			end
 		end)
@@ -905,36 +905,36 @@ task.spawn(function()
 end)
 
 TabQuest:AddToggle({
-	Name = "🔥 Auto Awakened Boss Hunter",
+	Name = "Auto Cazar Jefes",
 	Default = false,
 	Callback = function(val)
 		if PolarSecrets and PolarSecrets.Radar then
 			PolarSecrets.Radar.AutoHuntEnabled = val
 			if val then
-				Notify("Auto-Hunt", "Caza automática de jefes despertados ACTIVADA.", 4)
+				Notify("Auto-Hunt", "Caza de jefes activada.", 4)
 				task.spawn(function()
 					PolarSecrets.HuntCurrentAwakenedBoss()
 				end)
 			else
-				Notify("Auto-Hunt", "Caza automática desactivada.", 3)
+				Notify("Auto-Hunt", "Caza de jefes desactivada.", 3)
 			end
 		end
 	end
 })
 
 TabQuest:AddButton({
-	Name = "🚀 RUN INSTANT SPEEDRUN (23 Secretos -> Lv. 2925)",
+	Name = "Iniciar Speedrun (23 Misiones)",
 	Callback = function()
 		if PolarSecrets and PolarSecrets.RunInstantSpeedrun then
 			PolarSecrets.RunInstantSpeedrun()
 		else
-			Notify("Error", "Módulo PolarSecrets no disponible.", 4)
+			Notify("Error", "Motor PolarSecrets no disponible.", 4)
 		end
 	end
 })
 
 TabQuest:AddButton({
-	Name = "🛑 Detener Speedrun",
+	Name = "Detener Speedrun",
 	Callback = function()
 		if PolarSecrets and PolarSecrets.StopInstantSpeedrun then
 			PolarSecrets.StopInstantSpeedrun()
@@ -943,7 +943,7 @@ TabQuest:AddButton({
 })
 
 TabQuest:AddButton({
-	Name = "⚔️ Cazar Jefe Despertado Ahora",
+	Name = "Cazar Jefe Actual",
 	Callback = function()
 		if PolarSecrets and PolarSecrets.HuntCurrentAwakenedBoss then
 			PolarSecrets.HuntCurrentAwakenedBoss()
@@ -951,110 +951,115 @@ TabQuest:AddButton({
 	end
 })
 
--- Selector individual de los 27 secretos disponibles
-local SecretSolverList = {
-	"Sea1/Desert/Rescue Hasan",
-	"Sea1/Desert/Prickly Harvest",
-	"Sea1/Frozen Village/Breaking the Ice",
-	"Sea1/Frozen Village/Snowman",
-	"Sea1/Jungle/Zipline Repair",
-	"Sea1/Jungle/The Thieving Monkey",
-	"Sea1/Pirate Village/Tavern Brawl",
-	"Sea1/Marine Fortress/Fortress Flagpole",
-	"Sea1/Prison/Don Megalo",
-	"Sea1/Prison/Escape from Alcatraz",
-	"Sea1/Prison/Lever Jailbreak",
-	"Sea1/Colosseum/King's Apprentice",
-	"Sea1/Colosseum/Legendary Creator Statues",
-	"Sea1/Magma Village/Evil Slimes",
-	"Sea1/Magma Village/Magma Ore Extraction",
-	"Sea1/Sky/Electric Fighting Teacher",
-	"Sea1/Sky/Unexpected Guest",
-	"Sea1/Sky/The Clown's Jewels",
-	"Sea1/SkyArea2/Echoes Through the Clouds",
-	"Sea1/SkyArea2/Temple Intel",
-	"Sea1/Underwater City/Beyond the Bubble",
-	"Sea1/Underwater City/Fishman Karate",
-	"Sea1/Underwater City/Pearl of the Deep",
-	"Sea1/Fountain/Fountain Pipe Repair",
-	"Sea1/Fountain/Sewer Gangs",
-	"Sea1/Middle Town/X Marks The Spot",
-	"Sea1/Middle Town/Lookout"
+-- Selector individual con nombres limpios y compactos
+local SecretOptions = {
+	["Hasan (Desert)"] = "Sea1/Desert/Rescue Hasan",
+	["Cactus (Desert)"] = "Sea1/Desert/Prickly Harvest",
+	["Iceberg (Snow)"] = "Sea1/Frozen Village/Breaking the Ice",
+	["Muñeco Nieve (Snow)"] = "Sea1/Frozen Village/Snowman",
+	["Tirolesa (Jungle)"] = "Sea1/Jungle/Zipline Repair",
+	["Mono Ladron (Jungle)"] = "Sea1/Jungle/The Thieving Monkey",
+	["Taberna (Pirate)"] = "Sea1/Pirate Village/Tavern Brawl",
+	["Bandera (Marine)"] = "Sea1/Marine Fortress/Fortress Flagpole",
+	["Don Megalo (Prison)"] = "Sea1/Prison/Don Megalo",
+	["Fuga Alcatraz (Prison)"] = "Sea1/Prison/Escape from Alcatraz",
+	["Palancas (Prison)"] = "Sea1/Prison/Lever Jailbreak",
+	["Rey Aprendiz (Coliseum)"] = "Sea1/Colosseum/King's Apprentice",
+	["Estatuas (Coliseum)"] = "Sea1/Colosseum/Legendary Creator Statues",
+	["Slimes (Magma)"] = "Sea1/Magma Village/Evil Slimes",
+	["Mineral Magma (Magma)"] = "Sea1/Magma Village/Magma Ore Extraction",
+	["Maestro Electric (Sky)"] = "Sea1/Sky/Electric Fighting Teacher",
+	["Boveda Secreta (Sky)"] = "Sea1/Sky/Unexpected Guest",
+	["Joyas Payaso (Sky)"] = "Sea1/Sky/The Clown's Jewels",
+	["Campana Dorada (Sky2)"] = "Sea1/SkyArea2/Echoes Through the Clouds",
+	["Templo Intel (Sky2)"] = "Sea1/SkyArea2/Temple Intel",
+	["Cofre Maldito (Fishman)"] = "Sea1/Underwater City/Beyond the Bubble",
+	["Puzzle Karate (Fishman)"] = "Sea1/Underwater City/Fishman Karate",
+	["Perlas Almeja (Fishman)"] = "Sea1/Underwater City/Pearl of the Deep",
+	["Tuberias (Fountain)"] = "Sea1/Fountain/Fountain Pipe Repair",
+	["Alcantarillas (Fountain)"] = "Sea1/Fountain/Sewer Gangs",
+	["Mapa Tesoro (Middle)"] = "Sea1/Middle Town/X Marks The Spot",
+	["Guardia Vigia (Middle)"] = "Sea1/Middle Town/Lookout"
 }
 
-local SelectedSecretToRun = SecretSolverList[1]
+local SecretDropdownKeys = {}
+for k, _ in pairs(SecretOptions) do table.insert(SecretDropdownKeys, k) end
+table.sort(SecretDropdownKeys)
+
+local SelectedSecretKey = SecretDropdownKeys[1]
 TabQuest:AddDropdown({
-	Name = "Seleccionar Misión Secreta Individual",
-	Options = SecretSolverList,
-	Default = SelectedSecretToRun,
+	Name = "Mision Individual",
+	Options = SecretDropdownKeys,
+	Default = SelectedSecretKey,
 	Callback = function(val)
-		SelectedSecretToRun = val
+		SelectedSecretKey = val
 	end
 })
 
 TabQuest:AddButton({
-	Name = "⚡ Ejecutar Misión Seleccionada",
+	Name = "Ejecutar Mision",
 	Callback = function()
-		if PolarSecrets and PolarSecrets.Solvers and PolarSecrets.Solvers[SelectedSecretToRun] then
-			Notify("Secreto", "Ejecutando: " .. tostring(SelectedSecretToRun), 4)
+		local solverId = SecretOptions[SelectedSecretKey]
+		if PolarSecrets and PolarSecrets.Solvers and solverId and PolarSecrets.Solvers[solverId] then
+			Notify("Secreto", "Iniciando: " .. tostring(SelectedSecretKey), 3)
 			task.spawn(function()
-				local ok, err = pcall(PolarSecrets.Solvers[SelectedSecretToRun])
+				local ok, err = pcall(PolarSecrets.Solvers[solverId])
 				if ok then
-					Notify("Éxito", "Misión " .. tostring(SelectedSecretToRun) .. " completada!", 5)
+					Notify("Exito", "Mision completada!", 4)
 				else
-					Notify("Error", "Fallo al ejecutar: " .. tostring(err), 5)
+					Notify("Error", "Fallo: " .. tostring(err), 4)
 				end
 			end)
 		else
-			Notify("Error", "Solucionador no encontrado para " .. tostring(SelectedSecretToRun), 4)
+			Notify("Error", "Solucionador no encontrado.", 4)
 		end
 	end
 })
 
 -- Estilos de combate secretos y Maestro de los Secretos
-TabQuest:AddSection("Secrets Master & Estilos de Combate")
+TabQuest:AddSection("Secrets Master")
 
 TabQuest:AddButton({
-	Name = "Teleport al Secrets Master (Middle Town)",
+	Name = "Teleport a Secrets Master",
 	Callback = function()
 		Polar.Teleport:To(CFrame.new(-838.89, 31.77, 1603.10))
 	end
 })
 
 TabQuest:AddButton({
-	Name = "Auto Leer Historias Secretas",
+	Name = "Auto Leer Historias",
 	Callback = function()
 		AutoRollAllStories()
 	end
 })
 
 TabQuest:AddButton({
-	Name = "Equipar Estilo Combat (Nivel 2800)",
+	Name = "Equipar Estilo Combat",
 	Callback = function()
 		if CommF then
 			local r = CommF:InvokeServer("SetSecretStyle", "Combat")
 			if r == 1 then
-				Notify("[OK] Éxito", "Estilo Combat equipado.", 4)
+				Notify("Exito", "Estilo Combat equipado.", 4)
 			elseif r == 2 then
-				Notify("[INFO] Info", "Estilo Combat ya está equipado.", 4)
+				Notify("Info", "Estilo Combat ya equipado.", 4)
 			else
-				Notify("[ERROR] Bloqueado", "Completa todos los secretos de Sea 1 primero.", 4)
+				Notify("Bloqueado", "Completa secretos de Sea 1 primero.", 4)
 			end
 		end
 	end
 })
 
 TabQuest:AddButton({
-	Name = "Equipar Advanced Combat (Nivel 3000)",
+	Name = "Equipar Advanced Combat",
 	Callback = function()
 		if CommF then
 			local r = CommF:InvokeServer("SetSecretStyle", "Advanced Combat")
 			if r == 1 then
-				Notify("[OK] Éxito", "¡Advanced Combat desbloqueado y equipado!", 5)
+				Notify("Exito", "Advanced Combat desbloqueado y equipado!", 5)
 			elseif r == 2 then
-				Notify("[INFO] Info", "Advanced Combat ya está equipado.", 4)
+				Notify("Info", "Advanced Combat ya equipado.", 4)
 			else
-				Notify("[ERROR] Bloqueado", "Completa los 40 secretos de Sea 1 primero.", 4)
+				Notify("Bloqueado", "Completa los 40 secretos primero.", 4)
 			end
 		end
 	end

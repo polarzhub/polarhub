@@ -293,14 +293,14 @@ function PolarSecrets.StartRadar()
                 PolarSecrets.Radar.State = tostring(hint.State or "Dormant")
 
                 if PolarSecrets.Radar.State == "Armed" or PolarSecrets.Radar.State == "Triggered" then
-                    Notify("⚠️ JEFE DESPERTADO ACTIVO", string.format("¡%s ha despertado en %s! ¡A por él!", PolarSecrets.Radar.NextBoss, PolarSecrets.Radar.NextIsland), 8)
+                    Notify("Jefe Despertado", string.format("%s ha despertado en %s!", PolarSecrets.Radar.NextBoss, PolarSecrets.Radar.NextIsland), 6)
                     if PolarSecrets.Radar.AutoHuntEnabled then
                         task.spawn(function()
                             PolarSecrets.HuntCurrentAwakenedBoss()
                         end)
                     end
                 elseif PolarSecrets.Radar.State == "Arming" then
-                    Notify("⏳ JEFE PREPARÁNDOSE", string.format("%s está por despertar en %s. ¡Faltan %ds!", PolarSecrets.Radar.NextBoss, PolarSecrets.Radar.NextIsland, PolarSecrets.Radar.TimeLeft), 5)
+                    Notify("Jefe Preparandose", string.format("%s despertara en %s (%ds).", PolarSecrets.Radar.NextBoss, PolarSecrets.Radar.NextIsland, PolarSecrets.Radar.TimeLeft), 4)
                 end
             else
                 PolarSecrets.Radar.NextBoss = "En reposo"
@@ -921,7 +921,7 @@ function PolarSecrets.RunInstantSpeedrun()
 
     PolarSecrets.AutoSpeedrunRunning = true
     task.spawn(function()
-        Notify("🚀 SPEEDRUN INICIADO", "Comenzando resolución de misiones inmediatas...", 5)
+        Notify("Speedrun", "Iniciando resolucion de misiones inmediatas...", 4)
         
         local initialSummary = PolarSecrets.GetSummary()
         print(string.format("[Polar Speedrun] Nivel actual: %d. Secretos completados: %d/40", initialSummary.LevelCap, initialSummary.Completed))
@@ -946,7 +946,7 @@ function PolarSecrets.RunInstantSpeedrun()
         PolarSecrets.AutoSpeedrunRunning = false
         
         local finalSummary = PolarSecrets.GetSummary()
-        Notify("🎉 SPEEDRUN FINALIZADO", string.format("¡Completado! Nivel alcanzado: %d (%d/40 Secretos)", finalSummary.LevelCap, finalSummary.Completed), 8)
+        Notify("Speedrun Finalizado", string.format("Completado. Nivel: %d (%d/40 Secretos)", finalSummary.LevelCap, finalSummary.Completed), 6)
     end)
 end
 
@@ -962,11 +962,11 @@ function PolarSecrets.HuntCurrentAwakenedBoss()
     if not hint then return end
 
     if hint.State ~= "Armed" and hint.State ~= "Triggered" then
-        Notify("Auto-Hunt", string.format("El jefe %s aún está en estado %s (Faltan %ds).", tostring(hint.Boss), tostring(hint.State), hint.Seconds or 0), 4)
+        Notify("Auto-Hunt", string.format("Jefe %s en estado %s (Faltan %ds).", tostring(hint.Boss), tostring(hint.State), hint.Seconds or 0), 4)
         return
     end
 
-    Notify("⚔️ AUTO-HUNT", string.format("Viajando a %s para cazar a %s Despertado!", tostring(hint.Island), tostring(hint.Boss)), 5)
+    Notify("Auto-Hunt", string.format("Viajando a %s para cazar a %s...", tostring(hint.Island), tostring(hint.Boss)), 4)
 
     -- 1. Gorilla King (Jungle)
     if hint.Boss and hint.Boss:find("Gorilla") then
