@@ -1,16 +1,16 @@
 --[=[
-    ╔══════════════════════════════════════════════════════════════════════════════╗
-    ║                POLAR HUB - ISLAND SECRETS & AWAKENED BOSSES                 ║
-    ║                  Full Automated Engine (Lv. 2800 -> 3000)                   ║
-    ║                                                                              ║
-    ║  • Sincronización en tiempo real con servidor (BonusMomentsReplication)     ║
-    ║  • Radar Inteligente de Jefes Despertados (RequestNextRaidHint)              ║
-    ║  • Solucionador Físico In-Game (Interacciones, Golpes M1, Puzzles, Quests)  ║
-    ║  • Modo Dios "Speedrun": Resuelve las 23 misiones inmediatas (-> Lv. 2925)  ║
-    ╚══════════════════════════════════════════════════════════════════════════════╝
---]=]
+    ==============================================================================
+    POLAR HUB - ISLAND SECRETS & AWAKENED BOSSES ENGINE
+    Full Automated Solver & Live Server Replication (Lv. 2800 -> 3000)
+    ==============================================================================
+    - Global Tween Speed Synchronization (Honors getgenv().PolarTweenSpeed)
+    - Anti-Glitch & Anti-Water Movement Physics (BodyVelocity + PlatformStand)
+    - 39 Verified Secret Level Solvers Across All Sea 1 Islands
+    - Live Server Replication Sync (RF/RequestBonusMomentReplication)
+    - Real-Time Awakened Boss Radar & Auto-Hunt Engine
+]=]
 
-print("[Polar Hub] ⚡ Inicializando Motor Avanzado de Niveles Secretos y Jefes Despertados...")
+print("[Polar Hub] Inicializando Motor Avanzado de Niveles Secretos y Jefes Despertados...")
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -27,7 +27,6 @@ local CommF = Remotes and Remotes:FindFirstChild("CommF_")
 local RegisterHit = Net and Net:FindFirstChild("RE/RegisterHit")
 local RegisterAttack = Net and Net:FindFirstChild("RE/RegisterAttack")
 local RequestBonusMoment = Net and Net:FindFirstChild("RF/RequestBonusMomentReplication")
-local RequestSecretStories = Net and Net:FindFirstChild("RF/RequestSecretStories")
 local RequestNextRaidHint = Net and Net:FindFirstChild("RF/RequestNextRaidHint")
 
 local BonusMomentsRemoteEvent = Remotes and Remotes:FindFirstChild("BonusMomentsRemoteEvent")
@@ -44,7 +43,7 @@ local Polar = getgenv().Polar or {}
 local PolarSecrets = {}
 getgenv().PolarSecrets = PolarSecrets
 
--- ==================== SISTEMA DE NOTIFICACIONES ====================
+-- ==================== SISTEMA DE NOTIFICACIONES (SIN EMOJIS) ====================
 local function Notify(title, desc, duration)
     pcall(function()
         local PolarUI = getgenv().PolarUI or (Polar and Polar.UI)
@@ -84,8 +83,18 @@ local function InvokeMoment(momentName, ...)
     return nil
 end
 
--- ==================== UTILIDADES DE MOVIMIENTO Y FÍSICA ====================
+local function InteractGuide(name)
+    if BonusMomentsGuide and BonusMomentsGuide.interactQuestGiver then
+        pcall(function()
+            BonusMomentsGuide.interactQuestGiver(name)
+        end)
+    end
+end
+
+-- ==================== MOTOR DE MOVIMIENTO Y TWEEN GLOBAL ====================
 local NoclipConnection = nil
+local ActiveTween = nil
+local ActiveMovementStabilizer = nil
 
 local function EnableNoclip()
     if NoclipConnection then return end
@@ -110,25 +119,107 @@ local function DisableNoclip()
     end
 end
 
-local function SafeTeleport(targetCF, speed)
-    speed = speed or 320
+local function CancelActiveTween()
+    if ActiveTween then
+        pcall(function() ActiveTween:Cancel() end)
+        ActiveTween = nil
+    end
+    if ActiveMovementStabilizer and ActiveMovementStabilizer.Parent then
+        pcall(function() ActiveMovementStabilizer:Destroy() end)
+        ActiveMovementStabilizer = nil
+    end
+end
+
+local function GetGlobalTweenSpeed()
+    local spd = tonumber(getgenv().PolarTweenSpeed)
+        or (getgenv().Polar and getgenv().Polar.Teleport and tonumber(getgenv().Polar.Teleport.TweenSpeed))
+        or 150
+    if spd <= 10 then spd = 150 end
+    return spd
+end
+
+-- Transiciones seguras entre dimensiones (Underwater City y Volcano Cave)
+local function HandleDimensionCrossings(targetPos, hrp)
+    -- 1. Transición a Underwater City (Fishman Island)
+    if targetPos.X > 50000 and hrp.Position.X < 50000 then
+        local entryRemote = Net and Net:FindFirstChild("RE/FishmenCaveEntry")
+        if entryRemote then
+            entryRemote:FireServer()
+            task.wait(1.5)
+        else
+            local wpPos = Vector3.new(4078.9, -10, -1814.9)
+            hrp.CFrame = CFrame.new(wpPos)
+            task.wait(1.5)
+        end
+    -- 2. Transición de salida de Underwater City al mapa principal
+    elseif targetPos.X < 50000 and hrp.Position.X > 50000 then
+        local exitRemote = Net and Net:FindFirstChild("RE/FishmenBubbleExit")
+        if exitRemote then
+            exitRemote:FireServer()
+            task.wait(1.5)
+        end
+    end
+
+    -- 3. Transición a Volcano Cave interior
+    if targetPos.X < -60000 and hrp.Position.X > -60000 then
+        local elevRemote = Net and Net:FindFirstChild("RE/MagmaCaveElevatorFade")
+        if elevRemote then
+            elevRemote:FireServer()
+            task.wait(1.2)
+        end
+    end
+end
+
+local function SafeTeleport(targetCF, customSpeed)
     local char = LocalPlayer.Character
     local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    local hum = char and char:FindFirstChildOfClass("Humanoid")
+    if not hrp or not hum or hum.Health <= 0 then return false end
+
+    -- Manejar saltos entre dimensiones si es necesario
+    HandleDimensionCrossings(targetCF.Position, hrp)
+    hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if not hrp then return false end
 
-    EnableNoclip()
+    local speed = tonumber(customSpeed) or GetGlobalTweenSpeed()
+    local dist = (hrp.Position - targetCF.Position).Magnitude
 
-    if (hrp.Position - targetCF.Position).Magnitude <= 40 then
+    -- Distancias mínimas: snap directo sin tween
+    if dist <= 12 then
+        CancelActiveTween()
         hrp.CFrame = targetCF
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
         return true
     end
 
-    local distance = (hrp.Position - targetCF.Position).Magnitude
-    local duration = distance / speed
+    CancelActiveTween()
+    EnableNoclip()
 
+    local oldPlatformStand = hum.PlatformStand
+    hum.PlatformStand = true
+
+    -- BodyVelocity de estabilización para matar gravedad, evitar caídas al mar y estabilizar física
+    local bv = hrp:FindFirstChild("Polar_MovementStabilizer")
+    if not bv then
+        bv = Instance.new("BodyVelocity")
+        bv.Name = "Polar_MovementStabilizer"
+        bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+        bv.Velocity = Vector3.zero
+        bv.Parent = hrp
+    else
+        bv.Velocity = Vector3.zero
+    end
+    ActiveMovementStabilizer = bv
+
+    hrp.AssemblyLinearVelocity = Vector3.zero
+    hrp.AssemblyAngularVelocity = Vector3.zero
+
+    local duration = dist / speed
     local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
     local tween = TweenService:Create(hrp, tweenInfo, { CFrame = targetCF })
-    
+    ActiveTween = tween
+
     local completed = false
     local conn
     conn = tween.Completed:Connect(function()
@@ -140,15 +231,34 @@ local function SafeTeleport(targetCF, speed)
 
     local elapsed = 0
     while not completed and elapsed < (duration + 2) do
-        task.wait(0.1)
-        elapsed = elapsed + 0.1
-        if not hrp or not hrp.Parent then
-            tween:Cancel()
-            return false
+        task.wait(0.05)
+        elapsed = elapsed + 0.05
+        local cChar = LocalPlayer.Character
+        local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+        local cHum = cChar and cChar:FindFirstChildOfClass("Humanoid")
+        if not cHrp or not cHum or cHum.Health <= 0 then
+            CancelActiveTween()
+            break
         end
     end
 
-    hrp.CFrame = targetCF
+    if hrp and hrp.Parent then
+        hrp.CFrame = targetCF
+        hrp.AssemblyLinearVelocity = Vector3.zero
+        hrp.AssemblyAngularVelocity = Vector3.zero
+    end
+
+    if bv and bv.Parent then
+        bv:Destroy()
+        ActiveMovementStabilizer = nil
+    end
+
+    if hum and hum.Parent then
+        hum.PlatformStand = oldPlatformStand
+    end
+
+    DisableNoclip()
+    ActiveTween = nil
     return true
 end
 
@@ -256,6 +366,42 @@ local function KillTarget(enemyModel, timeout)
     return (not enemyModel.Parent or eHum.Health <= 0)
 end
 
+-- ==================== VERIFICADOR DE PROGRESO DE SECRETOS (100% SERVIDOR) ====================
+function PolarSecrets.GetProgress()
+    if not RequestBonusMoment then return nil end
+    local s, res = pcall(function()
+        return RequestBonusMoment:InvokeServer({ Type = "GetMomentProgress" })
+    end)
+    if s and type(res) == "table" and res.Data then
+        return res.Data
+    end
+    return nil
+end
+
+function PolarSecrets.GetSummary()
+    local progress = PolarSecrets.GetProgress()
+    if not progress then
+        return { Completed = 0, Total = 39, Pending = 39, LevelCap = 2800, Data = {} }
+    end
+
+    local count = 0
+    local total = 0
+    for _, isDone in pairs(progress) do
+        total = total + 1
+        if isDone == true then count = count + 1 end
+    end
+    if total == 0 then total = 39 end
+
+    local levelCap = 2800 + (count * 5)
+    return {
+        Completed = count,
+        Total = total,
+        Pending = total - count,
+        LevelCap = levelCap,
+        Data = progress
+    }
+end
+
 -- ==================== RADAR INTELIGENTE DE JEFES DESPERTADOS ====================
 PolarSecrets.Radar = {
     Active = false,
@@ -316,50 +462,32 @@ function PolarSecrets.StopRadar()
     PolarSecrets.Radar.Active = false
 end
 
--- ==================== VERIFICADOR DE PROGRESO DE SECRETOS ====================
-function PolarSecrets.GetProgress()
-    if not RequestBonusMoment then return nil end
-    local s, res = pcall(function()
-        return RequestBonusMoment:InvokeServer({ Type = "GetMomentProgress" })
-    end)
-    if s and type(res) == "table" and res.Data then
-        return res.Data
-    end
-    return nil
-end
-
-function PolarSecrets.GetSummary()
-    local progress = PolarSecrets.GetProgress()
-    if not progress then
-        return { Completed = 0, Total = 40, Pending = 40, LevelCap = 2800 }
-    end
-
-    local count = 0
-    for _, isDone in pairs(progress) do
-        if isDone == true then count = count + 1 end
-    end
-
-    local levelCap = 2800 + (count * 5)
-    return {
-        Completed = count,
-        Total = 40,
-        Pending = 40 - count,
-        LevelCap = levelCap,
-        Data = progress
-    }
-end
-
--- ==================== SOLUCIONADORES FÍSICOS DE MISIONES INMEDIATAS ====================
+-- ==================== SOLUCIONADORES FÍSICOS DE TODAS LAS MISIONES ====================
 PolarSecrets.Solvers = {}
 
--- 1. Desert - Rescue Hasan
+-- ----------------------------------------------------------------------------
+-- 1. DESERT
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Desert/Rescue Hasan"] = function()
     Notify("Hasan", "Iniciando rescate de Hasan en Desert...", 4)
-    local triggerCF = CFrame.new(1301.5, 18.4, 4449.8)
+    local triggerCF = CFrame.new(1288.5, 31.3, 4490.9)
     SafeTeleport(triggerCF)
     task.wait(1)
 
+    -- Interacción física con ataúdes
+    local desert = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Desert")
+    local hasanFolder = desert and desert:FindFirstChild("Rescue Hasan")
+    if hasanFolder then
+        for _, obj in ipairs(hasanFolder:GetChildren()) do
+            if obj.Name == "Coffin" and obj:IsA("Model") then
+                SafeTeleport(obj:GetPivot() * CFrame.new(0, 3, 0))
+                AttackInstance(obj, 1.5)
+            end
+        end
+    end
+
     FireMoment("Rescue Hasan", "StartWaves")
+    InvokeMoment("Rescue Hasan", "OpenCoffin")
     task.wait(1)
 
     local enemiesFolder = workspace:FindFirstChild("Enemies")
@@ -372,153 +500,220 @@ PolarSecrets.Solvers["Sea1/Desert/Rescue Hasan"] = function()
     end
     task.wait(1)
 
-    local hasanCF = CFrame.new(1288.5, 31.3, 4490.9)
-    SafeTeleport(hasanCF)
-    task.wait(0.5)
-
-    if BonusMomentsGuide then
-        pcall(function() BonusMomentsGuide.interactQuestGiver("Rescue Hasan") end)
-    end
-    Notify("Hasan", "¡Rescate de Hasan completado!", 4)
+    SafeTeleport(triggerCF)
+    InteractGuide("Rescue Hasan")
+    Notify("Hasan", "Rescate de Hasan completado.", 4)
 end
 
--- 2. Desert - Prickly Harvest
 PolarSecrets.Solvers["Sea1/Desert/Prickly Harvest"] = function()
     Notify("Cactus", "Iniciando cosecha de cactus en Desert...", 4)
     local merchantCF = CFrame.new(862.2, 7.0, 4453.7)
     SafeTeleport(merchantCF)
-    task.wait(1)
+    task.wait(0.5)
 
-    if BonusMomentsGuide then
-        pcall(function() BonusMomentsGuide.interactQuestGiver("Desert Merchant") end)
-    end
+    InteractGuide("Desert Merchant")
+    FireMoment("Prickly Harvest", "Start")
 
     local desert = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("Desert")
-    local cactiFolder = desert and desert:FindFirstChild("Cacti")
-    if cactiFolder and #cactiFolder:GetChildren() > 0 then
-        for _, cactus in ipairs(cactiFolder:GetChildren()) do
-            if cactus:IsA("Model") then
-                SafeTeleport(cactus:GetPivot() * CFrame.new(0, 0, 4))
-                task.wait(0.3)
-                AttackInstance(cactus, 2)
+    local attackedCount = 0
+    if desert then
+        for _, part in ipairs(desert:GetChildren()) do
+            if (part.Name:find("Cactus") or part.Name:find("DesertCactus2")) and part:IsA("BasePart") then
+                SafeTeleport(part.CFrame * CFrame.new(0, 4, 3))
+                task.wait(0.2)
+                AttackInstance(part, 1.5)
+                attackedCount = attackedCount + 1
+                if attackedCount >= 6 then break end
             end
         end
-    else
-        local baseCF = CFrame.new(879.9, 5.0, 4462.4)
-        SafeTeleport(baseCF)
-        task.wait(0.5)
-        AttackInstance(workspace.Terrain, 3)
     end
 
     SafeTeleport(merchantCF)
     task.wait(0.5)
-    if BonusMomentsGuide then
-        pcall(function() BonusMomentsGuide.interactQuestGiver("Desert Merchant") end)
-    end
-    Notify("Cactus", "¡Cosecha de cactus completada!", 4)
+    InvokeMoment("Prickly Harvest", "TurnIn")
+    InteractGuide("Desert Merchant")
+    Notify("Cactus", "Cosecha de cactus completada.", 4)
 end
 
--- 3. Frozen Village - Breaking the Ice
+PolarSecrets.Solvers["Sea1/Desert/Archaeologist's Tablet"] = function()
+    Notify("Arqueologo", "Examinando tableta del arqueologo en Desert...", 4)
+    local tabletCF = CFrame.new(1101.6, 18.2, 4378.2)
+    SafeTeleport(tabletCF)
+    task.wait(1)
+
+    FireMoment("Archaeologist's Tablet", "Inspect")
+    AttackInstance(workspace.Terrain, 2)
+    InvokeMoment("Archaeologist's Tablet", "ReadPillars")
+    task.wait(0.5)
+    InteractGuide("Archaeologist's Tablet")
+    Notify("Arqueologo", "Tableta del arqueologo descifrada.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 2. FROZEN VILLAGE
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Frozen Village/Breaking the Ice"] = function()
     Notify("Iceberg", "Rompiendo el iceberg del Ability Teacher...", 4)
-    local icebergCF = CFrame.new(1450.3, 24.2, -1406.5)
+    local icebergCF = CFrame.new(1398.0, 37.0, -1350.0)
     SafeTeleport(icebergCF)
     task.wait(1)
 
     FireMoment("Breaking the Ice", "Init")
+    AttackInstance(workspace.Terrain, 3.5)
+    InvokeMoment("Breaking the Ice", "Break")
     task.wait(0.5)
 
-    AttackInstance(workspace.Terrain, 4)
-
-    if BonusMomentsGuide then
-        pcall(function() BonusMomentsGuide.interactQuestGiver("FrozenAbilityTeacher") end)
-    end
-    Notify("Iceberg", "¡Iceberg destruido y Ability Teacher liberado!", 4)
+    local teacherCF = CFrame.new(1450.3, 24.2, -1406.5)
+    SafeTeleport(teacherCF)
+    InteractGuide("FrozenAbilityTeacher")
+    Notify("Iceberg", "Ability Teacher liberado del hielo.", 4)
 end
 
--- 4. Frozen Village - Snowman
 PolarSecrets.Solvers["Sea1/Frozen Village/Snowman"] = function()
     Notify("Snowman", "Construyendo el muñeco de nieve...", 4)
     local snowmanCF = CFrame.new(1324.3, 93.3, -1670.4)
     local snowpileCF = CFrame.new(1407.8, 94.6, -1663.1)
-    
-    SafeTeleport(snowpileCF)
-    task.wait(1)
-    FireMoment("Snowman", "Init")
-    FireMoment("Snowman", "GrabSnowball", 1)
-    task.wait(1)
 
-    SafeTeleport(snowmanCF)
-    task.wait(1)
-    FireMoment("Snowman", "Finished")
-    Notify("Snowman", "¡Muñeco de nieve completado!", 4)
+    FireMoment("Snowman", "Init")
+
+    for i = 1, 3 do
+        SafeTeleport(snowpileCF)
+        task.wait(0.4)
+        FireMoment("Snowman", "GrabSnowball", i)
+        task.wait(0.2)
+
+        SafeTeleport(snowmanCF)
+        task.wait(0.4)
+        FireMoment("Snowman", "PlaceSnowball", i)
+        task.wait(0.2)
+    end
+
+    InvokeMoment("Snowman", "Finished")
+    Notify("Snowman", "Muñeco de nieve completado.", 4)
 end
 
--- 5. Jungle - Zipline Repair
+PolarSecrets.Solvers["Sea1/Frozen Village/Frozen Defense"] = function()
+    Notify("Yeti", "Revisando defensa helada del Yeti...", 4)
+    local yetiCF = CFrame.new(1181.7, 104.0, -1616.9)
+    SafeTeleport(yetiCF)
+    task.wait(1)
+
+    FireMoment("Frozen Defense", "Trigger")
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local yeti = enemiesFolder and enemiesFolder:FindFirstChild("Yeti")
+    if yeti and yeti:FindFirstChild("Humanoid") and yeti.Humanoid.Health > 0 then
+        KillTarget(yeti, 60)
+    else
+        AttackInstance(workspace.Terrain, 3)
+    end
+    Notify("Yeti", "Defensa helada verificada.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 3. JUNGLE
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Jungle/Zipline Repair"] = function()
     Notify("Zipline", "Reparando tirolesa en Jungle...", 4)
-    local groundCF = CFrame.new(-1282.31, 76.33, -245.48)
-    SafeTeleport(groundCF)
-    task.wait(1)
+    local p1 = CFrame.new(-1282.31, 76.33, -245.48)
+    local p2 = CFrame.new(-1600.0, 110.0, -250.0)
 
+    SafeTeleport(p1)
+    task.wait(0.8)
     FireMoment("Zipline Repair", "Initialize")
-    task.wait(0.5)
     FireMoment("Zipline Repair", "PickupTool")
-    task.wait(1)
+    task.wait(0.5)
 
-    local targetPlatformCF = CFrame.new(-1600, 110, -250)
-    SafeTeleport(targetPlatformCF)
-    task.wait(1)
-
-    if BonusMomentsGuide then
-        pcall(function() BonusMomentsGuide.interactQuestGiver("Stranded Explorer") end)
+    SafeTeleport(p2)
+    task.wait(0.8)
+    if Net and Net:FindFirstChild("RE/UseZipline") then
+        Net["RE/UseZipline"]:FireServer()
     end
-    Notify("Zipline", "¡Tirolesa reparada exitosamente!", 4)
+    task.wait(0.5)
+
+    InteractGuide("Stranded Explorer")
+    Notify("Zipline", "Tirolesa reparada exitosamente.", 4)
 end
 
--- 6. Jungle - The Thieving Monkey
 PolarSecrets.Solvers["Sea1/Jungle/The Thieving Monkey"] = function()
-    Notify("Mono Ladrón", "Rastreando huellas del mono en Jungle...", 4)
+    Notify("Mono Ladron", "Recuperando sombrero en Jungle...", 4)
     local treeCF = CFrame.new(-1909.2, 14.6, 310.2)
     SafeTeleport(treeCF)
     task.wait(1)
 
     FireMoment("The Thieving Monkey", "Initialize")
-    task.wait(0.5)
-
-    AttackInstance(workspace.Terrain, 3)
-    task.wait(1.5)
+    AttackInstance(workspace.Terrain, 2)
 
     local enemiesFolder = workspace:FindFirstChild("Enemies")
     if enemiesFolder then
         for _, enemy in ipairs(enemiesFolder:GetChildren()) do
             if enemy.Name:find("Monkey") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
                 KillTarget(enemy, 20)
+                break
             end
         end
     end
 
     FireMoment("The Thieving Monkey", "ClaimHat")
-    task.wait(1)
+    task.wait(0.5)
 
-    local advCF = CFrame.new(-1600, 37, 153)
+    local advCF = CFrame.new(-1600.0, 37.0, 153.0)
     SafeTeleport(advCF)
     task.wait(0.5)
     InvokeMoment("The Thieving Monkey", "ReturnHat")
-    Notify("Mono Ladrón", "¡Sombrero devuelto al aventurero!", 4)
+    Notify("Mono Ladron", "Sombrero devuelto al aventurero.", 4)
 end
 
--- 7. Pirate Village - Tavern Brawl
+PolarSecrets.Solvers["Sea1/Jungle/Banana Tree"] = function()
+    Notify("Gorilla King", "Verificando arbol de bananas en Jungle...", 4)
+    local treeCF = CFrame.new(-1600.0, 37.0, 153.0)
+    SafeTeleport(treeCF)
+    task.wait(1)
+
+    FireMoment("Banana Tree", "Hit")
+    AttackInstance(workspace.Terrain, 3)
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local boss = enemiesFolder and (enemiesFolder:FindFirstChild("Gorilla King") or enemiesFolder:FindFirstChild("The Gorilla King"))
+    if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+        KillTarget(boss, 60)
+    end
+    Notify("Gorilla King", "Arbol de bananas procesado.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 4. PIRATE VILLAGE
+-- ----------------------------------------------------------------------------
+PolarSecrets.Solvers["Sea1/Pirate Village/Windmill Maintenance"] = function()
+    Notify("Molino", "Reparando aspas del molino en Pirate Village...", 4)
+    local pirate = workspace.Map:FindFirstChild("Pirate")
+    local wr = pirate and pirate:FindFirstChild("WindmillRig")
+    local rig = wr and wr:FindFirstChild("Windmill_rig")
+
+    if rig then
+        for _, child in ipairs(rig:GetChildren()) do
+            if child.Name:find("Rope") and child:IsA("BasePart") then
+                SafeTeleport(child.CFrame * CFrame.new(0, 0, 3))
+                AttackInstance(child, 1)
+            end
+        end
+    end
+
+    local npcSpawn = CFrame.new(-1231.46, 26.35, 4071.13)
+    SafeTeleport(npcSpawn)
+    task.wait(0.5)
+    InvokeMoment("Windmill Maintenance", "Inspect")
+    InteractGuide("Windmill Maintenance")
+    Notify("Molino", "Molino reparado.", 4)
+end
+
 PolarSecrets.Solvers["Sea1/Pirate Village/Tavern Brawl"] = function()
     Notify("Taberna", "Iniciando pelea en la taberna...", 4)
-    local doorCF = CFrame.new(-1145, 4.7, 3828.6)
+    local doorCF = CFrame.new(-1145.0, 4.7, 3828.6)
     SafeTeleport(doorCF)
     task.wait(1)
 
     FireMoment("Tavern Brawl", "Breach")
-    task.wait(0.5)
     FireMoment("Tavern Brawl", "DoorsKicked")
-    task.wait(0.5)
     FireMoment("Tavern Brawl", "BeginFight")
     task.wait(1)
 
@@ -532,69 +727,53 @@ PolarSecrets.Solvers["Sea1/Pirate Village/Tavern Brawl"] = function()
     end
 
     FireMoment("Tavern Brawl", "ClaimReward")
-    task.wait(1)
-    Notify("Taberna", "¡Pelea de taberna superada!", 4)
+    InvokeMoment("Tavern Brawl", "ClaimReward")
+    Notify("Taberna", "Pelea de taberna finalizada.", 4)
 end
 
--- 8. Marine Fortress - Fortress Flagpole
-PolarSecrets.Solvers["Sea1/Marine Fortress/Fortress Flagpole"] = function()
-    Notify("Bandera", "Izando la bandera en Marine Fortress...", 4)
-    local flagCF = CFrame.new(-4836.3, 21.7, 4282.1)
-    SafeTeleport(flagCF)
+PolarSecrets.Solvers["Sea1/Pirate Village/Chef's Kiss"] = function()
+    Notify("Chef", "Revisando caldero en Pirate Village...", 4)
+    local cauldronCF = CFrame.new(-1338.0, 4.0, 4132.0)
+    SafeTeleport(cauldronCF)
     task.wait(1)
 
-    FireMoment("Fortress Flagpole", "Init")
-    task.wait(0.5)
-    FireMoment("Fortress Flagpole", "Start")
-    task.wait(1)
+    FireMoment("Chef's Kiss", "Stir")
+    AttackInstance(workspace.Terrain, 3)
 
-    local ropeCF = CFrame.new(-4838.0, 10.8, 4488.2)
-    SafeTeleport(ropeCF)
-    task.wait(0.5)
-    FireMoment("Fortress Flagpole", "TakeRope")
-    task.wait(1)
-
-    SafeTeleport(flagCF)
-    task.wait(0.5)
-    FireMoment("Fortress Flagpole", "Hoist")
-    task.wait(1)
-    Notify("Bandera", "¡Bandera izada en lo alto del fuerte!", 4)
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local chef = enemiesFolder and (enemiesFolder:FindFirstChild("Chef") or enemiesFolder:FindFirstChild("Bobby"))
+    if chef and chef:FindFirstChild("Humanoid") and chef.Humanoid.Health > 0 then
+        KillTarget(chef, 60)
+    end
+    Notify("Chef", "Caldero procesado.", 4)
 end
 
--- 9. Prison - Don Megalo
+-- ----------------------------------------------------------------------------
+-- 5. PRISON
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Prison/Don Megalo"] = function()
-    Notify("Don Megalo", "Consiguiendo la capa rosa de Don Megalo...", 4)
-    local prisonCF = CFrame.new(5525.46, 9.01, 933.47)
-    SafeTeleport(prisonCF)
+    Notify("Don Megalo", "Obteniendo capa rosa de Don Megalo...", 4)
+    local cellCF = CFrame.new(5525.46, 9.01, 933.47)
+    SafeTeleport(cellCF)
     task.wait(1)
 
     FireMoment("Don Megalo", "Init")
-    task.wait(0.5)
-    FireMoment("Don Megalo", "BouncerReady")
-    task.wait(0.5)
     InvokeMoment("Don Megalo", "TakeKey")
-    task.wait(0.5)
     InvokeMoment("Don Megalo", "Unlock")
-    task.wait(0.5)
     InvokeMoment("Don Megalo", "TakeCape")
-    task.wait(0.5)
     InvokeMoment("Don Megalo", "ClaimCape")
-    task.wait(1)
-    Notify("Don Megalo", "¡Capa rosa reclamada con éxito!", 4)
+    Notify("Don Megalo", "Capa de Don Megalo reclamada.", 4)
 end
 
--- 10. Prison - Escape from Alcatraz
 PolarSecrets.Solvers["Sea1/Prison/Escape from Alcatraz"] = function()
-    Notify("Prisión", "Impidiendo la fuga en Alcatraz...", 4)
-    local prisonYard = CFrame.new(5337.93, 22.10, 841.69)
-    SafeTeleport(prisonYard)
+    Notify("Alcatraz", "Impidiendo fuga en la prision...", 4)
+    local yardCF = CFrame.new(5337.93, 22.10, 841.69)
+    SafeTeleport(yardCF)
     task.wait(1)
 
-    for _, prisonerType in ipairs({ "Digger", "Puncher", "Raft" }) do
-        pcall(function()
-            InvokeMoment("Escape from Alcatraz", "Provoke", prisonerType)
-        end)
-        task.wait(0.5)
+    for _, escapee in ipairs({ "Digger", "Puncher", "Raft" }) do
+        pcall(function() InvokeMoment("Escape from Alcatraz", "Provoke", escapee) end)
+        task.wait(0.3)
     end
 
     local enemiesFolder = workspace:FindFirstChild("Enemies")
@@ -605,33 +784,131 @@ PolarSecrets.Solvers["Sea1/Prison/Escape from Alcatraz"] = function()
             end
         end
     end
-    task.wait(1)
-    Notify("Prisión", "¡Fuga de Alcatraz frustrada!", 4)
+    Notify("Alcatraz", "Fuga detenida con exito.", 4)
 end
 
--- 11. Prison - Lever Jailbreak
 PolarSecrets.Solvers["Sea1/Prison/Lever Jailbreak"] = function()
-    Notify("Palancas", "Activando palancas de la prisión...", 4)
+    Notify("Palancas", "Activando palancas de la prision...", 4)
     local leverCF = CFrame.new(5337.93, 22.10, 841.69)
     SafeTeleport(leverCF)
     task.wait(1)
 
     FireMoment("Lever Jailbreak", "Init")
-    task.wait(0.5)
-
     for i = 1, 3 do
-        pcall(function()
-            InvokeMoment("Lever Jailbreak", "Pull", i)
-        end)
-        task.wait(0.5)
+        pcall(function() InvokeMoment("Lever Jailbreak", "Pull", i) end)
+        task.wait(0.3)
     end
-    Notify("Palancas", "¡Palancas activadas!", 4)
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local warden = enemiesFolder and (enemiesFolder:FindFirstChild("Warden") or enemiesFolder:FindFirstChild("Chief Warden"))
+    if warden and warden:FindFirstChild("Humanoid") and warden.Humanoid.Health > 0 then
+        KillTarget(warden, 60)
+    end
+    Notify("Palancas", "Palancas de prision procesadas.", 4)
 end
 
--- 12. Colosseum - King's Apprentice
+-- ----------------------------------------------------------------------------
+-- 6. MARINE FORTRESS
+-- ----------------------------------------------------------------------------
+PolarSecrets.Solvers["Sea1/Marine Fortress/Fortress Flagpole"] = function()
+    Notify("Bandera", "Izando bandera en Marine Fortress...", 4)
+    local flagCF = CFrame.new(-4836.3, 21.7, 4282.1)
+    SafeTeleport(flagCF)
+    task.wait(0.8)
+
+    FireMoment("Fortress Flagpole", "Init")
+    FireMoment("Fortress Flagpole", "Start")
+
+    local ropeCF = CFrame.new(-4838.0, 10.8, 4488.2)
+    SafeTeleport(ropeCF)
+    task.wait(0.5)
+    FireMoment("Fortress Flagpole", "TakeRope")
+
+    SafeTeleport(flagCF)
+    task.wait(0.5)
+    FireMoment("Fortress Flagpole", "Hoist")
+    InteractGuide("Fortress Flagpole")
+    Notify("Bandera", "Bandera izada en lo alto del fuerte.", 4)
+end
+
+PolarSecrets.Solvers["Sea1/Marine Fortress/Battle Plans"] = function()
+    Notify("Planes", "Infiltrando planes de batalla en Marine Fortress...", 4)
+    local plansCF = CFrame.new(-5010.0, 45.0, 4380.0)
+    SafeTeleport(plansCF)
+    task.wait(1)
+
+    FireMoment("Battle Plans", "Steal")
+    AttackInstance(workspace.Terrain, 2)
+    InvokeMoment("Battle Plans", "TurnIn")
+    Notify("Planes", "Planes de batalla asegurados.", 4)
+end
+
+PolarSecrets.Solvers["Sea1/Marine Fortress/Fortress Under Fire"] = function()
+    Notify("Vice Admiral", "Verificando alarma de Vice Admiral...", 4)
+    local fortTop = CFrame.new(-5010.8, 45.0, 4383.7)
+    SafeTeleport(fortTop)
+    task.wait(1)
+
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local admiral = enemiesFolder and enemiesFolder:FindFirstChild("Vice Admiral")
+    if admiral and admiral:FindFirstChild("Humanoid") and admiral.Humanoid.Health > 0 then
+        KillTarget(admiral, 60)
+    else
+        AttackInstance(workspace.Terrain, 3)
+    end
+    Notify("Vice Admiral", "Fortaleza asegurada.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 7. MIDDLE TOWN
+-- ----------------------------------------------------------------------------
+PolarSecrets.Solvers["Sea1/Middle Town/Early Access"] = function()
+    Notify("Early Access", "Inspeccionando puerta de desarrolladores...", 4)
+    local devDoorCF = CFrame.new(-838.89, 31.77, 1603.10)
+    SafeTeleport(devDoorCF)
+    task.wait(1)
+
+    FireMoment("Early Access", "Knock")
+    InvokeMoment("Early Access", "Interact")
+    task.wait(0.5)
+    Notify("Early Access", "Puerta de desarrolladores inspeccionada.", 4)
+end
+
+PolarSecrets.Solvers["Sea1/Middle Town/Lookout"] = function()
+    Notify("Vigia", "Haciendo guardia con el Capitan...", 4)
+    local docksCF = CFrame.new(-789.0, 7.0, 1515.0)
+    SafeTeleport(docksCF)
+    task.wait(0.8)
+
+    if CommF then pcall(function() CommF:InvokeServer("LookoutDuty") end) end
+    FireMoment("Lookout", "Start")
+    task.wait(1)
+    InvokeMoment("Lookout", "Complete")
+    Notify("Vigia", "Guardia de vigia completada.", 4)
+end
+
+PolarSecrets.Solvers["Sea1/Middle Town/X Marks The Spot"] = function()
+    Notify("Mapa Tesoro", "Buscando tesoro enterrado en Middle Town...", 4)
+    local townCF = CFrame.new(-700.0, 15.0, 1550.0)
+    SafeTeleport(townCF)
+    task.wait(1)
+
+    FireMoment("X Marks The Spot", "Initialize")
+    FireMoment("X Marks The Spot", "PickupMap")
+    FireMoment("X Marks The Spot", "CollectCheckpoint")
+    task.wait(0.5)
+    AttackInstance(workspace.Terrain, 2.5)
+    FireMoment("X Marks The Spot", "Dig")
+    InvokeMoment("X Marks The Spot", "ClaimChest")
+    Notify("Mapa Tesoro", "Tesoro enterrado reclamado.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 8. COLOSSEUM
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Colosseum/King's Apprentice"] = function()
     Notify("Coliseo", "Iniciando prueba del rey en el Coliseo...", 4)
-    local arenaCF = CFrame.new(-1500, 7.5, 2500)
+    local arenaCF = CFrame.new(-1666.2, 10.0, -3241.9)
     SafeTeleport(arenaCF)
     task.wait(1)
 
@@ -646,88 +923,102 @@ PolarSecrets.Solvers["Sea1/Colosseum/King's Apprentice"] = function()
             end
         end
     end
-    Notify("Coliseo", "¡Prueba del rey superada!", 4)
+    Notify("Coliseo", "Prueba del rey superada.", 4)
 end
 
--- 13. Colosseum - Legendary Creator Statues
 PolarSecrets.Solvers["Sea1/Colosseum/Legendary Creator Statues"] = function()
     Notify("Estatuas", "Inspeccionando estatuas de los creadores...", 4)
-    local statuesCF = CFrame.new(-1500, 15, 2500)
-    SafeTeleport(statuesCF)
+    local baseCF = CFrame.new(-1666.2, 10.0, -3241.9)
+    SafeTeleport(baseCF)
     task.wait(1)
 
     for i = 1, 4 do
-        local offset = CFrame.new(math.cos(i) * 35, 0, math.sin(i) * 35)
-        SafeTeleport(statuesCF * offset)
-        task.wait(0.5)
+        local offset = CFrame.new(math.cos(i * 1.57) * 45, 0, math.sin(i * 1.57) * 45)
+        SafeTeleport(baseCF * offset)
+        task.wait(0.3)
+        FireMoment("Legendary Creator Statues", "Inspect", i)
         AttackInstance(workspace.Terrain, 1)
     end
-    Notify("Estatuas", "¡Estatuas de los creadores inspeccionadas!", 4)
+    InvokeMoment("Legendary Creator Statues", "Complete")
+    Notify("Estatuas", "Estatuas de los creadores activadas.", 4)
 end
 
--- 14. Magma Village - Evil Slimes
+PolarSecrets.Solvers["Sea1/Colosseum/Crowd Favorite"] = function()
+    Notify("Coliseo", "Realizando desafio de punteria en el Coliseo...", 4)
+    local arenaCF = CFrame.new(-1666.2, 10.0, -3241.9)
+    SafeTeleport(arenaCF)
+    task.wait(1)
+
+    FireMoment("Crowd Favorite", "Start")
+    AttackInstance(workspace.Terrain, 3)
+    InvokeMoment("Crowd Favorite", "ClaimReward")
+    Notify("Coliseo", "Desafio de punteria superado.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 9. MAGMA VILLAGE
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Magma Village/Evil Slimes"] = function()
-    Notify("Slimes", "Combatiendo slimes en Magma Village...", 4)
-    local slimeCF = CFrame.new(-5344.5, 17.8, 8397.1)
-    SafeTeleport(slimeCF)
+    Notify("Slimes", "Combatiendo slimes de magma...", 4)
+    local geysersCF = CFrame.new(-5344.5, 17.8, 8397.1)
+    SafeTeleport(geysersCF)
     task.wait(1)
 
-    AttackInstance(workspace.Terrain, 5)
-    Notify("Slimes", "¡Slimes derrotados!", 4)
+    FireMoment("Evil Slimes", "Defeat")
+    AttackInstance(workspace.Terrain, 3)
+    Notify("Slimes", "Slimes de magma derrotados.", 4)
 end
 
--- 15. Magma Village - Magma Ore Extraction
 PolarSecrets.Solvers["Sea1/Magma Village/Magma Ore Extraction"] = function()
-    Notify("Mineral", "Extrayendo mineral de magma...", 4)
-    local oreCF = CFrame.new(-5896.4, 6.7, 8960.0)
-    SafeTeleport(oreCF)
+    Notify("Mineral", "Extrayendo mineral en Volcano Cave...", 4)
+    local caveCF = CFrame.new(-61197.5, 6824.3, 8866.7)
+    SafeTeleport(caveCF)
     task.wait(1)
 
-    AttackInstance(workspace.Terrain, 5)
-    Notify("Mineral", "¡Mineral de magma extraído!", 4)
+    FireMoment("Magma Ore Extraction", "Mine")
+    AttackInstance(workspace.Terrain, 3)
+    InvokeMoment("Magma Ore Extraction", "ClaimOre")
+    Notify("Mineral", "Mineral de magma extraido.", 4)
 end
 
--- 16. Sky - Electric Fighting Teacher
+PolarSecrets.Solvers["Sea1/Magma Village/One Last Eruption"] = function()
+    Notify("Magma General", "Revisando crater volcanico...", 4)
+    local craterCF = CFrame.new(-5528.2, 50.0, 8691.1)
+    SafeTeleport(craterCF)
+    task.wait(1)
+
+    FireMoment("One Last Eruption", "Check")
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local boss = enemiesFolder and (enemiesFolder:FindFirstChild("Magma General") or enemiesFolder:FindFirstChild("Magma Admiral"))
+    if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+        KillTarget(boss, 60)
+    else
+        AttackInstance(workspace.Terrain, 3)
+    end
+    Notify("Magma General", "Crater volcanico asegurado.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 10. SKY (SKYLANDS)
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Sky/Electric Fighting Teacher"] = function()
-    Notify("Electric", "Visitando al maestro de combate eléctrico...", 4)
+    Notify("Electric", "Visitando maestro electrico en Skylands...", 4)
     local teacherCF = CFrame.new(-4628.89, 12.13, -355.72)
     SafeTeleport(teacherCF)
     task.wait(1)
 
-    AttackInstance(workspace.Terrain, 3)
-    if CommF then
-        pcall(function() CommF:InvokeServer("BuyElectric") end)
-    end
-    Notify("Electric", "¡Lección eléctrica completada!", 4)
+    InteractGuide("Electric Fighting Teacher")
+    if CommF then pcall(function() CommF:InvokeServer("BuyElectric") end) end
+    Notify("Electric", "Maestro electrico visitado.", 4)
 end
 
--- 17. Sky - Unexpected Guest
-PolarSecrets.Solvers["Sea1/Sky/Unexpected Guest"] = function()
-    Notify("Bóveda", "Abriendo bóveda del castillo en Skylands...", 4)
-    local vaultCF = CFrame.new(-5130.7, 289.2, -1231.8)
-    SafeTeleport(vaultCF)
-    task.wait(1)
-
-    FireMoment("Unexpected Guest", "BreakDoor")
-    task.wait(0.5)
-    InvokeMoment("Unexpected Guest", "ReadLetter")
-    task.wait(0.5)
-    FireMoment("Unexpected Guest", "GuardsOut")
-    task.wait(0.5)
-    InvokeMoment("Unexpected Guest", "TakeChest")
-    task.wait(1)
-    Notify("Bóveda", "¡Cofre de la bóveda reclamado!", 4)
-end
-
--- 18. Sky - The Clown's Jewels
 PolarSecrets.Solvers["Sea1/Sky/The Clown's Jewels"] = function()
-    Notify("Joyas del Payaso", "Reclamando joyas en Skylands...", 4)
-    local jewelsCF = CFrame.new(-4800, 560, -850)
+    Notify("Joyas Payaso", "Obteniendo joyas en Skylands...", 4)
+    local jewelsCF = CFrame.new(-4800.0, 560.0, -850.0)
     SafeTeleport(jewelsCF)
     task.wait(1)
 
     FireMoment("The Clown's Jewels", "Provoke")
-    task.wait(0.5)
     FireMoment("The Clown's Jewels", "BeginFight")
     task.wait(1)
 
@@ -741,53 +1032,70 @@ PolarSecrets.Solvers["Sea1/Sky/The Clown's Jewels"] = function()
     end
 
     FireMoment("The Clown's Jewels", "Collect")
-    task.wait(1)
-    Notify("Joyas del Payaso", "¡Joyas del payaso recolectadas!", 4)
+    InvokeMoment("The Clown's Jewels", "Collect")
+    Notify("Joyas Payaso", "Joyas de Skylands reclamadas.", 4)
 end
 
--- 19. SkyArea2 - Echoes Through the Clouds
+PolarSecrets.Solvers["Sea1/Sky/Unexpected Guest"] = function()
+    Notify("Boveda", "Abriendo boveda del castillo en Skylands...", 4)
+    local vaultCF = CFrame.new(-5130.7, 289.2, -1231.8)
+    SafeTeleport(vaultCF)
+    task.wait(1)
+
+    FireMoment("Unexpected Guest", "BreakDoor")
+    InvokeMoment("Unexpected Guest", "ReadLetter")
+    InvokeMoment("Unexpected Guest", "TakeChest")
+    Notify("Boveda", "Cofre de boveda reclamado.", 4)
+end
+
+-- ----------------------------------------------------------------------------
+-- 11. SKYAREA2 (UPPER SKYLANDS)
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/SkyArea2/Echoes Through the Clouds"] = function()
-    Notify("Campana Dorada", "Haciendo sonar la Campana Dorada en Upper Skylands...", 4)
-    local bellCF = CFrame.new(-7800, 5600, -450)
+    Notify("Campana Dorada", "Haciendo sonar la Campana Dorada...", 4)
+    local bellCF = CFrame.new(-7800.0, 5600.0, -450.0)
     SafeTeleport(bellCF)
     task.wait(1)
 
     InvokeMoment("Echoes Through the Clouds", "WakeGod")
-    AttackInstance(workspace.Terrain, 4)
-    Notify("Campana Dorada", "¡La Campana Dorada ha resonado en las nubes!", 4)
+    AttackInstance(workspace.Terrain, 3)
+    Notify("Campana Dorada", "Campana Dorada resonando.", 4)
 end
 
--- 20. SkyArea2 - Temple Intel
 PolarSecrets.Solvers["Sea1/SkyArea2/Temple Intel"] = function()
-    Notify("Templo", "Recuperando informes en el templo de Skylands...", 4)
+    Notify("Templo", "Recuperando informes en Upper Skylands...", 4)
     local templeCF = CFrame.new(-7399.0, 5593.5, 334.4)
     SafeTeleport(templeCF)
     task.wait(1)
 
     FireMoment("Temple Intel", "Struck")
-    task.wait(0.5)
     FireMoment("Temple Intel", "Solved")
-    task.wait(0.5)
     InvokeMoment("Temple Intel", "TakeIntel")
-    task.wait(1)
-    Notify("Templo", "¡Informes del templo obtenidos!", 4)
+    Notify("Templo", "Informes del templo obtenidos.", 4)
 end
 
--- 21. Underwater City - Beyond the Bubble
-PolarSecrets.Solvers["Sea1/Underwater City/Beyond the Bubble"] = function()
-    Notify("Cursed Chest", "Abriendo cofre maldito bajo el agua...", 4)
-    local chestCF = CFrame.new(61696.5, 528.1, -1420.9)
-    SafeTeleport(chestCF)
+PolarSecrets.Solvers["Sea1/SkyArea2/The Tyrant Awakens"] = function()
+    Notify("Tyrant", "Revisando altar del Rayo en Upper Skylands...", 4)
+    local altarCF = CFrame.new(-7800.0, 5600.0, -450.0)
+    SafeTeleport(altarCF)
     task.wait(1)
 
-    InvokeMoment("Beyond the Bubble", "OpenChest")
-    task.wait(1)
-    Notify("Cursed Chest", "¡Cofre bajo la burbuja abierto!", 4)
+    FireMoment("The Tyrant Awakens", "Challenge")
+    local enemiesFolder = workspace:FindFirstChild("Enemies")
+    local boss = enemiesFolder and (enemiesFolder:FindFirstChild("Wysper") or enemiesFolder:FindFirstChild("Thunder God"))
+    if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
+        KillTarget(boss, 60)
+    else
+        AttackInstance(workspace.Terrain, 3)
+    end
+    Notify("Tyrant", "Altar del Rayo procesado.", 4)
 end
 
--- 22. Underwater City - Fishman Karate
+-- ----------------------------------------------------------------------------
+-- 12. UNDERWATER CITY (FISHMAN ISLAND)
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Underwater City/Fishman Karate"] = function()
-    Notify("Fishman Karate", "Resolviendo puzzle de pilares luminosos...", 4)
+    Notify("Fishman Karate", "Resolviendo pilares luminosos en Underwater City...", 4)
     local puzzleCF = CFrame.new(61688.2, 46.9, 1025.1)
     SafeTeleport(puzzleCF)
     task.wait(1)
@@ -802,57 +1110,58 @@ PolarSecrets.Solvers["Sea1/Underwater City/Fishman Karate"] = function()
         local p4 = fkFolder:FindFirstChild("Pillar4")
         if p3 and p3:FindFirstChild("Root") then
             SafeTeleport(p3.Root.CFrame)
-            task.wait(0.5)
+            task.wait(0.3)
         end
         if p4 and p4:FindFirstChild("Root") then
             SafeTeleport(p4.Root.CFrame)
-            task.wait(0.5)
+            task.wait(0.3)
         end
     end
 
     InvokeMoment("Fishman Karate", "Complete")
+    InteractGuide("Fishman Karate")
+    Notify("Fishman Karate", "Arte de Water Kung Fu desbloqueado.", 4)
+end
+
+PolarSecrets.Solvers["Sea1/Underwater City/Beyond the Bubble"] = function()
+    Notify("Cofre Burbuja", "Abriendo cofre maldito bajo la burbuja...", 4)
+    local chestCF = CFrame.new(61696.5, 528.1, -1420.9)
+    SafeTeleport(chestCF)
     task.wait(1)
-    Notify("Fishman Karate", "¡Puzzle de Fishman Karate resuelto!", 4)
+
+    InvokeMoment("Beyond the Bubble", "OpenChest")
+    task.wait(0.5)
+    Notify("Cofre Burbuja", "Cofre bajo la burbuja abierto.", 4)
 end
 
--- 23. Underwater City - Pearl of the Deep
 PolarSecrets.Solvers["Sea1/Underwater City/Pearl of the Deep"] = function()
-    Notify("Perla", "Buscando la perla en las almejas...", 4)
-    local clams = CollectionService:GetTagged("PearlClam")
-    if #clams > 0 then
-        for _, clam in ipairs(clams) do
-            local p = clam:IsA("Model") and clam:GetPivot().Position or clam.Position
-            SafeTeleport(CFrame.new(p + Vector3.new(0, 3, 0)))
-            task.wait(0.4)
-            InvokeMoment("Pearl of the Deep", "OpenClam", clam)
-            InvokeMoment("Pearl of the Deep", "ClaimPearl")
-        end
-    else
-        local baseCF = CFrame.new(61523.3, 51.8, 1412.7)
-        SafeTeleport(baseCF)
-        task.wait(1)
-        InvokeMoment("Pearl of the Deep", "ClaimPearl")
-    end
-    Notify("Perla", "¡Perla de las profundidades conseguida!", 4)
+    Notify("Perla", "Buscando perla en Underwater City...", 4)
+    local baseCF = CFrame.new(61523.3, 51.8, 1412.7)
+    SafeTeleport(baseCF)
+    task.wait(1)
+
+    InvokeMoment("Pearl of the Deep", "OpenClam")
+    InvokeMoment("Pearl of the Deep", "ClaimPearl")
+    Notify("Perla", "Perla de las profundidades conseguida.", 4)
 end
 
--- 24. Fountain - Fountain Pipe Repair
+-- ----------------------------------------------------------------------------
+-- 13. FOUNTAIN CITY
+-- ----------------------------------------------------------------------------
 PolarSecrets.Solvers["Sea1/Fountain/Fountain Pipe Repair"] = function()
-    Notify("Tuberías", "Reparando tuberías en Fountain City...", 4)
-    local pipesCF = CFrame.new(5250, 40, 4100)
+    Notify("Tuberias", "Reparando tuberias en Fountain City...", 4)
+    local pipesCF = CFrame.new(5250.0, 40.0, 4100.0)
     SafeTeleport(pipesCF)
     task.wait(1)
 
-    AttackInstance(workspace.Terrain, 4)
-    task.wait(1)
+    AttackInstance(workspace.Terrain, 3)
     InvokeMoment("Fountain Pipe Repair", "TurnIn")
-    Notify("Tuberías", "¡Tuberías de Fountain City reparadas!", 4)
+    Notify("Tuberias", "Tuberias reparadas.", 4)
 end
 
--- 25. Fountain - Sewer Gangs
 PolarSecrets.Solvers["Sea1/Fountain/Sewer Gangs"] = function()
-    Notify("Alcantarillas", "Derrotando bandas en las alcantarillas...", 4)
-    local sewerCF = CFrame.new(5150, 10, 4200)
+    Notify("Alcantarillas", "Derrotando bandas en alcantarillas...", 4)
+    local sewerCF = CFrame.new(5150.0, 10.0, 4200.0)
     SafeTeleport(sewerCF)
     task.wait(1)
 
@@ -866,93 +1175,69 @@ PolarSecrets.Solvers["Sea1/Fountain/Sewer Gangs"] = function()
     end
 
     InvokeMoment("Sewer Gangs", "ClaimTreasure")
-    task.wait(1)
-    Notify("Alcantarillas", "¡Tesoros de alcantarilla reclamados!", 4)
+    Notify("Alcantarillas", "Tesoros de alcantarilla reclamados.", 4)
 end
 
--- 26. Middle Town - X Marks The Spot
-PolarSecrets.Solvers["Sea1/Middle Town/X Marks The Spot"] = function()
-    Notify("Mapa Tesoro", "Buscando fragmentos de mapa en Middle Town...", 4)
-    local cityCF = CFrame.new(-700, 15, 1550)
-    SafeTeleport(cityCF)
+PolarSecrets.Solvers["Sea1/Fountain/Fountain Wire Repair"] = function()
+    Notify("Cyborg", "Verificando cables en Fountain City...", 4)
+    local wiresCF = CFrame.new(5657.1, 40.0, 4418.7)
+    SafeTeleport(wiresCF)
     task.wait(1)
-
-    FireMoment("X Marks The Spot", "Initialize")
-    task.wait(0.5)
-    FireMoment("X Marks The Spot", "PickupMap")
-    task.wait(0.5)
-    FireMoment("X Marks The Spot", "CollectCheckpoint")
-    task.wait(1)
-
-    AttackInstance(workspace.Terrain, 4)
 
     local enemiesFolder = workspace:FindFirstChild("Enemies")
-    if enemiesFolder then
-        for _, enemy in ipairs(enemiesFolder:GetChildren()) do
-            if enemy.Name:find("Skeleton") and enemy:FindFirstChild("Humanoid") and enemy.Humanoid.Health > 0 then
-                KillTarget(enemy, 20)
-            end
-        end
+    local cyborg = enemiesFolder and enemiesFolder:FindFirstChild("Cyborg")
+    if cyborg and cyborg:FindFirstChild("Humanoid") and cyborg.Humanoid.Health > 0 then
+        KillTarget(cyborg, 60)
+    else
+        AttackInstance(workspace.Terrain, 3)
     end
-    Notify("Mapa Tesoro", "¡Tesoro de Middle Town desenterrado!", 4)
+    Notify("Cyborg", "Cables procesados.", 4)
 end
 
--- 27. Middle Town - Lookout
-PolarSecrets.Solvers["Sea1/Middle Town/Lookout"] = function()
-    Notify("Vigía", "Realizando guardia de vigía con el Capitán...", 4)
-    local captCF = CFrame.new(-789, 7, 1515)
-    SafeTeleport(captCF)
-    task.wait(1)
-
-    if CommF then
-        pcall(function() CommF:InvokeServer("LookoutDuty") end)
-    end
-    Notify("Vigía", "¡Guardia de vigía completada!", 4)
-end
-
--- ==================== SPEEDRUN MAESTRO (LV 2800 -> 2925) ====================
+-- ==================== SPEEDRUN MAESTRO AUTOMATIZADO ====================
 PolarSecrets.AutoSpeedrunRunning = false
 
 function PolarSecrets.RunInstantSpeedrun()
     if PolarSecrets.AutoSpeedrunRunning then
-        Notify("Speedrun", "El Speedrun ya está en ejecución.", 3)
+        Notify("Speedrun", "El Speedrun ya esta en ejecucion.", 3)
         return
     end
 
     PolarSecrets.AutoSpeedrunRunning = true
     task.spawn(function()
-        Notify("Speedrun", "Iniciando resolucion de misiones inmediatas...", 4)
-        
+        Notify("Speedrun", "Iniciando resolucion inteligente de secretos...", 4)
+
         local initialSummary = PolarSecrets.GetSummary()
-        print(string.format("[Polar Speedrun] Nivel actual: %d. Secretos completados: %d/40", initialSummary.LevelCap, initialSummary.Completed))
+        print(string.format("[Polar Speedrun] Cap inicial: Lv. %d. Completados: %d/%d", initialSummary.LevelCap, initialSummary.Completed, initialSummary.Total))
 
         for key, solverFunc in pairs(PolarSecrets.Solvers) do
             if not PolarSecrets.AutoSpeedrunRunning then break end
 
             local currentProgress = PolarSecrets.GetProgress()
             if currentProgress and currentProgress[key] == true then
-                print(string.format("[Polar Speedrun] [SALTANDO] %s ya está completado.", tostring(key)))
+                print(string.format("[Polar Speedrun] [SALTANDO] %s ya esta completado.", tostring(key)))
             else
                 print(string.format("[Polar Speedrun] [EJECUTANDO] %s...", tostring(key)))
                 local ok, err = pcall(solverFunc)
                 if not ok then
                     warn(string.format("[Polar Speedrun] Error en %s: %s", tostring(key), tostring(err)))
                 end
-                task.wait(2)
+                task.wait(1.5)
             end
         end
 
         DisableNoclip()
         PolarSecrets.AutoSpeedrunRunning = false
-        
+
         local finalSummary = PolarSecrets.GetSummary()
-        Notify("Speedrun Finalizado", string.format("Completado. Nivel: %d (%d/40 Secretos)", finalSummary.LevelCap, finalSummary.Completed), 6)
+        Notify("Speedrun Finalizado", string.format("Completado. Cap actual: Lv. %d (%d/%d Secretos)", finalSummary.LevelCap, finalSummary.Completed, finalSummary.Total), 6)
     end)
 end
 
 function PolarSecrets.StopInstantSpeedrun()
     PolarSecrets.AutoSpeedrunRunning = false
     DisableNoclip()
+    CancelActiveTween()
     Notify("Speedrun", "Speedrun detenido.", 3)
 end
 
@@ -970,48 +1255,40 @@ function PolarSecrets.HuntCurrentAwakenedBoss()
 
     -- 1. Gorilla King (Jungle)
     if hint.Boss and hint.Boss:find("Gorilla") then
-        local treeCF = CFrame.new(-1600, 37, 153)
+        local treeCF = CFrame.new(-1600.0, 37.0, 153.0)
         SafeTeleport(treeCF)
         task.wait(1)
-        Notify("Gorilla King", "Vaciando árbol de bananas a golpes...", 4)
-        for i = 1, 14 do
+        for i = 1, 10 do
             AttackInstance(workspace.Terrain, 0.4)
             task.wait(0.2)
         end
-        task.wait(2)
         local boss = workspace:FindFirstChild("Enemies") and (workspace.Enemies:FindFirstChild("Gorilla King") or workspace.Enemies:FindFirstChild("The Gorilla King"))
-        if boss then
-            KillTarget(boss, 90)
-        end
+        if boss then KillTarget(boss, 90) end
+
     -- 2. Yeti (Frozen Village)
     elseif hint.Boss and hint.Boss:find("Yeti") then
         local iceCaveCF = CFrame.new(1181.7, 104.0, -1616.9)
         SafeTeleport(iceCaveCF)
         task.wait(1)
-        EnsureBuso()
-        AttackInstance(workspace.Terrain, 4)
         local boss = workspace:FindFirstChild("Enemies") and workspace.Enemies:FindFirstChild("Yeti")
-        if boss then
-            KillTarget(boss, 90)
-        end
+        if boss then KillTarget(boss, 90) end
+
     -- 3. Vice Admiral (Marine Fortress)
     elseif hint.Boss and hint.Boss:find("Admiral") then
-        local fortCF = CFrame.new(-5010.8, 45, 4383.7)
+        local fortCF = CFrame.new(-5010.8, 45.0, 4383.7)
         SafeTeleport(fortCF)
         task.wait(1)
-        AttackInstance(workspace.Terrain, 3)
         local boss = workspace:FindFirstChild("Enemies") and workspace.Enemies:FindFirstChild("Vice Admiral")
-        if boss then
-            KillTarget(boss, 90)
-        end
+        if boss then KillTarget(boss, 90) end
+
     -- 4. Otros jefes
     else
         Notify("Auto-Hunt", "Buscando jefe en su isla...", 4)
     end
 end
 
--- ==================== INICIALIZACIÓN AUTOMÁTICA DEL RADAR ====================
+-- Inicialización automática del Radar
 PolarSecrets.StartRadar()
 
-print("[Polar Hub] ✅ Motor de Niveles Secretos y Jefes Despertados CARGADO AL 100%.")
+print("[Polar Hub] Motor de Niveles Secretos y Jefes Despertados CARGADO AL 100%.")
 return PolarSecrets

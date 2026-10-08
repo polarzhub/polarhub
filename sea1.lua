@@ -883,8 +883,8 @@ task.spawn(function()
 		pcall(function()
 			if PolarSecrets and PolarSecrets.GetSummary then
 				local s = PolarSecrets.GetSummary()
-				local progressText = string.format("Completados: %d/40 (%.1f%%)\nCap Actual: Lv. %d/3000\nPendientes: +%d niveles",
-					s.Completed, (s.Completed / s.Total) * 100, s.LevelCap, s.Pending * 5)
+				local progressText = string.format("Completados: %d/%d (%.1f%%)\nCap Actual: Lv. %d/3000\nPendientes: +%d niveles",
+					s.Completed, s.Total, (s.Completed / math.max(1, s.Total)) * 100, s.LevelCap, s.Pending * 5)
 				UpdatePara(SecretsProgressPara, progressText)
 			end
 
@@ -923,7 +923,7 @@ TabQuest:AddToggle({
 })
 
 TabQuest:AddButton({
-	Name = "Iniciar Speedrun (23 Misiones)",
+	Name = "Iniciar Speedrun (39 Misiones)",
 	Callback = function()
 		if PolarSecrets and PolarSecrets.RunInstantSpeedrun then
 			PolarSecrets.RunInstantSpeedrun()
@@ -951,35 +951,47 @@ TabQuest:AddButton({
 	end
 })
 
--- Selector individual con nombres limpios y compactos
+-- Selector individual con nombres limpios y compactos (39 Misiones de Sea 1)
 local SecretOptions = {
 	["Hasan (Desert)"] = "Sea1/Desert/Rescue Hasan",
 	["Cactus (Desert)"] = "Sea1/Desert/Prickly Harvest",
+	["Tableta (Desert)"] = "Sea1/Desert/Archaeologist's Tablet",
 	["Iceberg (Snow)"] = "Sea1/Frozen Village/Breaking the Ice",
 	["Muñeco Nieve (Snow)"] = "Sea1/Frozen Village/Snowman",
+	["Defensa Helada (Snow)"] = "Sea1/Frozen Village/Frozen Defense",
 	["Tirolesa (Jungle)"] = "Sea1/Jungle/Zipline Repair",
 	["Mono Ladron (Jungle)"] = "Sea1/Jungle/The Thieving Monkey",
+	["Arbol Banana (Jungle)"] = "Sea1/Jungle/Banana Tree",
+	["Molino (Pirate)"] = "Sea1/Pirate Village/Windmill Maintenance",
 	["Taberna (Pirate)"] = "Sea1/Pirate Village/Tavern Brawl",
+	["Chef Cald (Pirate)"] = "Sea1/Pirate Village/Chef's Kiss",
 	["Bandera (Marine)"] = "Sea1/Marine Fortress/Fortress Flagpole",
+	["Planes (Marine)"] = "Sea1/Marine Fortress/Battle Plans",
+	["Alarma (Marine)"] = "Sea1/Marine Fortress/Fortress Under Fire",
 	["Don Megalo (Prison)"] = "Sea1/Prison/Don Megalo",
 	["Fuga Alcatraz (Prison)"] = "Sea1/Prison/Escape from Alcatraz",
 	["Palancas (Prison)"] = "Sea1/Prison/Lever Jailbreak",
+	["Puerta Dev (Middle)"] = "Sea1/Middle Town/Early Access",
+	["Vigia (Middle)"] = "Sea1/Middle Town/Lookout",
+	["Mapa Tesoro (Middle)"] = "Sea1/Middle Town/X Marks The Spot",
 	["Rey Aprendiz (Coliseum)"] = "Sea1/Colosseum/King's Apprentice",
 	["Estatuas (Coliseum)"] = "Sea1/Colosseum/Legendary Creator Statues",
+	["Punteria (Coliseum)"] = "Sea1/Colosseum/Crowd Favorite",
 	["Slimes (Magma)"] = "Sea1/Magma Village/Evil Slimes",
-	["Mineral Magma (Magma)"] = "Sea1/Magma Village/Magma Ore Extraction",
-	["Maestro Electric (Sky)"] = "Sea1/Sky/Electric Fighting Teacher",
-	["Boveda Secreta (Sky)"] = "Sea1/Sky/Unexpected Guest",
+	["Mineral (Magma)"] = "Sea1/Magma Village/Magma Ore Extraction",
+	["Erupcion (Magma)"] = "Sea1/Magma Village/One Last Eruption",
+	["Maestro Elect (Sky)"] = "Sea1/Sky/Electric Fighting Teacher",
+	["Boveda (Sky)"] = "Sea1/Sky/Unexpected Guest",
 	["Joyas Payaso (Sky)"] = "Sea1/Sky/The Clown's Jewels",
 	["Campana Dorada (Sky2)"] = "Sea1/SkyArea2/Echoes Through the Clouds",
 	["Templo Intel (Sky2)"] = "Sea1/SkyArea2/Temple Intel",
-	["Cofre Maldito (Fishman)"] = "Sea1/Underwater City/Beyond the Bubble",
+	["Altar Rayo (Sky2)"] = "Sea1/SkyArea2/The Tyrant Awakens",
+	["Cofre Burbuja (Fishman)"] = "Sea1/Underwater City/Beyond the Bubble",
 	["Puzzle Karate (Fishman)"] = "Sea1/Underwater City/Fishman Karate",
 	["Perlas Almeja (Fishman)"] = "Sea1/Underwater City/Pearl of the Deep",
 	["Tuberias (Fountain)"] = "Sea1/Fountain/Fountain Pipe Repair",
 	["Alcantarillas (Fountain)"] = "Sea1/Fountain/Sewer Gangs",
-	["Mapa Tesoro (Middle)"] = "Sea1/Middle Town/X Marks The Spot",
-	["Guardia Vigia (Middle)"] = "Sea1/Middle Town/Lookout"
+	["Cables Cyborg (Fountain)"] = "Sea1/Fountain/Fountain Wire Repair"
 }
 
 local SecretDropdownKeys = {}
