@@ -1077,24 +1077,90 @@ local function applyTransformationVisuals(character, fruitConfig)
         pcall(function() character:ScaleTo(2.2) end)
 
     elseif tType == "DRAGON_BEAST" then
-        -- Dragón
-        local dt = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Models") and ReplicatedStorage.Assets.Models:FindFirstChild("DragonTransformation")
-        if dt then
-            local dClone = dt:Clone()
-            dClone.Name = "DragonMorph"
-            unanchorModel(dClone)
-            local dPart = dClone.PrimaryPart or dClone:FindFirstChildWhichIsA("BasePart")
-            if dPart then
-                local w = Instance.new("Weld")
-                w.Part0 = root
-                w.Part1 = dPart
-                w.C0 = CFrame.new(0, 1, 1.5)
-                w.Parent = dPart
+        -- Dragon Rework Completo (DracoWings, DracoTail, Halo & Aura)
+        local dragonContainer = Instance.new("Model")
+        dragonContainer.Name = "DragonReworkMorph"
+        dragonContainer.Parent = character
+        activeTransformationModel = dragonContainer
+
+        local torso = character:FindFirstChild("UpperTorso") or character:FindFirstChild("Torso") or root
+        local skinnedRigs = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("SkinnedRigs")
+
+        -- DracoWings
+        pcall(function()
+            if skinnedRigs and skinnedRigs:FindFirstChild("Wings") and skinnedRigs.Wings:FindFirstChild("DracoWings") then
+                local wings = skinnedRigs.Wings.DracoWings:Clone()
+                wings.Name = "DragonWings"
+                unanchorModel(wings)
+                local wPart = wings.PrimaryPart or wings:FindFirstChildWhichIsA("BasePart")
+                if wPart then
+                    local w = Instance.new("Weld")
+                    w.Part0 = torso
+                    w.Part1 = wPart
+                    w.C0 = CFrame.new(0, 0.5, 1.2) * CFrame.Angles(0, math.rad(180), 0)
+                    w.Parent = wPart
+                end
+                wings.Parent = dragonContainer
             end
-            dClone.Parent = character
-            activeTransformationModel = dClone
-        end
-        pcall(function() character:ScaleTo(1.35) end)
+        end)
+
+        -- DracoTail
+        pcall(function()
+            if skinnedRigs and skinnedRigs:FindFirstChild("Tails") and skinnedRigs.Tails:FindFirstChild("DracoTail") then
+                local tail = skinnedRigs.Tails.DracoTail:Clone()
+                tail.Name = "DragonTail"
+                unanchorModel(tail)
+                local tPart = tail.PrimaryPart or tail:FindFirstChildWhichIsA("BasePart")
+                if tPart then
+                    local w = Instance.new("Weld")
+                    w.Part0 = torso
+                    w.Part1 = tPart
+                    w.C0 = CFrame.new(0, -1.2, 1.0) * CFrame.Angles(math.rad(-25), math.rad(180), 0)
+                    w.Parent = tPart
+                end
+                tail.Parent = dragonContainer
+            end
+        end)
+
+        -- Halo de Dragon Oriental (FX.EasternDragon.Halo)
+        pcall(function()
+            local edFX = FX:FindFirstChild("EasternDragon") or (type(FX) == "table" and FX.Get and FX:Get("EasternDragon"))
+            if edFX and edFX:FindFirstChild("Halo") then
+                local halo = edFX.Halo:Clone()
+                halo.Name = "DragonHalo"
+                unanchorModel(halo)
+                local hPart = halo.PrimaryPart or halo:FindFirstChild("RootPart") or halo:FindFirstChildWhichIsA("BasePart")
+                if hPart then
+                    local w = Instance.new("Weld")
+                    w.Part0 = root
+                    w.Part1 = hPart
+                    w.C0 = CFrame.new(0, 5.5, -0.5) * CFrame.Angles(math.rad(90), 0, 0)
+                    w.Parent = hPart
+                end
+                halo.Parent = dragonContainer
+            end
+        end)
+
+        -- Aura de Transformacion (Wind Vortex)
+        pcall(function()
+            local dt = ReplicatedStorage:FindFirstChild("Assets") and ReplicatedStorage.Assets:FindFirstChild("Models") and ReplicatedStorage.Assets.Models:FindFirstChild("DragonTransformation")
+            if dt then
+                local dClone = dt:Clone()
+                dClone.Name = "DragonWind"
+                unanchorModel(dClone)
+                local dPart = dClone.PrimaryPart or dClone:FindFirstChildWhichIsA("BasePart")
+                if dPart then
+                    local w = Instance.new("Weld")
+                    w.Part0 = root
+                    w.Part1 = dPart
+                    w.C0 = CFrame.new(0, 0, 0)
+                    w.Parent = dPart
+                end
+                dClone.Parent = dragonContainer
+            end
+        end)
+
+        pcall(function() character:ScaleTo(1.45) end)
 
     elseif tType == "DOUGH_AWAKENED" then
         -- Dough Despertado
