@@ -5,6 +5,9 @@
 -- Esperar a que el juego cargue completamente antes de inyectar
 repeat task.wait() until game:IsLoaded()
 
+getgenv()._PolarCoreSessionId = (getgenv()._PolarCoreSessionId or 0) + 1
+local myCoreSession = getgenv()._PolarCoreSessionId
+
 -- -- Limpiar cualquier instancia previa de la interfaz antes de cargar la librería para evitar ventanas duplicadas
 pcall(function()
 	local targets = {
@@ -941,6 +944,8 @@ Polar.Teleport = Polar.Teleport or {}
 Polar.Teleport.IsTeleporting = false
 Polar.Teleport.ActiveTween = nil
 Polar.Teleport._moveToken = 0
+Polar.Teleport.TweenSpeed = Polar.Teleport.TweenSpeed or getgenv().PolarTweenSpeed or 175
+getgenv().PolarTweenSpeed = Polar.Teleport.TweenSpeed
 
 local activeTween = nil
 
@@ -960,12 +965,20 @@ function Polar.Teleport:Cancel()
  self.IsTeleporting = false
 end
 
+local CORE_COLLIDABLE_PARTS = {
+ HumanoidRootPart = true,
+ Torso = true,
+ UpperTorso = true,
+ LowerTorso = true,
+ Head = true
+}
+
 local function RestoreLimbCollision(char, savedMap)
  if not char or not savedMap then return end
  for part, origCollide in pairs(savedMap) do
   if part and part.Parent and part:IsA("BasePart") then
    pcall(function()
-    part.CanCollide = origCollide
+    part.CanCollide = CORE_COLLIDABLE_PARTS[part.Name] and true or origCollide
    end)
   end
  end
@@ -1036,39 +1049,61 @@ local function MoveDirectly(targetCFrame)
  end)
 
  local arrived = false
- local tweenSpeed = math.max(10, (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150)
+ local function GetConfiguredTweenSpeed()
+  local raw = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 175
+  return math.clamp(tonumber(raw) or 175, 10, 250)
+ end
 
  local function DoTween(cframeTarget)
-  if Polar.Teleport._moveToken ~= myToken or not hrp.Parent or hum.Health <= 0 then return end
-  local tDist = (hrp.Position - cframeTarget.Position).Magnitude
-  if tDist <= 5 then
-   arrived = true
-   return
-  end
-  tweenSpeed = math.max(10, (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150)
-  local duration = math.max(0.05, tDist / tweenSpeed)
-  local tInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
-  local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
-  activeTween = tween
-  Polar.Teleport.ActiveTween = tween
-
-  local finished = false
-  local completedConn = tween.Completed:Connect(function()
-   finished = true
-  end)
-  tween:Play()
-
-  while not finished do
-   if Polar.Teleport._moveToken ~= myToken or not hrp.Parent or not hum.Parent or hum.Health <= 0 then
-    pcall(function() tween:Cancel() end)
-    break
+  while Polar.Teleport._moveToken == myToken and hrp.Parent and hum.Parent and hum.Health > 0 do
+   local tDist = (hrp.Position - cframeTarget.Position).Magnitude
+   if tDist <= 5 then
+    arrived = true
+    return
    end
-   task.wait(0.05)
-  end
 
-  if completedConn then pcall(function() completedConn:Disconnect() end) end
-  if activeTween == tween then activeTween = nil end
-  if Polar.Teleport.ActiveTween == tween then Polar.Teleport.ActiveTween = nil end
+   local segSpeed = GetConfiguredTweenSpeed()
+   local duration = math.max(0.05, tDist / segSpeed)
+   local tInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+   local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
+   activeTween = tween
+   Polar.Teleport.ActiveTween = tween
+
+   local finished = false
+   local speedChanged = false
+   local completedConn = tween.Completed:Connect(function()
+    finished = true
+   end)
+   tween:Play()
+
+   while not finished do
+    if Polar.Teleport._moveToken ~= myToken or not hrp.Parent or not hum.Parent or hum.Health <= 0 then
+     pcall(function() tween:Cancel() end)
+     if completedConn then pcall(function() completedConn:Disconnect() end) end
+     if activeTween == tween then activeTween = nil end
+     if Polar.Teleport.ActiveTween == tween then Polar.Teleport.ActiveTween = nil end
+     return
+    end
+    local liveSpeed = GetConfiguredTweenSpeed()
+    if math.abs(liveSpeed - segSpeed) >= 2 then
+     speedChanged = true
+     pcall(function() tween:Cancel() end)
+     break
+    end
+    task.wait(0.05)
+   end
+
+   if completedConn then pcall(function() completedConn:Disconnect() end) end
+   if activeTween == tween then activeTween = nil end
+   if Polar.Teleport.ActiveTween == tween then Polar.Teleport.ActiveTween = nil end
+
+   if not speedChanged then
+    if (hrp.Position - cframeTarget.Position).Magnitude <= 15 then
+     arrived = true
+    end
+    return
+   end
+  end
  end
 
  DoTween(targetCFrame)
@@ -2275,44 +2310,156 @@ function Polar.Detection:FindEnemy(enemyName)
  return nil, nil
 end
 
+Polar.Data.EnemySpawnClusters = Polar.Data.EnemySpawnClusters or {}
+Polar.Data._ProvisionalSpawnClusters = Polar.Data._ProvisionalSpawnClusters or {}
+
+local function CleanEnemySpawnName(rawName)
+ local s = tostring(rawName or ""):gsub("%s*%[.-%]%s*", ""):gsub("^%s+", ""):gsub("%s+$", "")
+ return string.lower(s)
+end
+
+local function RecordEnemySpawnPoint(rawName, pos, isProvisional)
+ local key = CleanEnemySpawnName(rawName)
+ if key == "" or not pos then return end
+ if isProvisional then
+  if Polar.Data.EnemySpawnClusters[key] and #Polar.Data.EnemySpawnClusters[key] > 0 then
+   return
+  end
+  Polar.Data._ProvisionalSpawnClusters[key] = Polar.Data._ProvisionalSpawnClusters[key] or {}
+  local bucket = Polar.Data._ProvisionalSpawnClusters[key]
+  for _, existing in ipairs(bucket) do
+   if (existing - pos).Magnitude < 12 then return end
+  end
+  table.insert(bucket, pos)
+  return
+ end
+
+ Polar.Data._ProvisionalSpawnClusters[key] = nil
+ Polar.Data.EnemySpawnClusters[key] = Polar.Data.EnemySpawnClusters[key] or {}
+ local bucket = Polar.Data.EnemySpawnClusters[key]
+ for _, existing in ipairs(bucket) do
+  if (existing - pos).Magnitude < 12 then return end
+ end
+ table.insert(bucket, pos)
+end
+
+local function AttachEnemySpawnListener(es)
+ if not es or Polar.Data._SpawnChildConn then return end
+ Polar.Data._SpawnChildConn = es.ChildAdded:Connect(function(sp)
+  task.defer(function()
+   if sp and sp.Parent then
+    if sp:IsA("BasePart") then
+     RecordEnemySpawnPoint(sp.Name, sp.Position, false)
+    elseif sp:IsA("Model") then
+     RecordEnemySpawnPoint(sp.Name, sp:GetPivot().Position, false)
+    end
+   end
+  end)
+ end)
+end
+
+local function CaptureCurrentEnemySpawns()
+ local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
+ local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
+ if enemySpawns then
+  AttachEnemySpawnListener(enemySpawns)
+  for _, sp in ipairs(enemySpawns:GetChildren()) do
+   if sp:IsA("BasePart") then
+    RecordEnemySpawnPoint(sp.Name, sp.Position, false)
+   elseif sp:IsA("Model") then
+    RecordEnemySpawnPoint(sp.Name, sp:GetPivot().Position, false)
+   end
+  end
+ end
+ return enemySpawns
+end
+
+local function ComputeBestClusterCentroid(points)
+ if not points or #points == 0 then return nil end
+ if #points == 1 then return points[1] end
+
+ local bestCluster = {points[1]}
+ for _, anchor in ipairs(points) do
+  local group = {}
+  for _, p in ipairs(points) do
+   if (p - anchor).Magnitude <= 500 then
+    table.insert(group, p)
+   end
+  end
+  if #group > #bestCluster then
+   bestCluster = group
+  end
+ end
+
+ local sum = Vector3.zero
+ for _, p in ipairs(bestCluster) do
+  sum = sum + p
+ end
+ return sum / #bestCluster
+end
+
+CaptureCurrentEnemySpawns()
+
+local function ResolveStaticClusterPosition(det, enemyName)
+ if not enemyName or enemyName == "" then return nil end
+ CaptureCurrentEnemySpawns()
+ local targetKey = CleanEnemySpawnName(enemyName)
+
+ local pts = Polar.Data.EnemySpawnClusters[targetKey]
+ if pts and #pts > 0 then
+  return ComputeBestClusterCentroid(pts)
+ end
+
+ for key, list in pairs(Polar.Data.EnemySpawnClusters) do
+  if #list > 0 and det:FuzzyMatch(key, enemyName) then
+   return ComputeBestClusterCentroid(list)
+  end
+ end
+
+ local prov = Polar.Data._ProvisionalSpawnClusters[targetKey]
+ if prov and #prov > 0 then
+  return ComputeBestClusterCentroid(prov)
+ end
+
+ return nil
+end
+
 function Polar.Detection:GetEnemySpawnCFrame(enemyName)
  if not enemyName or enemyName == "" then return nil end
  
  local mob, hrp = self:FindEnemy(enemyName)
- if hrp then return hrp.CFrame end
- 
- if Polar.Data.SpawnCache[enemyName] then
- local pos = Polar.Data.SpawnCache[enemyName]
- return typeof(pos) == "Vector3" and CFrame.new(pos) or pos
+ if hrp then
+  RecordEnemySpawnPoint(mob.Name, hrp.Position, true)
+  return hrp.CFrame
  end
 
- local worldOrigin = workspace:FindFirstChild("_WorldOrigin")
- local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
- if enemySpawns then
- for _, spawnPart in ipairs(enemySpawns:GetChildren()) do
- if self:FuzzyMatch(spawnPart.Name, enemyName) then
- local cf = spawnPart.CFrame
- Polar.Data.SpawnCache[enemyName] = cf
- return cf
+ local clusterPos = ResolveStaticClusterPosition(self, enemyName)
+ if clusterPos then
+  local cf = CFrame.new(clusterPos)
+  Polar.Data.SpawnCache[enemyName] = cf
+  return cf
  end
- end
+ 
+ if Polar.Data.SpawnCache[enemyName] then
+  local pos = Polar.Data.SpawnCache[enemyName]
+  return typeof(pos) == "Vector3" and CFrame.new(pos) or pos
  end
 
  if FallbackPositions and FallbackPositions[enemyName] then
- local pos = FallbackPositions[enemyName]
- local cf = typeof(pos) == "Vector3" and CFrame.new(pos) or pos
- Polar.Data.SpawnCache[enemyName] = cf
- return cf
+  local pos = FallbackPositions[enemyName]
+  local cf = typeof(pos) == "Vector3" and CFrame.new(pos) or pos
+  Polar.Data.SpawnCache[enemyName] = cf
+  return cf
  end
 
  if Polar.Data.QuestInfo then
- for _, qData in ipairs(Polar.Data.QuestInfo) do
- if qData.name and self:FuzzyMatch(qData.name, enemyName) and qData.pos then
- local cf = qData.pos
- Polar.Data.SpawnCache[enemyName] = cf
- return cf
- end
- end
+  for _, qData in ipairs(Polar.Data.QuestInfo) do
+   if qData.name and self:FuzzyMatch(qData.name, enemyName) and qData.pos then
+    local cf = qData.pos
+    Polar.Data.SpawnCache[enemyName] = cf
+    return cf
+   end
+  end
  end
 
  return nil
@@ -2356,6 +2503,12 @@ end
 function Polar.World:GetEnemySpawnPosition(enemyName)
  local cf = Polar.Detection:GetEnemySpawnCFrame(enemyName)
  return cf and cf.Position or nil
+end
+
+function Polar.World:GetEnemySpawnCenter(enemyName)
+ local clusterPos = ResolveStaticClusterPosition(Polar.Detection, enemyName)
+ if clusterPos then return clusterPos end
+ return self:GetEnemySpawnPosition(enemyName)
 end
 
 function Polar.World:IsEnemyAlive(enemyName)
@@ -3131,14 +3284,14 @@ end
 -- ==================== CEREBRO AUTO FARM CENTRAL ====================
 local QuestTryCount = 0
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  task.wait(0.1)
  local char = LocalPlayer.Character
  local hrp = char and char:FindFirstChild("HumanoidRootPart")
  local hum = char and char:FindFirstChild("Humanoid")
  if not hrp or not hum or hum.Health <= 0 then continue end
  
- local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant
+ local anyFarmActive = (AutoFarmEnabled and getgenv().PolarAutoFarmEnabled ~= false) or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant
 
  -- DECONFLICTION: If PolarMastery is active, it handles combat/farming exclusively without collision
  if getgenv().PolarMastery and (getgenv().PolarMastery.AutoBones or getgenv().PolarMastery.AutoFarm or getgenv().PolarMastery.AutoFarmBoss or getgenv().PolarMastery.AutoKillAllBosses) then
@@ -3498,8 +3651,8 @@ local FastAttackRange = 65
 local FastAttackCombo = 1
 
 task.spawn(function()
-	while true do
-		local anyFarmActive = AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant or KillAuraEnabled
+	while getgenv()._PolarCoreSessionId == myCoreSession do
+		local anyFarmActive = (AutoFarmEnabled and getgenv().PolarAutoFarmEnabled ~= false) or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled or getgenv().PolarAutoBonesEnabled or getgenv().PolarAutoDoughKingEnabled or getgenv().PolarAutoTyrant or KillAuraEnabled
 
 		-- DECONFLICTION: If PolarMastery is active, it handles M1 and skill attacks exclusively
 		if getgenv().PolarMastery and (getgenv().PolarMastery.AutoBones or getgenv().PolarMastery.AutoFarm or getgenv().PolarMastery.AutoFarmBoss or getgenv().PolarMastery.AutoKillAllBosses) then
@@ -3587,7 +3740,7 @@ end)
 -- ==================== AUTO CHEST ====================
 local AutoChestEnabled = false
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  if not AutoChestEnabled then
  task.wait(1)
  continue
@@ -3639,7 +3792,7 @@ local AutoStatsEnabled = false
 local activeStats = {}
 
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  if not AutoStatsEnabled then
  task.wait(1)
  continue
@@ -3938,17 +4091,17 @@ SecMainFarm:AddSlider({
 	end
 })
 
-SecMainFarm:AddSlider({
+Polar.Registry:BindSlider(SecMainFarm, {
 	Name = "Tween Speed",
 	Min = 50,
 	Max = 250,
-	Default = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150,
+	Default = math.clamp((Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 175, 50, 250),
 	Step = 5,
 	Callback = function(Value)
 		if Polar.Teleport then Polar.Teleport.TweenSpeed = Value end
 		getgenv().PolarTweenSpeed = Value
 	end
-})
+}, "Polar.Teleport.TweenSpeed")
 
 SecMainFarm:AddDropdown({
 	Name = "Primary Weapon",
@@ -4187,7 +4340,7 @@ end
 
 -- Actualización periódica en tiempo real del status del boss seleccionado en Home
 task.spawn(function()
-	while true do
+	while getgenv()._PolarCoreSessionId == myCoreSession do
 		task.wait(2)
 		pcall(function()
 			if Polar.UpdateBossHunterStatus then
@@ -4693,7 +4846,7 @@ TabCombat:AddToggle({
 -- Bring Target: Trae al jugador enemigo cerca de ti (no usa hooks)
 
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  task.wait(0.1)
  if CombatModeEnabled and BringTargetEnabled then
  pcall(function()
@@ -4773,7 +4926,7 @@ TabServers:AddParagraph({
 -- ==================== LOGICA DE UTILIDADES Y COMBATE EXTREMO ====================
 
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  task.wait(1)
  if AutoSkillsEnabled and (AutoFarmEnabled or getgenv().PolarAutoFarmBossEnabled or getgenv().PolarAutoFarmAllBossesEnabled or getgenv().PolarAutoSaberExpertEnabled or getgenv().PolarAutoMobLeaderEnabled or AutoFarmNearestEnabled) then
  pcall(function()
@@ -4789,7 +4942,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  task.wait(2)
  if FruitFinderEnabled then
  for _, v in ipairs(workspace:GetDescendants()) do
@@ -4901,7 +5054,7 @@ task.spawn(function()
  -- ==================== EVALUACIÓN DE COMANDOS REMOTOS (AI BRIDGE) ====================
  task.spawn(function()
  task.wait(2)
- while true do
+ while getgenv()._PolarCoreSessionId == myCoreSession do
  task.wait(1.5)
  pcall(function()
  local response = request_func({

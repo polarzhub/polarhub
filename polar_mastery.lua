@@ -264,11 +264,19 @@ local function ensureHoverCharCache(char)
     end
 end
 
+local HOVER_CORE_COLLIDABLE = {
+    HumanoidRootPart = true,
+    Torso = true,
+    UpperTorso = true,
+    LowerTorso = true,
+    Head = true
+}
+
 local function restoreHoverCharCollisions()
     if next(savedCharCanCollide) == nil then return end
     for part, orig in pairs(savedCharCanCollide) do
         if part and part.Parent and part:IsA("BasePart") then
-            pcall(function() part.CanCollide = orig end)
+            pcall(function() part.CanCollide = HOVER_CORE_COLLIDABLE[part.Name] and true or orig end)
         end
     end
     cachedCharRef = nil
@@ -463,6 +471,7 @@ function PolarMastery:StopAll()
     self.CurrentTargetRoot = nil
     self.CurrentAimPos = nil
     self.IsBusyWithSkills = false
+    lastNearestCombatPos = nil
     getgenv().PolarAutoFarmEnabled = false
     getgenv().PolarAutoBonesEnabled = false
     getgenv().PolarFastAttackEnabled = false
@@ -575,28 +584,28 @@ local function updateHoverEngine()
     local hum = char and char:FindFirstChildOfClass("Humanoid")
 
     local Polar = getgenv().Polar
-    local isTeleporting = (Polar and Polar.Teleport and Polar.Teleport.IsTeleporting) or PolarMastery.IsTraveling
+    local isTeleporting = (Polar and Polar.Teleport and (Polar.Teleport.IsTeleporting or Polar.Teleport.IsTraveling)) or PolarMastery.IsTraveling
     if not isActive or not root or not hum or hum.Health <= 0 or not PolarMastery.TargetHoverCFrame or isTeleporting then
         clearHoverInstances()
         return
     end
 
-    -- Ancla BodyVelocity cinemtico permanente (inmune a cambios de fruta o animaciones)
+    -- Ancla BodyVelocity cinematico permanente (reafirma MaxForce cada frame contra MovesetClientRunner)
     if not hoverVelocity or hoverVelocity.Parent ~= root then
         if hoverVelocity then pcall(function() hoverVelocity:Destroy() end) end
         hoverVelocity = Instance.new("BodyVelocity")
         hoverVelocity.Name = "PolarHoverAnchor"
-        hoverVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-        hoverVelocity.Velocity = Vector3.zero
         hoverVelocity.Parent = root
     end
+    hoverVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    hoverVelocity.Velocity = Vector3.zero
 
-    -- Fijacin directa sin oscilacin
+    -- Fijacion directa sin oscilacion
     root.CFrame = PolarMastery.TargetHoverCFrame
     root.AssemblyLinearVelocity = Vector3.zero
     root.AssemblyAngularVelocity = Vector3.zero
 
-    -- Prevenir estados de cada libre generados por herramientas de fruta
+    -- Prevenir estados de caida libre generados por herramientas de fruta
     pcall(function()
         local st = hum:GetState()
         if st == Enum.HumanoidStateType.Freefall or st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Ragdoll then
@@ -863,33 +872,47 @@ function PolarMastery:CastKey(key, holdSeconds, targetRoot)
                 Changed = ev.Event
             }
 
-            GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, fakeInput)
-            task.wait(0.08)
-            activated = (GlobalModule.busy ~= nil and GlobalModule.busy ~= false)
+            -- MovesetClientRunner.casFunc ejecuta run() con coroutine.yield(); aislar en task.spawn evita bloquear el loop ni deadlocks en skills mantenidas
+            local casDone = false
+            task.spawn(function()
+                pcall(function()
+                    GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, fakeInput)
+                end)
+                casDone = true
+            end)
 
-            local duration = math.min(holdSeconds or 0, 0.8)
-            if activated and duration > 0.08 then
-                local startTime = os.clock()
-                while (os.clock() - startTime) < duration and GlobalModule.busy do
-                    local center = self.ClusterCenterPos or (targetRoot and targetRoot.Parent and targetRoot.Position)
-                    if center then
-                        self.TargetHoverCFrame = CFrame.new(center + Vector3.new(0, self.HoverHeight or 16.5, 0))
-                    end
-                    if hoverVelocity and hoverVelocity.Parent then
-                        hoverVelocity.Velocity = Vector3.zero
-                    end
-                    task.wait(0.04)
+            task.wait(0.08)
+            activated = casDone or (GlobalModule.busy ~= nil and GlobalModule.busy ~= false)
+
+            local duration = math.clamp(holdSeconds or 0, 0.04, 0.55)
+            local startTime = os.clock()
+            while (os.clock() - startTime) < duration and not casDone and GlobalModule.busy do
+                local stillActive = self.AutoBones or self.AutoFarm or self.AutoFarmBoss or self.AutoKillAllBosses
+                if not stillActive then break end
+                local center = self.ClusterCenterPos or (targetRoot and targetRoot.Parent and targetRoot.Position)
+                if center then
+                    self.TargetHoverCFrame = CFrame.new(center + Vector3.new(0, self.HoverHeight or 16.5, 0))
                 end
+                if hoverVelocity and hoverVelocity.Parent then
+                    hoverVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+                    hoverVelocity.Velocity = Vector3.zero
+                end
+                task.wait(0.04)
             end
 
             fakeInput.UserInputState = Enum.UserInputState.End
             pcall(function() ev:Fire("UserInputState") end)
-            pcall(function() GlobalModule.casFunc("DevilFruit", Enum.UserInputState.End, fakeInput) end)
-            ev:Destroy()
+            task.spawn(function()
+                pcall(function() GlobalModule.casFunc("DevilFruit", Enum.UserInputState.End, fakeInput) end)
+            end)
+            task.delay(0.15, function()
+                pcall(function() ev:Destroy() end)
+            end)
         else
+            local hold = math.clamp(holdSeconds or 0.05, 0.04, 0.3)
             pcall(function()
                 VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
-                task.wait(math.min(holdSeconds or 0.05, 0.3))
+                task.wait(hold)
                 VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
                 activated = true
             end)
@@ -969,11 +992,11 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
         elseif self.MasteryTarget == "Gun" then keys = self.GunKeys
         end
 
-        local delay = self.SkillDelays[self.MasteryTarget] or 0
+        local delay = math.clamp(self.SkillDelays[self.MasteryTarget] or 0, 0, 0.5)
 
         -- Intentar a lo sumo 1 habilidad lista para no bloquear M1 durante segundos
-        local launchedAny = false
         for _, key in ipairs(keys) do
+            if not (self.AutoBones or self.AutoFarm or self.AutoFarmBoss or self.AutoKillAllBosses) then break end
             local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
             if not hum or hum.Health <= 0 or not targetMob.Parent then break end
 
@@ -981,7 +1004,6 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
                 local holdSec = self.HoldTimes[key] or 0
                 local okCast = self:CastKey(key, holdSec, tRoot)
                 if okCast then
-                    launchedAny = true
                     if delay > 0 then task.wait(delay) end
                     break
                 end
@@ -1257,6 +1279,98 @@ local function findNearestMob(enemiesFolder, originPos, maxDist, enemyName)
     return bestFallback
 end
 
+local lastCombatZoneByEnemy = {}
+local lastNearestCombatPos = nil
+
+local function computeSafeWaitHoverCFrame(basePos)
+    local hoverY = math.max((PolarMastery.HoverHeight or 16.5) + 6, 22.5)
+    local mapFolder = Workspace:FindFirstChild("Map")
+    if mapFolder then
+        local params = RaycastParams.new()
+        params.FilterType = Enum.RaycastFilterType.Include
+        params.FilterDescendantsInstances = { mapFolder }
+        local hit = Workspace:Raycast(basePos + Vector3.new(0, 4, 0), Vector3.new(0, hoverY + 6, 0), params)
+        if hit and hit.Distance < (hoverY + 2) then
+            hoverY = math.clamp(hit.Distance, 10, hoverY)
+        end
+    end
+    return CFrame.new(basePos + Vector3.new(0, hoverY, 0))
+end
+
+local function findStaticSpawnCentroid(enemyName)
+    if not enemyName or enemyName == "" then return nil end
+    local Polar = getgenv().Polar
+    if Polar and Polar.World and type(Polar.World.GetEnemySpawnCenter) == "function" then
+        local center = Polar.World:GetEnemySpawnCenter(enemyName)
+        if center then return center end
+    end
+
+    local worldOrigin = Workspace:FindFirstChild("_WorldOrigin")
+    local enemySpawns = worldOrigin and worldOrigin:FindFirstChild("EnemySpawns")
+    if enemySpawns then
+        local pts = {}
+        for _, sp in ipairs(enemySpawns:GetChildren()) do
+            if MatchesEnemyName(sp.Name, enemyName) then
+                if sp:IsA("BasePart") then
+                    table.insert(pts, sp.Position)
+                elseif sp:IsA("Model") then
+                    table.insert(pts, sp:GetPivot().Position)
+                end
+            end
+        end
+        if #pts > 0 then
+            local sum = Vector3.zero
+            for _, p in ipairs(pts) do sum = sum + p end
+            return sum / #pts
+        end
+    end
+
+    if Polar and Polar.World and type(Polar.World.GetEnemySpawnPosition) == "function" then
+        local sp = Polar.World:GetEnemySpawnPosition(enemyName)
+        if sp then return sp end
+    end
+
+    return lastCombatZoneByEnemy[enemyName]
+end
+
+local function resolveFarmWaitHoverCFrame(bestQuest, targetEnemyName)
+    if targetEnemyName and targetEnemyName ~= "" then
+        local spawnCenter = findStaticSpawnCentroid(targetEnemyName)
+        if spawnCenter then
+            return computeSafeWaitHoverCFrame(spawnCenter), false
+        end
+    end
+
+    if bestQuest then
+        local Polar = getgenv().Polar
+        local giverCF = (Polar and Polar.World and Polar.World.GetQuestGiverCFrame and Polar.World:GetQuestGiverCFrame(bestQuest.qName, bestQuest.index, bestQuest.enemyName))
+            or (bestQuest.giverName and Polar and Polar.World and Polar.World.FindNPC and Polar.World:FindNPC(bestQuest.giverName))
+            or bestQuest.pos
+        if giverCF then
+            return computeSafeWaitHoverCFrame(giverCF.Position), false
+        end
+    elseif not targetEnemyName and lastNearestCombatPos then
+        return computeSafeWaitHoverCFrame(lastNearestCombatPos), false
+    end
+
+    return nil, true
+end
+
+local function safeInvokeStartQuest(qName, qIndex)
+    if not CommF or not qName or not qIndex then return end
+    local done = false
+    task.spawn(function()
+        pcall(function()
+            CommF:InvokeServer("StartQuest", qName, qIndex)
+        end)
+        done = true
+    end)
+    local deadline = os.clock() + 1.0
+    while not done and os.clock() < deadline do
+        task.wait(0.05)
+    end
+end
+
 local function engageCombatTarget(targetMob, root, clusterName, useClustering)
     local tHum = targetMob:FindFirstChildOfClass("Humanoid")
     local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
@@ -1437,9 +1551,7 @@ PolarMastery.IsTraveling = false
             else
                 root.CFrame = giverCF
                 root.AssemblyLinearVelocity = Vector3.zero
-                if CommF then
-                    pcall(function() CommF:InvokeServer("StartQuest", qName, qIndex) end)
-                end
+                safeInvokeStartQuest(qName, qIndex)
                 task.wait(0.3)
                 return
             end
@@ -1449,15 +1561,25 @@ PolarMastery.IsTraveling = false
         local targetMob = findNearestMob(enemies, root.Position, 2500, targetMobName)
 
         if not targetMob then
-            PolarMastery.TargetHoverCFrame = nil
-            clearHoverInstances()
             releaseAllTrackedMobs()
             PolarMastery.ClusterCenterPos = nil
             PolarMastery.CurrentTarget = nil
             PolarMastery.CurrentTargetRoot = nil
             PolarMastery.CurrentAimPos = nil
-            PolarMastery:TeleportTo(mobAreaCF)
-            task.wait(0.4)
+
+            local waitBase = findStaticSpawnCentroid(targetMobName) or mobAreaCF.Position
+            local waitHoverCF = computeSafeWaitHoverCFrame(waitBase)
+            local distWait = (root.Position - waitHoverCF.Position).Magnitude
+            if distWait > 14 or needsPortalOrDimensionJump(root.Position, waitHoverCF.Position) then
+                PolarMastery:TeleportTo(waitHoverCF)
+                if not PolarMastery.AutoBones then return end
+                local c2 = LocalPlayer.Character
+                local r2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+                if not r2 or (r2.Position - waitHoverCF.Position).Magnitude > 18 then
+                    return
+                end
+            end
+            PolarMastery.TargetHoverCFrame = waitHoverCF
             return
         end
 
@@ -1555,9 +1677,7 @@ PolarMastery.IsTraveling = false
                         else
                             root.CFrame = giverCF
                             root.AssemblyLinearVelocity = Vector3.zero
-                            if CommF then
-                                pcall(function() CommF:InvokeServer("StartQuest", bestQuest.qName, bestQuest.index) end)
-                            end
+                            safeInvokeStartQuest(bestQuest.qName, bestQuest.index)
                             task.wait(0.3)
                             return
                         end
@@ -1569,23 +1689,43 @@ PolarMastery.IsTraveling = false
         -- Find Target Mob (saltando automaticamente NPCs que no reciben dano)
         targetMob = findNearestMob(enemies, root.Position, PolarMastery.NearestDistance or 1500, targetEnemyName)
 
-        if not targetMob and bestQuest and bestQuest.island then
-            local Polar = getgenv().Polar
-            if Polar and Polar.Teleport and Polar.Teleport.ToIsland then
-                PolarMastery.TargetHoverCFrame = nil
-                releaseAllTrackedMobs()
-                PolarMastery.ClusterCenterPos = nil
-                Polar.Teleport:ToIsland(bestQuest.island)
-                return
-            end
-        end
-
         if targetMob then
+            local mRoot = targetMob:FindFirstChild("HumanoidRootPart")
+            if mRoot and not savedMobStates[targetMob] then
+                lastCombatZoneByEnemy[targetEnemyName or targetMob.Name] = mRoot.Position
+                lastNearestCombatPos = mRoot.Position
+            end
             engageCombatTarget(targetMob, root, targetMob.Name, true)
         else
-            PolarMastery.TargetHoverCFrame = nil
+            PolarMastery.CurrentTarget = nil
+            PolarMastery.CurrentTargetRoot = nil
+            PolarMastery.CurrentAimPos = nil
             releaseAllTrackedMobs()
             PolarMastery.ClusterCenterPos = nil
+
+            local waitHoverCF, useIslandFallback = resolveFarmWaitHoverCFrame(bestQuest, targetEnemyName)
+            if waitHoverCF then
+                local distWait = (root.Position - waitHoverCF.Position).Magnitude
+                if distWait > 14 or needsPortalOrDimensionJump(root.Position, waitHoverCF.Position) then
+                    SafeMasteryTeleport(waitHoverCF, root)
+                    if not PolarMastery.AutoFarm then return end
+                    local c2 = LocalPlayer.Character
+                    local r2 = c2 and c2:FindFirstChild("HumanoidRootPart")
+                    if not r2 or (r2.Position - waitHoverCF.Position).Magnitude > 18 then
+                        return
+                    end
+                end
+                PolarMastery.TargetHoverCFrame = waitHoverCF
+            elseif useIslandFallback and bestQuest and bestQuest.island then
+                local Polar = getgenv().Polar
+                if Polar and Polar.Teleport and Polar.Teleport.ToIsland then
+                    PolarMastery.TargetHoverCFrame = nil
+                    Polar.Teleport:ToIsland(bestQuest.island)
+                    return
+                end
+            else
+                PolarMastery.TargetHoverCFrame = nil
+            end
         end
         return
     end
@@ -1593,19 +1733,30 @@ end
 
 -- Fast combat loop con sesin controlada para recargas limpias
 PolarMastery._CombatSessionId = (PolarMastery._CombatSessionId or 0) + 1
+PolarMastery._LoopTicks = 0
+PolarMastery._StepTicks = 0
+PolarMastery._LastStepErr = nil
 local curSession = PolarMastery._CombatSessionId
 
 task.spawn(function()
     while PolarMastery._CombatSessionId == curSession do
         task.wait(PolarMastery.FastAttackDelay or 0.10)
+        PolarMastery._LoopTicks = (PolarMastery._LoopTicks or 0) + 1
         local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
         if isActive then
-            pcall(runMasteryCombatStep)
-        else
-            clearHoverInstances()
-            if next(savedMobStates) or (PolarMastery.ActiveClusterMobs and #PolarMastery.ActiveClusterMobs > 0) then
-                releaseAllTrackedMobs()
+            PolarMastery._StepTicks = (PolarMastery._StepTicks or 0) + 1
+            local ok, err = pcall(runMasteryCombatStep)
+            if not ok then
+                PolarMastery._LastStepErr = tostring(err)
+                warn("[PolarMastery] Step error: " .. tostring(err))
             end
+        else
+            pcall(function()
+                clearHoverInstances()
+                if next(savedMobStates) or (PolarMastery.ActiveClusterMobs and #PolarMastery.ActiveClusterMobs > 0) then
+                    releaseAllTrackedMobs()
+                end
+            end)
         end
     end
 end)

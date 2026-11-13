@@ -2387,6 +2387,7 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
     sliderHitbox.BackgroundTransparency = 1
     sliderHitbox.BorderSizePixel = 0
     sliderHitbox.Text = ""
+    sliderHitbox.AutoButtonColor = false
     sliderHitbox.ZIndex = 220
     sliderHitbox.Parent = frame
 
@@ -2407,8 +2408,9 @@ function PolarUI:AddSlider(cfg, min, max, def, cb, overrideParent)
         end
         currentVal = val
         valBox.Text = formatVal(val)
-        fill.Size = UDim2.new(p, 0, 1, 0)
-        thumb.Position = UDim2.new(p, 0, 0.5, 0)
+        local snappedP = math.clamp((val - minVal) / math.max(1e-6, maxVal - minVal), 0, 1)
+        fill.Size = UDim2.new(snappedP, 0, 1, 0)
+        thumb.Position = UDim2.new(snappedP, 0, 0.5, 0)
         callback(val)
     end
 
