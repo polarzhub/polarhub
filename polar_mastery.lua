@@ -233,8 +233,52 @@ end
 -- CONTINUOUS ANTI-FALL HOVER LOCK & MOB CLUSTERING STATE
 -- ==============================================================================
 local hoverVelocity = nil
+local cachedCharRef = nil
+local cachedCharParts = {}
+local savedCharCanCollide = {}
+local charDescAddedConn = nil
 PolarMastery.ClusterCenterPos = nil
 PolarMastery.ActiveClusterMobs = {}
+
+local function trackHoverCharPart(inst)
+    if inst and inst:IsA("BasePart") and savedCharCanCollide[inst] == nil then
+        savedCharCanCollide[inst] = inst.CanCollide
+        table.insert(cachedCharParts, inst)
+    end
+end
+
+local function ensureHoverCharCache(char)
+    if not char then return end
+    if cachedCharRef ~= char then
+        if charDescAddedConn then
+            pcall(function() charDescAddedConn:Disconnect() end)
+            charDescAddedConn = nil
+        end
+        cachedCharRef = char
+        cachedCharParts = {}
+        savedCharCanCollide = {}
+        for _, v in ipairs(char:GetDescendants()) do
+            trackHoverCharPart(v)
+        end
+        charDescAddedConn = char.DescendantAdded:Connect(trackHoverCharPart)
+    end
+end
+
+local function restoreHoverCharCollisions()
+    if next(savedCharCanCollide) == nil then return end
+    for part, orig in pairs(savedCharCanCollide) do
+        if part and part.Parent and part:IsA("BasePart") then
+            pcall(function() part.CanCollide = orig end)
+        end
+    end
+    cachedCharRef = nil
+    cachedCharParts = {}
+    savedCharCanCollide = {}
+    if charDescAddedConn then
+        pcall(function() charDescAddedConn:Disconnect() end)
+        charDescAddedConn = nil
+    end
+end
 
 local function clearHoverInstances()
     if hoverVelocity and hoverVelocity.Parent then
@@ -243,6 +287,21 @@ local function clearHoverInstances()
     hoverVelocity = nil
     PolarMastery.ClusterCenterPos = nil
     PolarMastery.ActiveClusterMobs = {}
+    restoreHoverCharCollisions()
+end
+
+local function needsPortalOrDimensionJump(fromPos, toPos)
+    if not fromPos or not toPos then return false end
+    if (fromPos.X > 50000) ~= (toPos.X > 50000) then return true end
+    if (fromPos.Z > 25000) ~= (toPos.Z > 25000) then return true end
+    local fromSub = fromPos.Y < -1000 and (Vector2.new(fromPos.X - 10533, fromPos.Z - 9940).Magnitude < 4500)
+    local toSub = toPos.Y < -1000 and (Vector2.new(toPos.X - 10533, toPos.Z - 9940).Magnitude < 4500)
+    if fromSub ~= toSub then return true end
+    local domCenter = Vector3.new(5366.5, 71.1, -225.9)
+    local fromDom = fromPos.Y >= -50 and fromPos.Y <= 250 and (fromPos - domCenter).Magnitude <= 320
+    local toDom = toPos.Y >= -50 and toPos.Y <= 250 and (toPos - domCenter).Magnitude <= 320
+    if fromDom ~= toDom then return true end
+    return false
 end
 
 -- ==============================================================================
@@ -252,20 +311,21 @@ function PolarMastery:TeleportTo(cf)
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     if not root or not cf then return end
+    if typeof(cf) == "Vector3" then cf = CFrame.new(cf) end
 
     local dist = (root.Position - cf.Position).Magnitude
-    if dist <= 4 then return end
+    local crossDim = needsPortalOrDimensionJump(root.Position, cf.Position)
+    if dist <= 4 and not crossDim then return end
 
-    -- Para distancias de combate o reposicionamiento cercano (<= 150 studs):
-    -- Snap cinemtico directo sin Tween, sin PlatformStand, sin prdida de altura ni lag
-    if dist <= 150 then
+    -- Para distancias cortas en la misma dimension (<= 150 studs): snap directo
+    if dist <= 150 and not crossDim then
         root.CFrame = cf
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
         return
     end
 
-    -- Solo para distancias largas (> 150 studs) viajar con Tween
+    -- Distancias largas o cambios de dimension/portal: delegar a Polar.Teleport:To
     self.IsTraveling = true
     clearHoverInstances()
 
@@ -434,19 +494,22 @@ if PolarMastery._Connections then
 end
 PolarMastery._Connections = {}
 
--- Stepped: Sin colisiones y estabilización previa a la física
+-- Stepped: Sin colisiones usando cache de partes y estabilizacion previa a la fisica
 table.insert(PolarMastery._Connections, RunService.Stepped:Connect(function()
     local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
     if isActive and PolarMastery.TargetHoverCFrame then
         local char = LocalPlayer.Character
         if char then
-            for _, part in ipairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
+            ensureHoverCharCache(char)
+            for _, part in ipairs(cachedCharParts) do
+                if part.Parent then
                     part.CanCollide = false
                 end
             end
         end
         pcall(stabilizeClusterMobs)
+    else
+        restoreHoverCharCollisions()
     end
 end))
 
@@ -785,6 +848,45 @@ local MASTERY_ENEMY_ALIASES = {
     {"magma admiral", "magma general"},
     {"wysper", "sky warlord"},
     {"mob leader", "mob boss"},
+    {"posessed mummy", "possessed mummy"},
+    {"pirate millionaire", "pirata millonario"},
+    {"pistol billionaire", "pistolero multimillonario"},
+    {"dragon crew warrior", "guerrero de la tripulacion dragon"},
+    {"dragon crew archer", "arquero de la tripulacion dragon"},
+    {"forest pirate", "pirata del bosque"},
+    {"mythological pirate", "pirata mitologico"},
+    {"jungle pirate", "pirata de la jungla"},
+    {"musketeer pirate", "pirata mosquetero"},
+    {"reborn skeleton", "esqueleto renacido"},
+    {"living zombie", "zombi viviente"},
+    {"demonic soul", "alma demoniaca"},
+    {"posessed mummy", "momia poseida"},
+    {"peanut scout", "explorador de mani"},
+    {"peanut president", "presidente de mani"},
+    {"ice cream chef", "chef de helados"},
+    {"ice cream commander", "comandante de helados"},
+    {"cookie crafter", "creador de galletas"},
+    {"cake guard", "guardia del pastel"},
+    {"baking staff", "personal de panaderia"},
+    {"head baker", "jefe panadero"},
+    {"cocoa warrior", "guerrero del cacao"},
+    {"chocolate bar battler", "luchador de barra de chocolate"},
+    {"sweet thief", "ladron de dulces"},
+    {"candy rebel", "rebelde de caramelo"},
+    {"candy pirate", "pirata de caramelo"},
+    {"snow demon", "demonio de nieve"},
+    {"isle outlaw", "forajido de la isla"},
+    {"island boy", "chico de la isla"},
+    {"sun-kissed warrior", "guerrero bronceado"},
+    {"isle champion", "campeon de la isla"},
+    {"serpent hunter", "cazador de serpientes"},
+    {"skull slayer", "asesino de calaveras"},
+    {"reef bandit", "bandido del arrecife"},
+    {"coral pirate", "pirata de coral"},
+    {"sea chanter", "cantor del mar"},
+    {"ocean prophet", "profeta del oceano"},
+    {"high disciple", "alto discipulo"},
+    {"grand devotee", "gran devoto"}
 }
 
 local function MatchesEnemyName(mobName, targetName)
@@ -812,12 +914,7 @@ local function MatchesEnemyName(mobName, targetName)
 end
 
 local function SafeMasteryTeleport(cf, root)
-    local Polar = getgenv().Polar
-    if Polar and Polar.Teleport and Polar.Teleport.To and root and ((root.Position.X > 50000) ~= (cf.Position.X > 50000) or (root.Position.Z > 25000) ~= (cf.Position.Z > 25000)) then
-        Polar.Teleport:To(cf)
-    else
-        PolarMastery:TeleportTo(cf)
-    end
+    PolarMastery:TeleportTo(cf)
 end
 
 function PolarMastery:ClusterMobs(pivotPos, targetMobName)
@@ -876,23 +973,44 @@ end
 -- QUEST VERIFICATION & DETECTION
 -- ==============================================================================
 function PolarMastery:GetActiveQuestTarget()
+    local Polar = getgenv().Polar
+    if Polar and Polar.QuestEngine and Polar.QuestEngine.HasActiveQuest then
+        if not Polar.QuestEngine:HasActiveQuest() then
+            return nil
+        end
+        if Polar.Quest and Polar.Quest.GetTargetEnemyNameFromQuest then
+            local resolved = Polar.Quest:GetTargetEnemyNameFromQuest()
+            if resolved and resolved ~= "" then
+                return resolved
+            end
+        end
+    end
+
     local pgui = LocalPlayer:FindFirstChild("PlayerGui")
     if not pgui then return nil end
 
-    -- 1. Check TrackedQuestFrame
+    -- Fallback directo a TrackedQuestFrame (incluye objective:* rows)
     local tq = pgui:FindFirstChild("TrackedQuestFrame")
     if tq and tq:FindFirstChild("Frame") and tq.Frame.Visible then
         local progress = tq.Frame:FindFirstChild("progress")
-        if progress and progress.Text and string.find(progress.Text, "8/8") then
-            return nil
+        if progress and progress.Text then
+            local c, m = string.match(progress.Text, "(%d+)%s*/%s*(%d+)")
+            if c and m and tonumber(c) >= tonumber(m) then
+                return nil
+            end
         end
-        local desc = tq.Frame:FindFirstChild("description")
-        local descText = desc and desc.Text or ""
-        local txtAll = ""
-        for _, l in ipairs(tq.Frame:GetChildren()) do
-            if l:IsA("TextLabel") and l.Visible then txtAll = txtAll .. " " .. l.Text end
+        local parts = {}
+        for _, child in ipairs(tq.Frame:GetChildren()) do
+            if string.sub(child.Name, 1, 10) == "objective:" then
+                local lbl = child:FindFirstChild("label")
+                if lbl and lbl:IsA("TextLabel") and lbl.Text ~= "" then
+                    table.insert(parts, lbl.Text)
+                end
+            elseif child:IsA("TextLabel") and child.Visible and child.Text ~= "" then
+                table.insert(parts, child.Text)
+            end
         end
-        local fullText = string.lower(descText .. " " .. txtAll)
+        local fullText = string.lower(table.concat(parts, " "))
         if string.find(fullText, "momi") or string.find(fullText, "mummy") then return "Posessed Mummy"
         elseif string.find(fullText, "alma") or string.find(fullText, "demonic") or string.find(fullText, "soul") then return "Demonic Soul"
         elseif string.find(fullText, "zomb") then return "Living Zombie"
@@ -900,7 +1018,7 @@ function PolarMastery:GetActiveQuestTarget()
         end
     end
 
-    -- 2. Check Main.Quest
+    -- Fallback Main.Quest
     local main = pgui:FindFirstChild("Main")
     local questUI = main and main:FindFirstChild("Quest")
     if questUI and questUI.Visible then
@@ -913,10 +1031,10 @@ function PolarMastery:GetActiveQuestTarget()
             elseif string.find(tLower, "zombie") or string.find(tLower, "zomb") then return "Living Zombie"
             elseif string.find(tLower, "skeleton") or string.find(tLower, "esquelet") then return "Reborn Skeleton"
             end
+            return title.Text
         end
     end
 
-    -- 3. Check Guide
     local guide = main and main:FindFirstChild("Guide")
     if guide and guide:FindFirstChild("LeftFrame") and guide.LeftFrame:FindFirstChild("Abandon") and guide.LeftFrame.Abandon.Visible then
         return "HAS_QUEST"
@@ -974,27 +1092,40 @@ PolarMastery.IsTraveling = false
     -- MODE 1: AUTO BONES (HAUNTED CASTLE)
     -- ==========================================================================
     if PolarMastery.AutoBones then
+        local Polar = getgenv().Polar
         local targetMobName = "Posessed Mummy"
         local qName = "HauntedQuest2"
         local qIndex = 2
-        local giverCF = CFrame.new(-9516.1, 175.1, 6079.2)
-        local mobAreaCF = CFrame.new(-9479.4, 15.0, 6106.4)
+        local giverCF = CFrame.new(-9517.0, 172.0, 6078.4)
+        local mobAreaCF = CFrame.new(-9517.0, 172.0, 6078.4)
 
         if PolarMastery.QuestFarmMode == "Normal" then
             targetMobName = "Reborn Skeleton"
             qName = "HauntedQuest1"
             qIndex = 1
-            giverCF = CFrame.new(-9515.7, 169.0, 6078.6)
-            mobAreaCF = CFrame.new(-8814.4, 150.0, 5930.5)
+            giverCF = CFrame.new(-9479.3, 141.2, 5566.0)
+            mobAreaCF = CFrame.new(-8763.7, 165.0, 6159.9)
+        end
+
+        if Polar and Polar.World and Polar.World.GetQuestGiverCFrame then
+            local liveGiver = Polar.World:GetQuestGiverCFrame(qName, qIndex, targetMobName)
+            if liveGiver then giverCF = liveGiver end
         end
 
         local activeQuestMob = PolarMastery:GetActiveQuestTarget()
         if activeQuestMob and activeQuestMob ~= "HAS_QUEST" then
             targetMobName = activeQuestMob
-            if targetMobName == "Demonic Soul" then
-                mobAreaCF = CFrame.new(-9516.1, 175.1, 6079.2)
-            elseif targetMobName == "Living Zombie" then
-                mobAreaCF = CFrame.new(-9515.7, 169.0, 6078.6)
+            if targetMobName == "Demonic Soul" or targetMobName == "Posessed Mummy" then
+                mobAreaCF = CFrame.new(-9517.0, 172.0, 6078.4)
+            elseif targetMobName == "Living Zombie" or targetMobName == "Reborn Skeleton" then
+                mobAreaCF = CFrame.new(-9479.3, 141.2, 5566.0)
+            end
+        end
+
+        if Polar and Polar.World and Polar.World.GetEnemySpawnPosition then
+            local liveSpawn = Polar.World:GetEnemySpawnPosition(targetMobName)
+            if liveSpawn then
+                mobAreaCF = CFrame.new(liveSpawn + Vector3.new(0, 12, 0))
             end
         end
 
@@ -1168,7 +1299,7 @@ PolarMastery.IsTraveling = false
         elseif not PolarMastery.AutoKillAllBosses and bData and bData.pos then
             PolarMastery.TargetHoverCFrame = nil
             local waitCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
-            if (root.Position - bData.pos).Magnitude > 300 or ((root.Position.X > 50000) ~= (bData.pos.X > 50000)) then
+            if (root.Position - bData.pos).Magnitude > 300 or needsPortalOrDimensionJump(root.Position, bData.pos) then
                 SafeMasteryTeleport(waitCF, root)
             end
         end
@@ -1194,9 +1325,9 @@ PolarMastery.IsTraveling = false
                 if PolarMastery.TakeQuest and not hasQuest then
                     PolarMastery.TargetHoverCFrame = nil
                     local giverName = bestQuest.giverName
-                    local giverCF = bestQuest.pos
-                        or (Polar.World and Polar.World.GetQuestGiverCFrame and Polar.World:GetQuestGiverCFrame(bestQuest.qName, bestQuest.index, bestQuest.enemyName))
-                        or (Polar.World and Polar.World.FindNPC and Polar.World:FindNPC(giverName))
+                    local giverCF = (Polar.World and Polar.World.GetQuestGiverCFrame and Polar.World:GetQuestGiverCFrame(bestQuest.qName, bestQuest.index, bestQuest.enemyName))
+                        or (giverName and Polar.World and Polar.World.FindNPC and Polar.World:FindNPC(giverName))
+                        or bestQuest.pos
                         or (Polar.Data and Polar.Data.NPCCache and Polar.Data.NPCCache[giverName])
                         or (Polar.NPCCache and Polar.NPCCache[giverName])
                     if giverCF then

@@ -177,6 +177,7 @@ local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local VirtualUser = game:GetService("VirtualUser")
 local TweenService = game:GetService("TweenService")
+local CollectionService = game:GetService("CollectionService")
 local LocalPlayer = Players.LocalPlayer
 
 -- ==================== ANTI-AFK ====================
@@ -936,94 +937,160 @@ function Polar.BossSystem.SetupReactiveListeners()
 end
 
 -- Módulo de Teletransporte
-Polar.Teleport = {}
+Polar.Teleport = Polar.Teleport or {}
 Polar.Teleport.IsTeleporting = false
 Polar.Teleport.ActiveTween = nil
+Polar.Teleport._moveToken = 0
 
 local activeTween = nil
 
 local function CancelActiveTween()
+ Polar.Teleport._moveToken = (Polar.Teleport._moveToken or 0) + 1
  if activeTween then
- pcall(function()
- activeTween:Cancel()
- end)
- activeTween = nil
+  pcall(function()
+   activeTween:Cancel()
+  end)
+  activeTween = nil
+ end
+ Polar.Teleport.ActiveTween = nil
+end
+
+function Polar.Teleport:Cancel()
+ CancelActiveTween()
+ self.IsTeleporting = false
+end
+
+local function RestoreLimbCollision(char, savedMap)
+ if not char or not savedMap then return end
+ for part, origCollide in pairs(savedMap) do
+  if part and part.Parent and part:IsA("BasePart") then
+   pcall(function()
+    part.CanCollide = origCollide
+   end)
+  end
  end
 end
 
 local function MoveDirectly(targetCFrame)
-	if typeof(targetCFrame) == "Vector3" then
-		targetCFrame = CFrame.new(targetCFrame)
-	end
-	local char = LocalPlayer.Character
-	local hrp = char and char:FindFirstChild("HumanoidRootPart")
-	local hum = char and char:FindFirstChildOfClass("Humanoid")
-	if not hrp or not hum or hum.Health <= 0 then return end
-	
-	local dist = (hrp.Position - targetCFrame.Position).Magnitude
-	
-	-- Solo hacer TP instantáneo si ya estamos muy cerca (<= 15 studs)
-	if dist <= 15 then
-		CancelActiveTween()
-		hrp.CFrame = targetCFrame
-		hrp.AssemblyLinearVelocity = Vector3.zero
-		hrp.AssemblyAngularVelocity = Vector3.zero
-		return
-	end
-	
-	CancelActiveTween()
-	Polar.Teleport.IsTeleporting = true
-	
-	local oldPlatformStand = hum and hum.PlatformStand
-	if hum then hum.PlatformStand = true end
-	
-	local bp = hrp:FindFirstChild("Polar_MoveVelocity")
-	if not bp then
-		bp = Instance.new("BodyVelocity")
-		bp.Name = "Polar_MoveVelocity"
-		bp.Velocity = Vector3.zero
-		bp.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-		bp.Parent = hrp
-	else
-		bp.Velocity = Vector3.zero
-	end
-	
-	local nclConn = RunService.Stepped:Connect(function()
-		for _, v in ipairs(char:GetDescendants()) do
-			if v:IsA("BasePart") then v.CanCollide = false end
-		end
-	end)
-	
-	local tweenSpeed = (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150
-	
-	local function DoTween(cframeTarget)
-		local tDist = (hrp.Position - cframeTarget.Position).Magnitude
-		if tDist <= 5 then return end
-		local tInfo = TweenInfo.new(tDist / tweenSpeed, Enum.EasingStyle.Linear)
-		local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
-		activeTween = tween
-		Polar.Teleport.ActiveTween = tween
-		
-		tween:Play()
-		tween.Completed:Wait()
-		if activeTween == tween then activeTween = nil end
-		Polar.Teleport.ActiveTween = nil
-	end
-	
-	-- Tween directo y suave al objetivo (noclip total en todos los descendientes)
-	DoTween(targetCFrame)
-	
-	-- Snap final seguro solo si ya llegó a menos de 15 studs
-	if hrp and (hrp.Position - targetCFrame.Position).Magnitude <= 15 then
-		hrp.CFrame = targetCFrame
-		hrp.AssemblyLinearVelocity = Vector3.zero
-		hrp.AssemblyAngularVelocity = Vector3.zero
-	end
-	
-	nclConn:Disconnect()
-	if bp and bp.Parent then bp:Destroy() end
-	if hum and hum.Parent then hum.PlatformStand = oldPlatformStand end
-	Polar.Teleport.IsTeleporting = false
+ if typeof(targetCFrame) == "Vector3" then
+  targetCFrame = CFrame.new(targetCFrame)
+ end
+ local char = LocalPlayer.Character
+ local hrp = char and char:FindFirstChild("HumanoidRootPart")
+ local hum = char and char:FindFirstChildOfClass("Humanoid")
+ if not hrp or not hum or hum.Health <= 0 then return false end
+
+ local dist = (hrp.Position - targetCFrame.Position).Magnitude
+
+ -- Solo hacer TP instantaneo si ya estamos muy cerca (<= 15 studs)
+ if dist <= 15 then
+  CancelActiveTween()
+  hrp.CFrame = targetCFrame
+  hrp.AssemblyLinearVelocity = Vector3.zero
+  hrp.AssemblyAngularVelocity = Vector3.zero
+  return true
+ end
+
+ CancelActiveTween()
+ local myToken = Polar.Teleport._moveToken
+ Polar.Teleport.IsTeleporting = true
+
+ local oldPlatformStand = hum.PlatformStand
+ hum.PlatformStand = true
+
+ local bp = hrp:FindFirstChild("Polar_MoveVelocity")
+ if not bp then
+  bp = Instance.new("BodyVelocity")
+  bp.Name = "Polar_MoveVelocity"
+  bp.Velocity = Vector3.zero
+  bp.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+  bp.Parent = hrp
+ else
+  bp.Velocity = Vector3.zero
+ end
+
+ -- Cachear partes BasePart del personaje para evitar char:GetDescendants() por frame
+ -- y restaurar CanCollide limpio al terminar (seguro ante CheckTeleportGlitchFix)
+ local cachedParts = {}
+ local savedCanCollide = {}
+ local function TrackPart(inst)
+  if inst and inst:IsA("BasePart") and savedCanCollide[inst] == nil then
+   savedCanCollide[inst] = inst.CanCollide
+   table.insert(cachedParts, inst)
+  end
+ end
+ for _, v in ipairs(char:GetDescendants()) do
+  TrackPart(v)
+ end
+ local descAddedConn = char.DescendantAdded:Connect(TrackPart)
+
+ local nclConn = RunService.Stepped:Connect(function()
+  if Polar.Teleport._moveToken ~= myToken or not char.Parent or hum.Health <= 0 then
+   return
+  end
+  for _, part in ipairs(cachedParts) do
+   if part.Parent then
+    part.CanCollide = false
+   end
+  end
+ end)
+
+ local arrived = false
+ local tweenSpeed = math.max(10, (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150)
+
+ local function DoTween(cframeTarget)
+  if Polar.Teleport._moveToken ~= myToken or not hrp.Parent or hum.Health <= 0 then return end
+  local tDist = (hrp.Position - cframeTarget.Position).Magnitude
+  if tDist <= 5 then
+   arrived = true
+   return
+  end
+  tweenSpeed = math.max(10, (Polar.Teleport and Polar.Teleport.TweenSpeed) or getgenv().PolarTweenSpeed or 150)
+  local duration = math.max(0.05, tDist / tweenSpeed)
+  local tInfo = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+  local tween = TweenService:Create(hrp, tInfo, {CFrame = cframeTarget})
+  activeTween = tween
+  Polar.Teleport.ActiveTween = tween
+
+  local finished = false
+  local completedConn = tween.Completed:Connect(function()
+   finished = true
+  end)
+  tween:Play()
+
+  while not finished do
+   if Polar.Teleport._moveToken ~= myToken or not hrp.Parent or not hum.Parent or hum.Health <= 0 then
+    pcall(function() tween:Cancel() end)
+    break
+   end
+   task.wait(0.05)
+  end
+
+  if completedConn then pcall(function() completedConn:Disconnect() end) end
+  if activeTween == tween then activeTween = nil end
+  if Polar.Teleport.ActiveTween == tween then Polar.Teleport.ActiveTween = nil end
+ end
+
+ DoTween(targetCFrame)
+
+ if Polar.Teleport._moveToken == myToken and hrp and hrp.Parent and hum and hum.Parent and hum.Health > 0 then
+  if (hrp.Position - targetCFrame.Position).Magnitude <= 15 then
+   hrp.CFrame = targetCFrame
+   hrp.AssemblyLinearVelocity = Vector3.zero
+   hrp.AssemblyAngularVelocity = Vector3.zero
+   arrived = true
+  end
+ end
+
+ if nclConn then pcall(function() nclConn:Disconnect() end) end
+ if descAddedConn then pcall(function() descAddedConn:Disconnect() end) end
+ RestoreLimbCollision(char, savedCanCollide)
+ if bp and bp.Parent then bp:Destroy() end
+ if hum and hum.Parent then hum.PlatformStand = oldPlatformStand end
+ if Polar.Teleport._moveToken == myToken then
+  Polar.Teleport.IsTeleporting = false
+ end
+ return arrived
 end
 
 local function FindCursedShipEntrance()
@@ -1104,16 +1171,424 @@ local function FindCursedShipExit()
  return bestDoor
 end
 
+local _sea3PortalLockCache = {}
+
+local function IsSea3SubmergedPos(pos)
+ return pos and pos.Y < -1000 and (Vector2.new(pos.X - 10533, pos.Z - 9940).Magnitude < 4500)
+end
+
+local function IsSea3BeautifulDomainPos(pos)
+ if not pos then return false end
+ if pos.Y < -50 or pos.Y > 250 then return false end
+ local domainCenter = Vector3.new(5366.5, 71.1, -225.9)
+ pcall(function()
+  local origin = workspace:FindFirstChild("_WorldOrigin")
+  local locs = origin and origin:FindFirstChild("Locations")
+  local dom = locs and locs:FindFirstChild("Beautiful Pirate Domain")
+  if dom and dom:IsA("BasePart") then domainCenter = dom.Position end
+ end)
+ return (pos - domainCenter).Magnitude <= 320
+end
+
+local function EnsureSubmergedMapLoaded()
+ local ok = false
+ pcall(function()
+  local controllers = ReplicatedStorage:FindFirstChild("Controllers")
+  local mapServices = controllers and controllers:FindFirstChild("MapServices")
+  local mod = mapServices and mapServices:FindFirstChild("SubmergedIslandController")
+  if mod then
+   local ctrl = require(mod)
+   if ctrl then
+    if ctrl.IsMapInWorkspace and not ctrl:IsMapInWorkspace() then
+     if ctrl.LockState then ctrl:LockState() end
+     if ctrl.LoadMap then ctrl:LoadMap() end
+     task.wait(0.35)
+     if ctrl.UnlockState then ctrl:UnlockState() end
+    end
+    ok = true
+   end
+  end
+ end)
+ return ok
+end
+
+local function GetBoatCastleEntryCF(model)
+ if not model then return nil end
+ local hb = model:FindFirstChild("Hitbox")
+ if hb and hb:IsA("BasePart") then return hb.CFrame end
+ local piv = model:GetAttribute("Pivot")
+ if typeof(piv) == "CFrame" then return piv end
+ return nil
+end
+
+local function TrySea3BoatCastlePortal(hrp, targetPos)
+ if not hrp or not targetPos or not Net then return false end
+ local directDist = (hrp.Position - targetPos).Magnitude
+ if directDist < 2200 then return false end
+
+ local function IsPortalUnlocked(name)
+  local unlocked = _sea3PortalLockCache[name]
+  if unlocked == nil then
+   local infoOk, info = pcall(function()
+    return Net:RemoteFunction("BoatCastleTeleporters"):InvokeServer("GetInfo", name)
+   end)
+   if infoOk and type(info) == "table" and type(info.isUnlocked) == "boolean" then
+    unlocked = info.isUnlocked
+    _sea3PortalLockCache[name] = unlocked
+   end
+  end
+  return unlocked == true
+ end
+
+ local tagged = {}
+ pcall(function()
+  tagged = CollectionService:GetTagged("BoatCastleTeleporter")
+ end)
+
+ local byName = {}
+ for _, model in ipairs(tagged) do
+  if model:IsA("Model") and model:GetAttribute("Pivot") then
+   byName[model.Name] = byName[model.Name] or {}
+   table.insert(byName[model.Name], model)
+  end
+ end
+
+ local bestName, bestA, bestEntryCF, bestDestCF, bestSave = nil, nil, nil, nil, 800
+ for name, list in pairs(byName) do
+  if IsPortalUnlocked(name) then
+   if #list >= 2 then
+    for _, pA in ipairs(list) do
+     local entryCF = GetBoatCastleEntryCF(pA)
+     if entryCF then
+      for _, pB in ipairs(list) do
+       if pB ~= pA then
+        local pivB = pB:GetAttribute("Pivot")
+        if typeof(pivB) == "CFrame" then
+         local portalCost = (hrp.Position - entryCF.Position).Magnitude + (pivB.Position - targetPos).Magnitude + 350
+         local save = directDist - portalCost
+         if save > bestSave then
+          bestSave = save
+          bestName = name
+          bestA = pA
+          bestEntryCF = entryCF
+          bestDestCF = pivB
+         end
+        end
+       end
+      end
+     end
+    end
+   elseif name == "MapTeleportC" and #list == 1 then
+    local pA = list[1]
+    local entryCF = GetBoatCastleEntryCF(pA)
+    local castlePiv = CFrame.new(-5085, 319, -3156)
+    local tikiPiv = CFrame.new(-16813.4, 61.6, 304.9)
+    if entryCF then
+     local destCF = ((entryCF.Position - tikiPiv.Position).Magnitude < 500) and castlePiv or tikiPiv
+     local portalCost = (hrp.Position - entryCF.Position).Magnitude + (destCF.Position - targetPos).Magnitude + 350
+     local save = directDist - portalCost
+     if save > bestSave then
+      bestSave = save
+      bestName = name
+      bestA = pA
+      bestEntryCF = entryCF
+      bestDestCF = destCF
+     end
+    end
+   end
+  end
+ end
+
+ -- Allow Castle <-> Tiki routing even when neither island is currently streamed in
+ if not byName["MapTeleportC"] and IsPortalUnlocked("MapTeleportC") then
+  local cEntry = CFrame.new(-5097.1, 318.5, -3178.4)
+  local cPiv = CFrame.new(-5085, 319, -3156)
+  local tEntry = CFrame.new(-16799.1, 84.3, 291.1)
+  local tPiv = CFrame.new(-16813.4, 61.6, 304.9)
+
+  local cCost = (hrp.Position - cEntry.Position).Magnitude + (tPiv.Position - targetPos).Magnitude + 350
+  if (directDist - cCost) > bestSave then
+   bestSave = directDist - cCost
+   bestName = "MapTeleportC"
+   bestA = nil
+   bestEntryCF = cEntry
+   bestDestCF = tPiv
+  end
+
+  local tCost = (hrp.Position - tEntry.Position).Magnitude + (cPiv.Position - targetPos).Magnitude + 350
+  if (directDist - tCost) > bestSave then
+   bestSave = directDist - tCost
+   bestName = "MapTeleportC"
+   bestA = nil
+   bestEntryCF = tEntry
+   bestDestCF = cPiv
+  end
+ end
+
+ if bestEntryCF and bestDestCF then
+  if (hrp.Position - bestEntryCF.Position).Magnitude > 16 then
+   MoveDirectly(bestEntryCF)
+  end
+  local cChar = LocalPlayer.Character
+  local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+  if cHrp and (cHrp.Position - bestEntryCF.Position).Magnitude <= 35 then
+   if (not bestA or not bestA.Parent) and bestName then
+    for _ = 1, 8 do
+     local refreshed = {}
+     pcall(function() refreshed = CollectionService:GetTagged("BoatCastleTeleporter") end)
+     for _, model in ipairs(refreshed) do
+      if model.Name == bestName then
+       local mCF = GetBoatCastleEntryCF(model)
+       if mCF and (mCF.Position - cHrp.Position).Magnitude <= 90 then
+        bestA = model
+        bestEntryCF = mCF
+        break
+       end
+      end
+     end
+     if bestA then break end
+     task.wait(0.15)
+    end
+   end
+
+   if bestA then
+    cHrp.CFrame = bestEntryCF
+    cHrp.AssemblyLinearVelocity = Vector3.zero
+    task.wait(0.15)
+    local tpOk, tpRes = pcall(function()
+     return Net:RemoteFunction("BoatCastleTeleporters"):InvokeServer("InitiateTeleport", bestA)
+    end)
+    if tpOk and tpRes then
+     cHrp.CFrame = bestDestCF
+     cHrp.AssemblyLinearVelocity = Vector3.zero
+     task.wait(0.25)
+     return true
+    end
+   end
+  end
+ end
+ return false
+end
+
+local function PickBestSubmarineDestination(targetPos)
+ if not Net then return nil, math.huge end
+ local pickName, bestCost = nil, math.huge
+ local beli = 0
+ pcall(function()
+  local d = LocalPlayer:FindFirstChild("Data")
+  local b = d and d:FindFirstChild("Beli")
+  if b then beli = tonumber(b.Value) or 0 end
+ end)
+ pcall(function()
+  local subRF = Net:RemoteFunction("SubmarineTransportation")
+  local avail = subRF:InvokeServer("GetAvailableLocations")
+  if type(avail) == "table" then
+   for k, entry in pairs(avail) do
+    local locName = type(entry) == "table" and (entry.Name or entry.Location or entry.Id) or (type(k) == "string" and k or tostring(entry))
+    local price = type(entry) == "table" and (tonumber(entry.TransportationPrice) or 0) or 0
+    local endLoc = type(entry) == "table" and entry.EndLocation or nil
+    if locName and string.lower(locName) ~= "submerged island" and price <= beli then
+     local endPos = nil
+     if typeof(endLoc) == "CFrame" then
+      endPos = endLoc.Position
+     elseif typeof(endLoc) == "Vector3" then
+      endPos = endLoc
+     else
+      local o = workspace:FindFirstChild("_WorldOrigin")
+      local locs = o and o:FindFirstChild("Locations")
+      local lp = locs and locs:FindFirstChild(locName)
+      if lp and lp:IsA("BasePart") then endPos = lp.Position end
+     end
+     local d = endPos and (endPos - targetPos).Magnitude or 99999
+     if d < bestCost then
+      bestCost = d
+      pickName = locName
+     end
+    end
+   end
+  end
+ end)
+ return pickName, bestCost
+end
+
+local function ExitSubmergedViaSubmarine(targetPos)
+ if not Net then return false end
+ local cChar = LocalPlayer.Character
+ local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+ if not cHrp or not IsSea3SubmergedPos(cHrp.Position) then return false end
+
+ local sw2CF = (Polar.World and Polar.World.FindNPC and Polar.World:FindNPC("Submarine Worker2"))
+  or CFrame.new(11427.9, -2156.4, 9726.2)
+ if (cHrp.Position - sw2CF.Position).Magnitude > 14 then
+  MoveDirectly(sw2CF * CFrame.new(0, 2, 3))
+ end
+
+ cChar = LocalPlayer.Character
+ cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+ if not cHrp then return false end
+ if not IsSea3SubmergedPos(cHrp.Position) then return true end
+ if (cHrp.Position - sw2CF.Position).Magnitude > 24 then return false end
+
+ for _ = 1, 6 do
+  local npcs = workspace:FindFirstChild("NPCs")
+  local npc = npcs and npcs:FindFirstChild("Submarine Worker2")
+  if npc then
+   sw2CF = npc:GetPivot()
+   break
+  end
+  task.wait(0.1)
+ end
+
+ cHrp.CFrame = sw2CF * CFrame.new(0, 2, 3)
+ cHrp.AssemblyLinearVelocity = Vector3.zero
+ task.wait(0.2)
+
+ local left = false
+ local pickName = PickBestSubmarineDestination(targetPos) or "Tiki Outpost"
+ for attempt = 1, 2 do
+  local okT, resT = pcall(function()
+   return Net:RemoteFunction("SubmarineTransportation"):InvokeServer("InitiateTeleport", pickName)
+  end)
+  if okT and (type(resT) == "table" or resT == true) then
+   left = true
+   break
+  end
+  if attempt == 1 then
+   cHrp.CFrame = sw2CF * CFrame.new(0, 2, 3)
+   cHrp.AssemblyLinearVelocity = Vector3.zero
+   task.wait(0.3)
+  end
+ end
+
+ if not left then
+  pcall(function()
+   Net:RemoteFunction("SubmarineWorkerSpeak"):InvokeServer("LeaveAbnormally")
+  end)
+  pcall(function()
+   Net:RemoteFunction("SubmarineTransportation"):InvokeServer("LeaveAbnormally")
+  end)
+ end
+ for _ = 1, 12 do
+  task.wait(0.25)
+  local aChar = LocalPlayer.Character
+  local aHrp = aChar and aChar:FindFirstChild("HumanoidRootPart")
+  if aHrp and not IsSea3SubmergedPos(aHrp.Position) then
+   aHrp.AssemblyLinearVelocity = Vector3.zero
+   return true
+  end
+ end
+ return false
+end
+
+local function EnterSubmergedViaTiki()
+ EnsureSubmergedMapLoaded()
+ local cChar = LocalPlayer.Character
+ local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+ if not cHrp then return false end
+ if IsSea3SubmergedPos(cHrp.Position) then return true end
+ if not Net then return false end
+
+ local okAsk, killedTiki = pcall(function()
+  return Net:RemoteFunction("SubmarineWorkerSpeak"):InvokeServer("AskKilledTikiBoss")
+ end)
+ if not (okAsk and killedTiki == true) then return false end
+
+ local swCF = (Polar.World and Polar.World.FindNPC and Polar.World:FindNPC("Submarine Worker"))
+  or CFrame.new(-16269.4, 24.0, 1371.7)
+ if (cHrp.Position - swCF.Position).Magnitude > 2200 then
+  TrySea3BoatCastlePortal(cHrp, swCF.Position)
+  cChar = LocalPlayer.Character
+  cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+ end
+ if cHrp and (cHrp.Position - swCF.Position).Magnitude > 14 then
+  MoveDirectly(swCF * CFrame.new(0, 2, 3))
+ end
+
+ cChar = LocalPlayer.Character
+ cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+ if not cHrp then return false end
+ if IsSea3SubmergedPos(cHrp.Position) then return true end
+ if (cHrp.Position - swCF.Position).Magnitude > 24 then return false end
+
+ -- Wait briefly after arrival so server position and NPC streaming sync before remote invoke
+ for _ = 1, 8 do
+  local npcs = workspace:FindFirstChild("NPCs")
+  local npc = npcs and npcs:FindFirstChild("Submarine Worker")
+  if npc then
+   swCF = npc:GetPivot()
+   break
+  end
+  task.wait(0.1)
+ end
+
+ cHrp.CFrame = swCF * CFrame.new(0, 2, 3)
+ cHrp.AssemblyLinearVelocity = Vector3.zero
+ task.wait(0.25)
+
+ for attempt = 1, 3 do
+  local okTravel, resTravel = pcall(function()
+   return Net:RemoteFunction("SubmarineWorkerSpeak"):InvokeServer("TravelToSubmergedIsland")
+  end)
+  if okTravel and resTravel then
+   for _ = 1, 12 do
+    task.wait(0.25)
+    local aChar = LocalPlayer.Character
+    local aHrp = aChar and aChar:FindFirstChild("HumanoidRootPart")
+    if aHrp and IsSea3SubmergedPos(aHrp.Position) then
+     aHrp.AssemblyLinearVelocity = Vector3.zero
+     return true
+    end
+   end
+  end
+  if attempt < 3 then
+   cChar = LocalPlayer.Character
+   cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+   if cHrp and (cHrp.Position - swCF.Position).Magnitude <= 24 then
+    cHrp.CFrame = swCF * CFrame.new(0, 2, 3)
+    cHrp.AssemblyLinearVelocity = Vector3.zero
+   end
+   task.wait(0.35)
+  end
+ end
+ return false
+end
+
+local function MoveViaSea3SurfaceShortcuts(hrp, targetPos)
+ if not hrp or not targetPos then return hrp end
+ if IsSea3SubmergedPos(hrp.Position) or IsSea3SubmergedPos(targetPos) then return hrp end
+
+ TrySea3BoatCastlePortal(hrp, targetPos)
+ local cChar = LocalPlayer.Character
+ hrp = (cChar and cChar:FindFirstChild("HumanoidRootPart")) or hrp
+
+ local remDist = (hrp.Position - targetPos).Magnitude
+ local swCF = (Polar.World and Polar.World.FindNPC and Polar.World:FindNPC("Submarine Worker"))
+  or CFrame.new(-16269.4, 24.0, 1371.7)
+ if remDist > 5500 and (hrp.Position - swCF.Position).Magnitude <= 2200 then
+  local pickName, pickCost = PickBestSubmarineDestination(targetPos)
+  if pickName and (remDist - pickCost) > 3500 then
+   if EnterSubmergedViaTiki() then
+    ExitSubmergedViaSubmarine(targetPos)
+    local aChar = LocalPlayer.Character
+    hrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+   end
+  end
+ end
+ return hrp
+end
+
 function Polar.Teleport:To(targetCFrame)
  if typeof(targetCFrame) == "Vector3" then
- targetCFrame = CFrame.new(targetCFrame)
+  targetCFrame = CFrame.new(targetCFrame)
  end
  local char = LocalPlayer.Character
  local hrp = char and char:FindFirstChild("HumanoidRootPart")
  if not hrp then return end
- 
- -- Teletransporte especial para Sea 1 Underwater City (X > 50000)
- if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
+
+ local targetPos = targetCFrame.Position
+
+ -- Sea 1 Underwater City (X > 50000)
+ if targetPos.X > 50000 and hrp.Position.X < 50000 then
   local mapFolder = workspace:FindFirstChild("Map")
   local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
   local portal = (tpSpawn and (tpSpawn:FindFirstChild("Entrance") or tpSpawn:FindFirstChild("Whirlpool")))
@@ -1142,10 +1617,11 @@ function Polar.Teleport:To(targetCFrame)
   if not cHrp or cHrp.Position.X < 50000 then
    return
   end
+  hrp = cHrp
  end
 
  -- Salida de Sea 1 Underwater City hacia el mapa principal
- if targetCFrame.Position.X < 50000 and hrp.Position.X > 50000 then
+ if targetPos.X < 50000 and hrp.Position.X > 50000 then
   local mapFolder = workspace:FindFirstChild("Map")
   local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
   local exitPortal = tpSpawn and (tpSpawn:FindFirstChild("Exit") or tpSpawn:FindFirstChild("ExitPoint"))
@@ -1182,10 +1658,11 @@ function Polar.Teleport:To(targetCFrame)
   if not aHrp or aHrp.Position.X > 50000 then
    return
   end
+  hrp = aHrp
  end
- 
- -- Cursed Ship (Acceso al sub-lugar desde el Mar 2 Principal)
- if targetCFrame.Position.Z > 25000 and hrp.Position.Z < 25000 then
+
+ -- Sea 2 Cursed Ship (Z > 25000)
+ if targetPos.Z > 25000 and hrp.Position.Z < 25000 then
  local door = FindCursedShipEntrance()
  if door then
  MoveDirectly(door.CFrame)
@@ -1206,10 +1683,11 @@ function Polar.Teleport:To(targetCFrame)
  end
  end
  if entered then
- return
+  local cChar = LocalPlayer.Character
+  hrp = cChar and cChar:FindFirstChild("HumanoidRootPart") or hrp
  end
  end
- 
+
  local cChar = LocalPlayer.Character
  local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
  if not cHrp or cHrp.Position.Z < 25000 then
@@ -1217,10 +1695,11 @@ function Polar.Teleport:To(targetCFrame)
  task.wait(1.5)
  return
  end
+ hrp = cHrp
  end
- 
- -- Barco Maldito (Salida hacia el Mar 2 Principal si el objetivo está fuera)
- if targetCFrame.Position.Z < 25000 and hrp.Position.Z > 25000 then
+
+ -- Salida Cursed Ship
+ if targetPos.Z < 25000 and hrp.Position.Z > 25000 then
  local door = FindCursedShipExit()
  local exited = false
  if door then
@@ -1241,7 +1720,7 @@ function Polar.Teleport:To(targetCFrame)
  end
  end
  end
- 
+
  if not exited then
  warn("[Polar Hub] Puerta de salida no detectada o inoperante. Intentando GoHome...")
  if CommF then
@@ -1259,95 +1738,199 @@ function Polar.Teleport:To(targetCFrame)
  end
  end
  end
- 
- if exited then
- return
- else
+
+ if not exited then
  warn("[Polar Hub] No se pudo salir del Barco Maldito. Evitando tween directo al agua.")
  task.wait(1.5)
  return
  end
+ local aChar = LocalPlayer.Character
+ hrp = aChar and aChar:FindFirstChild("HumanoidRootPart") or hrp
  end
- 
- MoveDirectly(targetCFrame)
+
+ -- Sea 3 Beautiful Pirate Domain (WaterfallBossHitbox <-> TurtleEntranceBoss)
+ if (not IsSea3BeautifulDomainPos(hrp.Position)) and IsSea3BeautifulDomainPos(targetPos) and CommF then
+  local ok, ret = pcall(function()
+   return CommF:InvokeServer("requestEntrance", "WaterfallBossHitbox")
+  end)
+  if not (ok and typeof(ret) == "Vector3") then
+   local mapF = workspace:FindFirstChild("Map")
+   local tDoor = mapF and mapF:FindFirstChild("Turtle") and mapF.Turtle:FindFirstChild("Entrance")
+    and mapF.Turtle.Entrance:FindFirstChild("Door") and mapF.Turtle.Entrance.Door:FindFirstChild("BossDoor")
+    and mapF.Turtle.Entrance.Door.BossDoor:FindFirstChild("Hitbox")
+   local doorCF = (tDoor and tDoor:IsA("BasePart") and tDoor.CFrame) or CFrame.new(-11993.6, 334.8, -8829.2)
+   if IsSea3SubmergedPos(hrp.Position) then
+    ExitSubmergedViaSubmarine(doorCF.Position)
+    local aChar = LocalPlayer.Character
+    hrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+   end
+   hrp = MoveViaSea3SurfaceShortcuts(hrp, doorCF.Position)
+   if (hrp.Position - doorCF.Position).Magnitude > 14 then
+    MoveDirectly(doorCF)
+   end
+   ok, ret = pcall(function()
+    return CommF:InvokeServer("requestEntrance", "WaterfallBossHitbox")
+   end)
+  end
+  if ok and typeof(ret) == "Vector3" then
+   local aChar = LocalPlayer.Character
+   local aHrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+   aHrp.CFrame = CFrame.new(ret)
+   aHrp.AssemblyLinearVelocity = Vector3.zero
+   task.wait(0.25)
+   hrp = aHrp
+  end
+  if not IsSea3BeautifulDomainPos(hrp.Position) then
+   warn("[Polar Hub] No se pudo entrar al dominio de Beautiful Pirate.")
+   return false
+  end
+ elseif IsSea3BeautifulDomainPos(hrp.Position) and (not IsSea3BeautifulDomainPos(targetPos)) and CommF then
+  local ok, ret = pcall(function()
+   return CommF:InvokeServer("requestEntrance", "TurtleEntranceBoss")
+  end)
+  if not (ok and typeof(ret) == "Vector3") then
+   local mapF = workspace:FindFirstChild("Map")
+   local wDoor = mapF and mapF:FindFirstChild("Waterfall") and mapF.Waterfall:FindFirstChild("BossRoom")
+    and mapF.Waterfall.BossRoom:FindFirstChild("Door") and mapF.Waterfall.BossRoom.Door:FindFirstChild("BossDoor")
+    and mapF.Waterfall.BossRoom.Door.BossDoor:FindFirstChild("Hitbox")
+   local exitCF = (wDoor and wDoor:IsA("BasePart") and wDoor.CFrame) or CFrame.new(5369.0, 34.1, -497.1)
+   if (hrp.Position - exitCF.Position).Magnitude > 14 then
+    MoveDirectly(exitCF)
+   end
+   ok, ret = pcall(function()
+    return CommF:InvokeServer("requestEntrance", "TurtleEntranceBoss")
+   end)
+  end
+  if ok and typeof(ret) == "Vector3" then
+   local aChar = LocalPlayer.Character
+   local aHrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+   aHrp.CFrame = CFrame.new(ret)
+   aHrp.AssemblyLinearVelocity = Vector3.zero
+   task.wait(0.25)
+   hrp = aHrp
+  end
+  if IsSea3BeautifulDomainPos(hrp.Position) then
+   warn("[Polar Hub] No se pudo salir del dominio de Beautiful Pirate.")
+   return false
+  end
+ end
+
+ -- Sea 3 Submerged Island: mantener cargado en Workspace y usar Submarino con proximidad real al NPC
+ if IsSea3SubmergedPos(targetPos) then
+  EnsureSubmergedMapLoaded()
+  if not IsSea3SubmergedPos(hrp.Position) then
+   local entered = EnterSubmergedViaTiki()
+   local aChar = LocalPlayer.Character
+   hrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+   if (not entered) or (not hrp) or (not IsSea3SubmergedPos(hrp.Position)) then
+    warn("[Polar Hub] No se pudo entrar a Submerged Island via submarino.")
+    return false
+   end
+  end
+ elseif IsSea3SubmergedPos(hrp.Position) and not IsSea3SubmergedPos(targetPos) then
+  local exited = ExitSubmergedViaSubmarine(targetPos)
+  local aChar = LocalPlayer.Character
+  hrp = (aChar and aChar:FindFirstChild("HumanoidRootPart")) or hrp
+  if (not exited) or (not hrp) or IsSea3SubmergedPos(hrp.Position) then
+   warn("[Polar Hub] No se pudo salir de Submerged Island via submarino.")
+   return false
+  end
+ end
+
+ -- Sea 3 BoatCastleTeleporters & Tiki Submarine shortcut: optimizar viajes largos en superficie
+ if (not IsSea3SubmergedPos(hrp.Position)) and (not IsSea3SubmergedPos(targetPos)) and (not IsSea3BeautifulDomainPos(hrp.Position)) and (not IsSea3BeautifulDomainPos(targetPos)) then
+  hrp = MoveViaSea3SurfaceShortcuts(hrp, targetPos)
+ end
+
+ return MoveDirectly(targetCFrame)
 end
 
 function Polar.Teleport:ToIsland(islandName)
  if not islandName or islandName == "" then return end
- 
+
+ local lowerIsland = string.lower(islandName)
  local inCursedShip = game.PlaceId == 4442272183 or (LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character.HumanoidRootPart.Position.Z > 25000)
- if inCursedShip and string.lower(islandName) == "cursed ship" then
- return -- Ya estamos en el barco, no es necesario viajar
+ if inCursedShip and lowerIsland == "cursed ship" then
+  return
  end
- 
- local origin = workspace:FindFirstChild("_WorldOrigin")
- local locs = origin and origin:FindFirstChild("Locations")
- local pos = nil
- 
- if locs then
- for _, v in ipairs(locs:GetChildren()) do
- if string.find(string.lower(v.Name), string.lower(islandName)) then
- pos = v.Position
- break
- end
- end
- end
- 
- -- Fallbacks absolutos de islas
- if not pos then
+
+ -- Fallbacks / Landing coords verificadas en superficie (evita marcadores subterraneos de _WorldOrigin.Locations como Hydra Y=-989 o Turtle Y=-548)
  local fallbacks = {
- ["bandit"] = Vector3.new(1051.8, 16.0, 1557.7),
- ["starter island"] = Vector3.new(1051.8, 16.0, 1557.7),
- ["town"] = Vector3.new(-655.0, 15.0, 1550.0),
- ["middle town"] = Vector3.new(-655.0, 15.0, 1550.0),
- ["jungle"] = Vector3.new(-1461.0, 30.0, -51.0),
- ["pirate"] = Vector3.new(-1151.6, 14.0, 3863.1),
- ["pirate village"] = Vector3.new(-1151.6, 14.0, 3863.1),
- ["desert"] = Vector3.new(1066.8, 16.0, 4430.1),
- ["snow"] = Vector3.new(1400.6, 80.0, -1311.3),
- ["frozen village"] = Vector3.new(1400.6, 80.0, -1311.3),
- ["bandit village"] = Vector3.new(-2880.7, 15.0, 5430.9),
- ["marine"] = Vector3.new(-4699.3, 15.0, 4227.6),
- ["marine fortress"] = Vector3.new(-4699.3, 15.0, 4227.6),
- ["sky"] = Vector3.new(-5406.3, 410.1, -694.0),
- ["skylands"] = Vector3.new(-5406.3, 410.1, -694.0),
- ["prison"] = Vector3.new(5208.3, 16.0, 736.6),
- ["colosseum"] = Vector3.new(-1342.3, 15.0, -2928.6),
- ["magma"] = Vector3.new(-5308.9, 20.0, 8482.7),
- ["magma village"] = Vector3.new(-5308.9, 20.0, 8482.7),
- ["fishman"] = Vector3.new(61163.9, 15.0, 1819.8),
- ["underwater city"] = Vector3.new(61163.9, 15.0, 1819.8),
- ["upper sky"] = Vector3.new(-7033.1, 5590.6, 1353.1),
- ["fountain"] = Vector3.new(5263.5, 75.0, 4087.6),
- ["fountain city"] = Vector3.new(5263.5, 75.0, 4087.6),
- ["sewers"] = Vector3.new(-196.8, -545.6, 106.8),
- ["kingdom of rose"] = Vector3.new(-429, 73, 299),
- ["green zone"] = Vector3.new(-2840, 73, -2990),
- ["graveyard"] = Vector3.new(-5154, 8, -714),
- ["snow mountain"] = Vector3.new(639, 44, -5137),
- ["hot and cold"] = Vector3.new(-312, 190, -4933),
- ["cursed ship"] = Vector3.new(943, 121, 1269),
- ["ice castle"] = Vector3.new(5669, 28, -6482),
- ["forgotten island"] = Vector3.new(-2544, 256, -429),
- ["port town"] = Vector3.new(-290, 44, 5582),
- ["hydra island"] = Vector3.new(5230, 60, 763),
- ["great tree"] = Vector3.new(2402, 73, -6682),
- ["floating turtle"] = Vector3.new(-2014, 185, -10238),
- ["turtle"] = Vector3.new(-2014, 185, -10238),
- ["haunted castle"] = Vector3.new(-9516, 169, 6079),
- ["sea of treats"] = Vector3.new(-198, 48, -12118),
- ["tiki outpost"] = Vector3.new(-16238, 10, 439),
- ["submerged island"] = Vector3.new(-18021, 15, 2810),
- ["castle on sea"] = Vector3.new(-5085, 316, 3152)
+  ["bandit"] = Vector3.new(1051.8, 16.0, 1557.7),
+  ["starter island"] = Vector3.new(1051.8, 16.0, 1557.7),
+  ["town"] = Vector3.new(-655.0, 15.0, 1550.0),
+  ["middle town"] = Vector3.new(-655.0, 15.0, 1550.0),
+  ["jungle"] = Vector3.new(-1461.0, 30.0, -51.0),
+  ["pirate"] = Vector3.new(-1151.6, 14.0, 3863.1),
+  ["pirate village"] = Vector3.new(-1151.6, 14.0, 3863.1),
+  ["desert"] = Vector3.new(1066.8, 16.0, 4430.1),
+  ["snow"] = Vector3.new(1400.6, 80.0, -1311.3),
+  ["frozen village"] = Vector3.new(1400.6, 80.0, -1311.3),
+  ["bandit village"] = Vector3.new(-2880.7, 15.0, 5430.9),
+  ["marine"] = Vector3.new(-4699.3, 15.0, 4227.6),
+  ["marine fortress"] = Vector3.new(-4699.3, 15.0, 4227.6),
+  ["sky"] = Vector3.new(-5406.3, 410.1, -694.0),
+  ["skylands"] = Vector3.new(-5406.3, 410.1, -694.0),
+  ["prison"] = Vector3.new(5208.3, 16.0, 736.6),
+  ["colosseum"] = Vector3.new(-1342.3, 15.0, -2928.6),
+  ["magma"] = Vector3.new(-5308.9, 20.0, 8482.7),
+  ["magma village"] = Vector3.new(-5308.9, 20.0, 8482.7),
+  ["fishman"] = Vector3.new(61163.9, 15.0, 1819.8),
+  ["underwater city"] = Vector3.new(61163.9, 15.0, 1819.8),
+  ["upper sky"] = Vector3.new(-7033.1, 5590.6, 1353.1),
+  ["fountain"] = Vector3.new(5263.5, 75.0, 4087.6),
+  ["fountain city"] = Vector3.new(5263.5, 75.0, 4087.6),
+  ["sewers"] = Vector3.new(-196.8, -545.6, 106.8),
+  ["kingdom of rose"] = Vector3.new(-429, 73, 299),
+  ["green zone"] = Vector3.new(-2840, 73, -2990),
+  ["graveyard"] = Vector3.new(-5154, 8, -714),
+  ["snow mountain"] = Vector3.new(639, 44, -5137),
+  ["hot and cold"] = Vector3.new(-312, 190, -4933),
+  ["cursed ship"] = Vector3.new(943, 121, 1269),
+  ["ice castle"] = Vector3.new(5669, 28, -6482),
+  ["forgotten island"] = Vector3.new(-2544, 256, -429),
+  -- Sea 3 Landing Positions Verificadas
+  ["port town"] = Vector3.new(-450.2, 107.6, 5950.7),
+  ["hydra island"] = Vector3.new(5214.3, 1000.4, 759.5),
+  ["dragon dojo"] = Vector3.new(5868.4, 1204.6, 870.8),
+  ["great tree"] = Vector3.new(2485.7, 73.3, -6788.7),
+  ["floating turtle"] = Vector3.new(-12680.4, 389.9, -9902.1),
+  ["turtle"] = Vector3.new(-12680.4, 389.9, -9902.1),
+  ["mansion"] = Vector3.new(-12547.8, 337.2, -7487.1),
+  ["beautiful pirate domain"] = Vector3.new(5366.5, 71.1, -225.9),
+  ["haunted castle"] = Vector3.new(-9517.0, 172.0, 6078.4),
+  ["sea of treats"] = Vector3.new(-2022.3, 36.9, -12031.0),
+  ["north pole"] = Vector3.new(-1164.5, 59.2, -14492.7),
+  ["tiki outpost"] = Vector3.new(-16548.9, 55.6, -172.9),
+  ["submerged island"] = Vector3.new(10780.6, -2088.5, 9260.4),
+  ["castle on sea"] = Vector3.new(-5116.3, 315.7, -3133.6),
+  ["castle on the sea"] = Vector3.new(-5116.3, 315.7, -3133.6)
  }
- pos = fallbacks[string.lower(islandName)]
+
+ local pos = fallbacks[lowerIsland]
+ if not pos then
+  local origin = workspace:FindFirstChild("_WorldOrigin")
+  local locs = origin and origin:FindFirstChild("Locations")
+  if locs then
+   local exact = locs:FindFirstChild(islandName)
+   if exact and exact:IsA("BasePart") then
+    pos = exact.Position
+   else
+    for _, v in ipairs(locs:GetChildren()) do
+     if v:IsA("BasePart") and string.find(string.lower(v.Name), lowerIsland, 1, true) then
+      pos = v.Position
+      break
+     end
+    end
+   end
+  end
  end
- 
+
  if pos then
- print("[Polar Hub] [TP] Viajando hacia isla: " .. islandName)
- local safeY = (pos.Y < -50 or string.find(string.lower(islandName), "sewer") or string.find(string.lower(islandName), "fish") or string.find(string.lower(islandName), "underwater")) and (pos.Y + 4) or (pos.Y + 12)
- Polar.Teleport:To(CFrame.new(pos.X, safeY, pos.Z))
- task.wait(0.8) -- Pausa breve para streaming
+  print("[Polar Hub] [TP] Viajando hacia isla: " .. islandName)
+  local safeY = (pos.Y < -50 or string.find(lowerIsland, "sewer") or string.find(lowerIsland, "fish") or string.find(lowerIsland, "underwater") or string.find(lowerIsland, "submerged")) and (pos.Y + 4) or (pos.Y + 12)
+  Polar.Teleport:To(CFrame.new(pos.X, safeY, pos.Z))
+  task.wait(0.8)
  end
 end
 
@@ -1421,29 +2004,51 @@ local FallbackPositions = {
  ["Awakened Ice Admiral"] = Vector3.new(5655, 38, -6482),
  ["Forgotten Quest Giver"] = Vector3.new(-2544, 256, -429),
 
- -- Sea 3 Quest Givers
- ["Pirate Port Quest Giver"] = Vector3.new(-290, 44, 5582),
- ["Dragon Crew Quest Giver"] = Vector3.new(5230, 60, 763),
- ["Hydra Town Quest Giver"] = Vector3.new(5748, 610, -278),
- ["Marine Tree Quest Giver"] = Vector3.new(2402, 73, -6682),
- ["Turtle Adventure Quest Giver"] = Vector3.new(-2014, 185, -10238),
- ["Deep Forest Quest Giver"] = Vector3.new(-12871, 333, -7751),
- ["Deep Forest Area 2 Quest Giver"] = Vector3.new(-10620, 331, -8671),
- ["Haunted Castle Quest Giver 1"] = Vector3.new(-9516, 169, 6079),
- ["Haunted Castle Quest Giver 2"] = Vector3.new(-9516, 175, 6079),
- ["Peanut Quest Giver"] = Vector3.new(-198, 48, -12118),
- ["Ice Cream Quest Giver"] = Vector3.new(-822, 63, -10963),
- ["Cake Quest Giver 1"] = Vector3.new(198, 25, -12109),
- ["Cake Quest Giver 2"] = Vector3.new(680, 25, -12543),
- ["Chocolate Quest Giver 1"] = Vector3.new(228, 25, -11124),
- ["Chocolate Quest Giver 2"] = Vector3.new(1541, 25, -12105),
- ["Candy Cane Quest Giver"] = Vector3.new(-1190, 14, -14352),
- ["Tiki Quest Giver 1"] = Vector3.new(-16238, 10, 439),
- ["Tiki Quest Giver 2"] = Vector3.new(-16521, 52, 1042),
- ["Tiki Quest Giver 3"] = Vector3.new(-16901, 85, 1512),
- ["Submerged Quest Giver 1"] = Vector3.new(-18021, 15, 2810),
- ["Submerged Quest Giver 2"] = Vector3.new(-18512, 42, 3211),
- ["Submerged Quest Giver 3"] = Vector3.new(-19102, 90, 3821)
+ -- Sea 3 Quest Givers (Verificados en vivo via ReplicatedStorage.NPCs & GuideModule)
+ ["Pirate Port Quest Giver"] = Vector3.new(-450.2, 107.6, 5950.7),
+ ["Dragon Crew Quest Giver"] = Vector3.new(6735.1, 126.9, -711.1),
+ ["Hydra Town Quest Giver"] = Vector3.new(5214.3, 1003.5, 759.5),
+ ["Marine Tree Quest Giver"] = Vector3.new(2485.7, 73.3, -6788.7),
+ ["Turtle Adventure Quest Giver"] = Vector3.new(-10581.7, 330.8, -8761.2),
+ ["Deep Forest Quest Giver"] = Vector3.new(-13234.1, 331.4, -7625.5),
+ ["Deep Forest Area 2 Quest Giver"] = Vector3.new(-12680.4, 389.9, -9902.1),
+ ["Haunted Castle Quest Giver 1"] = Vector3.new(-9479.3, 141.2, 5566.0),
+ ["Haunted Castle Quest Giver 2"] = Vector3.new(-9517.0, 172.0, 6078.4),
+ ["Peanut Quest Giver"] = Vector3.new(-2105.6, 37.2, -10195.6),
+ ["Ice Cream Quest Giver"] = Vector3.new(-819.4, 64.9, -10967.3),
+ ["Cake Quest Giver 1"] = Vector3.new(-2022.3, 36.9, -12031.0),
+ ["Cake Quest Giver 2"] = Vector3.new(-1928.3, 37.7, -12840.6),
+ ["Chocolate Quest Giver 1"] = Vector3.new(231.7, 23.8, -12200.3),
+ ["Chocolate Quest Giver 2"] = Vector3.new(151.1, 23.8, -12774.7),
+ ["Candy Cane Quest Giver"] = Vector3.new(-1164.5, 59.2, -14492.7),
+ ["Tiki Quest Giver 1"] = Vector3.new(-16548.9, 55.6, -172.9),
+ ["Tiki Quest Giver 2"] = Vector3.new(-16541.0, 54.8, 1051.5),
+ ["Tiki Quest Giver 3"] = Vector3.new(-16665.2, 104.5, 1579.6),
+ ["Submerged Quest Giver 1"] = Vector3.new(10780.6, -2088.5, 9260.4),
+ ["Submerged Quest Giver 2"] = Vector3.new(10883.5, -2086.9, 10034.0),
+ ["Submerged Quest Giver 3"] = Vector3.new(9637.2, -1993.2, 9616.3),
+ -- Sea 3 Special NPCs Verificados
+ ["Butler"] = Vector3.new(-5116.3, 315.7, -3133.6),
+ ["Elite Hunter"] = Vector3.new(-5417.7, 313.0, -2823.0),
+ ["Death King"] = Vector3.new(-8722.2, 141.5, 6247.6),
+ ["drip_mama"] = Vector3.new(-2137.7, 66.3, -12326.3),
+ ["Cake Scientist"] = Vector3.new(-2711.0, 63.4, -12895.7),
+ ["Sweet Crafter"] = Vector3.new(223.1, 23.5, -12770.3),
+ ["Citizen"] = Vector3.new(-12441.6, 330.7, -7676.2),
+ ["Indra"] = Vector3.new(-12483.6, 332.0, -7769.2),
+ ["Previous Hero"] = Vector3.new(-10371.5, 330.7, -10131.5),
+ ["Hungry Man"] = Vector3.new(-10921.6, 620.5, -10270.4),
+ ["Horned Man"] = Vector3.new(-11893.7, 929.6, -8760.6),
+ ["Set Home Point"] = Vector3.new(-1073.2, 20.5, -14179.2),
+ ["Submarine Worker2"] = Vector3.new(11427.9, -2156.4, 9726.2),
+ ["Sharkman Master"] = Vector3.new(10266.9, -2157.7, 9630.9),
+ ["Dojo Trainer"] = Vector3.new(5868.4, 1204.6, 870.8),
+ ["Dragon Wizard"] = Vector3.new(5771.8, 1205.7, 804.2),
+ ["Dragon Hunter"] = Vector3.new(5862.4, 1205.7, 807.5),
+ ["Uzoth"] = Vector3.new(5661.8, 1210.8, 863.1),
+ ["Ancient One"] = Vector3.new(28974.2, 14889.0, -119.1),
+ ["Mysterious Force"] = Vector3.new(3032.7, 2280.8, -7325.5),
+ ["Mysterious Force3"] = Vector3.new(28611.2, 14896.1, 105.4)
 }
 
 Polar.Detection = {
@@ -1466,101 +2071,183 @@ function Polar.Detection:FuzzyMatch(str1, str2)
  return false
 end
 
+local function ExtractNPCCFrame(npc)
+ if not npc then return nil end
+ if npc:IsA("BasePart") then
+  return npc.Position.Magnitude > 5 and npc.CFrame or nil
+ end
+ if npc:IsA("Model") then
+  local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc.PrimaryPart or npc:FindFirstChildOfClass("BasePart")
+  if part and part.Position.Magnitude > 5 then
+   return part.CFrame
+  end
+  local piv = npc:GetPivot()
+  if piv and piv.Position.Magnitude > 5 then
+   return piv
+  end
+ end
+ return nil
+end
+
+function Polar.Detection:FindNPCFromGuideModule(npcName)
+ if not npcName or npcName == "" then return nil end
+ local lowerTarget = string.lower(npcName)
+ local bestCF = nil
+ pcall(function()
+  local gm = ReplicatedStorage:FindFirstChild("GuideModule")
+  if not gm then return end
+  local ok, guide = pcall(require, gm)
+  local npcList = ok and guide and guide.Data and guide.Data.NPCList
+  if type(npcList) ~= "table" then return end
+
+  -- 1. Coincidencia exacta primero (NPCName o InternalQuestName)
+  for part, info in pairs(npcList) do
+   if type(info) == "table" then
+    local gName = info.NPCName and string.lower(tostring(info.NPCName)) or ""
+    local qName = info.InternalQuestName and string.lower(tostring(info.InternalQuestName)) or ""
+    if gName == lowerTarget or qName == lowerTarget then
+     if typeof(part) == "Instance" and part:IsDescendantOf(workspace) then
+      local mdl = part:FindFirstAncestorOfClass("Model")
+      local cf = ExtractNPCCFrame(mdl or part)
+      if cf then bestCF = cf return end
+     end
+     if typeof(info.Position) == "Vector3" and info.Position.Magnitude > 5 then
+      bestCF = CFrame.new(info.Position)
+      return
+     end
+    end
+   end
+  end
+
+  -- 2. FuzzyMatch fallback en GuideModule
+  for part, info in pairs(npcList) do
+   if type(info) == "table" then
+    if (info.NPCName and self:FuzzyMatch(info.NPCName, npcName)) or (info.InternalQuestName and self:FuzzyMatch(info.InternalQuestName, npcName)) then
+     if typeof(part) == "Instance" and part:IsDescendantOf(workspace) then
+      local mdl = part:FindFirstAncestorOfClass("Model")
+      local cf = ExtractNPCCFrame(mdl or part)
+      if cf then bestCF = cf return end
+     end
+     if typeof(info.Position) == "Vector3" and info.Position.Magnitude > 5 then
+      bestCF = CFrame.new(info.Position)
+      return
+     end
+    end
+   end
+  end
+ end)
+ return bestCF
+end
+
 function Polar.Detection:FindNPC(npcName)
  if not npcName or npcName == "" then return nil end
- 
- -- 1. Caché previo
- if getgenv().PolarNPCCache and getgenv().PolarNPCCache[npcName] then
- return getgenv().PolarNPCCache[npcName]
- end
- if Polar.Data.NPCCache and Polar.Data.NPCCache[npcName] then
- return Polar.Data.NPCCache[npcName]
- end
 
  local lowerTarget = string.lower(npcName)
 
- -- 2. Búsqueda directa en workspace.NPCs (coincidencia exacta primero, luego FuzzyMatch)
+ -- 1. Busqueda en vivo en workspace.NPCs (siempre prioridad sobre cache para detectar streaming actual)
  local npcsFolder = workspace:FindFirstChild("NPCs")
  if npcsFolder then
- for _, npc in ipairs(npcsFolder:GetChildren()) do
- if string.lower(npc.Name) == lowerTarget then
- local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildOfClass("BasePart")
- local cf = part and part.CFrame or (npc:IsA("Model") and npc:GetPivot() or nil)
- if cf then
- Polar.Data.NPCCache[npcName] = cf
- if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
- return cf
- end
- end
- end
- for _, npc in ipairs(npcsFolder:GetChildren()) do
- if self:FuzzyMatch(npc.Name, npcName) then
- local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildOfClass("BasePart")
- local cf = part and part.CFrame or (npc:IsA("Model") and npc:GetPivot() or nil)
- if cf then
- Polar.Data.NPCCache[npcName] = cf
- if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
- return cf
- end
- end
- end
+  for _, npc in ipairs(npcsFolder:GetChildren()) do
+   if string.lower(npc.Name) == lowerTarget then
+    local cf = ExtractNPCCFrame(npc)
+    if cf then
+     Polar.Data.NPCCache[npcName] = cf
+     if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+     return cf
+    end
+   end
+  end
+  for _, npc in ipairs(npcsFolder:GetChildren()) do
+   if self:FuzzyMatch(npc.Name, npcName) then
+    local cf = ExtractNPCCFrame(npc)
+    if cf then
+     Polar.Data.NPCCache[npcName] = cf
+     if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+     return cf
+    end
+   end
+  end
  end
 
- -- 2b. Búsqueda en ReplicatedStorage.NPCs (Modelos con Pivot sin necesitar Streaming cercano)
+ -- 2. GuideModule.Data.NPCList (registro interno oficial del cliente con Positions reales incluso sin streaming)
+ local guideCF = self:FindNPCFromGuideModule(npcName)
+ if guideCF then
+  Polar.Data.NPCCache[npcName] = guideCF
+  if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = guideCF end
+  return guideCF
+ end
+
+ -- 3. Cache previo valido (solo si no esta en vivo en workspace.NPCs ni en GuideModule)
+ if getgenv().PolarNPCCache and getgenv().PolarNPCCache[npcName] then
+  return getgenv().PolarNPCCache[npcName]
+ end
+ if Polar.Data.NPCCache and Polar.Data.NPCCache[npcName] then
+  return Polar.Data.NPCCache[npcName]
+ end
+
+ -- 4. Busqueda en ReplicatedStorage.NPCs (Modelos con Pivot sin necesitar Streaming cercano)
  local repNPCs = ReplicatedStorage:FindFirstChild("NPCs")
  if repNPCs then
- for _, npc in ipairs(repNPCs:GetChildren()) do
- if string.lower(npc.Name) == lowerTarget then
- local cf = npc:IsA("Model") and npc:GetPivot() or (npc:IsA("BasePart") and npc.CFrame or nil)
- if cf and cf.Position.Magnitude > 5 then
- Polar.Data.NPCCache[npcName] = cf
- if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
- return cf
- end
- end
- end
- for _, npc in ipairs(repNPCs:GetChildren()) do
- if self:FuzzyMatch(npc.Name, npcName) then
- local cf = npc:IsA("Model") and npc:GetPivot() or (npc:IsA("BasePart") and npc.CFrame or nil)
- if cf and cf.Position.Magnitude > 5 then
- Polar.Data.NPCCache[npcName] = cf
- if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
- return cf
- end
- end
- end
+  for _, npc in ipairs(repNPCs:GetChildren()) do
+   if string.lower(npc.Name) == lowerTarget then
+    local cf = ExtractNPCCFrame(npc)
+    if cf then
+     Polar.Data.NPCCache[npcName] = cf
+     if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+     return cf
+    end
+   end
+  end
+  for _, npc in ipairs(repNPCs:GetChildren()) do
+   if self:FuzzyMatch(npc.Name, npcName) then
+    local cf = ExtractNPCCFrame(npc)
+    if cf then
+     Polar.Data.NPCCache[npcName] = cf
+     if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+     return cf
+    end
+   end
+  end
  end
 
- -- 3. Búsqueda profunda en contenedores secundarios
+ -- 5. Busqueda en contenedores secundarios
  local containers = {
- workspace:FindFirstChild("Enemies"),
- workspace:FindFirstChild("Characters"),
- workspace:FindFirstChild("Map"),
- workspace:FindFirstChild("Locations"),
- workspace
+  workspace:FindFirstChild("Enemies"),
+  workspace:FindFirstChild("Characters"),
+  workspace:FindFirstChild("Map"),
+  workspace:FindFirstChild("Locations"),
+  workspace
  }
 
  for _, folder in ipairs(containers) do
- if folder then
- for _, child in ipairs(folder:GetChildren()) do
- if child:IsA("Model") and (string.lower(child.Name) == lowerTarget or self:FuzzyMatch(child.Name, npcName)) then
- local part = child:FindFirstChild("HumanoidRootPart") or child:FindFirstChild("Head") or child:FindFirstChildOfClass("BasePart")
- if part then
- local cf = part.CFrame
- Polar.Data.NPCCache[npcName] = cf
- return cf
- end
- end
- end
- end
+  if folder then
+   for _, child in ipairs(folder:GetChildren()) do
+    if child:IsA("Model") and (string.lower(child.Name) == lowerTarget or self:FuzzyMatch(child.Name, npcName)) then
+     local cf = ExtractNPCCFrame(child)
+     if cf then
+      Polar.Data.NPCCache[npcName] = cf
+      return cf
+     end
+    end
+   end
+  end
  end
 
- -- 4. Fallback de StreamingEnabled
- if FallbackPositions and FallbackPositions[npcName] then
- local pos = FallbackPositions[npcName]
- local cf = (typeof(pos) == "Vector3" and CFrame.new(pos)) or pos
- Polar.Data.NPCCache[npcName] = cf
- return cf
+ -- 6. Fallback de StreamingEnabled verificado
+ if FallbackPositions then
+  if FallbackPositions[npcName] then
+   local pos = FallbackPositions[npcName]
+   local cf = (typeof(pos) == "Vector3" and CFrame.new(pos)) or pos
+   Polar.Data.NPCCache[npcName] = cf
+   return cf
+  end
+  for k, pos in pairs(FallbackPositions) do
+   if string.lower(k) == lowerTarget then
+    local cf = (typeof(pos) == "Vector3" and CFrame.new(pos)) or pos
+    Polar.Data.NPCCache[npcName] = cf
+    return cf
+   end
+  end
  end
 
  return nil
@@ -1679,52 +2366,100 @@ end
 -- ==================== UNIFIED QUEST ENGINE (MOTOR MAESTRO DE MISIONES) ====================
 Polar.QuestEngine = Polar.QuestEngine or {}
 
+function Polar.QuestEngine:GetGuideQuestData()
+ local qd = nil
+ pcall(function()
+  local gm = ReplicatedStorage:FindFirstChild("GuideModule")
+  local gd = gm and gm:FindFirstChild("GuideData")
+  if gd then
+   local ok, mod = pcall(require, gd)
+   if ok and mod and mod.Data and mod.Data.QuestData then
+    qd = mod.Data.QuestData
+   end
+  end
+ end)
+ return qd
+end
+
 function Polar.QuestEngine:GetActiveQuestTitle()
+ -- Prioridad 1: GuideData.Data.QuestData (estructura oficial del servidor, inmune a ObjectiveRow nil description y traduccion)
+ local qd = self:GetGuideQuestData()
+ if qd and qd.Info then
+  if type(qd.Info.Task) == "table" then
+   for taskKey, taskVal in pairs(qd.Info.Task) do
+    if type(taskKey) == "string" and taskKey ~= "" then
+     return taskKey
+    end
+   end
+  end
+  if qd.Info.CustomTitle and qd.Info.CustomTitle ~= "" then
+   return qd.Info.CustomTitle
+  end
+  if qd.Info.Name and qd.Info.Name ~= "" then
+   return qd.Info.Name
+  end
+  if qd.InternalQuestName and qd.InternalQuestName ~= "" then
+   return qd.InternalQuestName
+  end
+ end
+
  local pgui = LocalPlayer:FindFirstChild("PlayerGui")
  if not pgui then return nil end
 
- -- Prioridad 1: Modern Blox Fruits TrackedQuestFrame
+ -- Prioridad 2: Modern Blox Fruits TrackedQuestFrame (header, description y objective:* rows)
  local tq = pgui:FindFirstChild("TrackedQuestFrame")
  if tq then
- local frame = tq:FindFirstChild("Frame")
- if frame and frame.Visible then
- local header = frame:FindFirstChild("header")
- local headerText = header and header:FindFirstChild("textLabel")
- if headerText and headerText.Text and headerText.Text ~= "" then
- return headerText.Text
- end
- local desc = frame:FindFirstChild("description")
- if desc and desc.Text and desc.Text ~= "" then
- return desc.Text
- end
- end
+  local frame = tq:FindFirstChild("Frame")
+  if frame and frame.Visible then
+   for _, child in ipairs(frame:GetChildren()) do
+    if string.sub(child.Name, 1, 10) == "objective:" then
+     local lbl = child:FindFirstChild("label")
+     if lbl and lbl:IsA("TextLabel") and lbl.Text and lbl.Text ~= "" then
+      return lbl.Text
+     end
+    end
+   end
+   local desc = frame:FindFirstChild("description")
+   if desc and desc:IsA("TextLabel") and desc.Text and desc.Text ~= "" then
+    return desc.Text
+   end
+   local header = frame:FindFirstChild("header")
+   local headerText = header and header:FindFirstChild("textLabel")
+   if headerText and headerText.Text and headerText.Text ~= "" then
+    return headerText.Text
+   end
+  end
  end
 
- -- Prioridad 2: Legacy Main.Quest
+ -- Prioridad 3: Legacy Main.Quest
  local main = pgui:FindFirstChild("Main")
  local questUI = main and main:FindFirstChild("Quest")
  if questUI and questUI.Visible then
- local container = questUI:FindFirstChild("Container")
- if container then
- local title = container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
- if title and title.Text and title.Text ~= "" then
- return title.Text
- end
- local oldTitle = container:FindFirstChild("QuestTitle")
- if oldTitle and oldTitle:IsA("TextLabel") and oldTitle.Text and oldTitle.Text ~= "" then
- return oldTitle.Text
- end
- end
+  local container = questUI:FindFirstChild("Container")
+  if container then
+   local title = container:FindFirstChild("QuestTitle") and container.QuestTitle:FindFirstChild("Title")
+   if title and title.Text and title.Text ~= "" then
+    return title.Text
+   end
+   local oldTitle = container:FindFirstChild("QuestTitle")
+   if oldTitle and oldTitle:IsA("TextLabel") and oldTitle.Text and oldTitle.Text ~= "" then
+    return oldTitle.Text
+   end
+  end
  end
  return nil
 end
 
 function Polar.QuestEngine:HasActiveQuest()
+ local qd = self:GetGuideQuestData()
+ if qd ~= nil then
+  return true
+ end
  local title = self:GetActiveQuestTitle()
  if not title then return false end
  local lowerTitle = string.lower(title)
  if string.find(lowerTitle, "completed") or string.find(lowerTitle, "completada") then
- return false
+  return false
  end
  return true
 end
@@ -1802,46 +2537,77 @@ function Polar.Quest:HasQuest()
 end
 
 function Polar.Quest:GetTargetEnemyNameFromQuest()
+ -- 1. Lectura directa desde GuideData.Data.QuestData (taskKey es el nombre exacto de entidad en servidor)
+ local qd = Polar.QuestEngine:GetGuideQuestData()
+ if qd and qd.Info and type(qd.Info.Task) == "table" then
+  local prog = type(qd.Progress) == "table" and qd.Progress or {}
+  local fallbackTask = nil
+  for taskKey, taskVal in pairs(qd.Info.Task) do
+   if type(taskKey) == "string" and taskKey ~= "" then
+    if not fallbackTask then fallbackTask = taskKey end
+    local reqAmt = type(taskVal) == "number" and taskVal or (type(taskVal) == "table" and taskVal.Amount) or 1
+    local cur = prog[taskKey]
+    if cur ~= true and (type(cur) ~= "number" or cur < reqAmt) then
+     return taskKey
+    end
+   end
+  end
+  if fallbackTask then return fallbackTask end
+ end
+
+ -- 2. Lectura en TrackedQuestFrame (ObjectiveRow / description / header)
+ local uiText = nil
  local pgui = LocalPlayer:FindFirstChild("PlayerGui")
  local tq = pgui and pgui:FindFirstChild("TrackedQuestFrame")
  if tq then
- local frame = tq:FindFirstChild("Frame")
- if frame and frame.Visible then
- local desc = frame:FindFirstChild("description")
- if desc and desc.Text and desc.Text ~= "" then
- return desc.Text
- end
- end
+  local frame = tq:FindFirstChild("Frame")
+  if frame and frame.Visible then
+   for _, child in ipairs(frame:GetChildren()) do
+    if string.sub(child.Name, 1, 10) == "objective:" then
+     local lbl = child:FindFirstChild("label")
+     if lbl and lbl:IsA("TextLabel") and lbl.Text and lbl.Text ~= "" then
+      uiText = lbl.Text
+      break
+     end
+    end
+   end
+   if not uiText then
+    local desc = frame:FindFirstChild("description")
+    if desc and desc:IsA("TextLabel") and desc.Text and desc.Text ~= "" then
+     uiText = desc.Text
+    end
+   end
+  end
  end
 
- local activeTitle = Polar.QuestEngine:GetActiveQuestTitle()
+ local activeTitle = uiText or Polar.QuestEngine:GetActiveQuestTitle()
  if not activeTitle then return nil end
- 
+
  local bestMatch = nil
  local bestLen = 0
- 
+
  if Polar.Data.QuestInfo then
- for _, qData in ipairs(Polar.Data.QuestInfo) do
- if Polar.Detection:FuzzyMatch(activeTitle, qData.name) then
- if #qData.name > bestLen then
- bestLen = #qData.name
- bestMatch = qData.name
- end
- end
- end
+  for _, qData in ipairs(Polar.Data.QuestInfo) do
+   if Polar.Detection:FuzzyMatch(activeTitle, qData.name) then
+    if #qData.name > bestLen then
+     bestLen = #qData.name
+     bestMatch = qData.name
+    end
+   end
+  end
  end
  if Polar.Data.Bosses then
- for _, bData in ipairs(Polar.Data.Bosses) do
- if Polar.Detection:FuzzyMatch(activeTitle, bData.name) then
- if #bData.name > bestLen then
- bestLen = #bData.name
- bestMatch = bData.name
+  for _, bData in ipairs(Polar.Data.Bosses) do
+   if Polar.Detection:FuzzyMatch(activeTitle, bData.name) then
+    if #bData.name > bestLen then
+     bestLen = #bData.name
+     bestMatch = bData.name
+    end
+   end
+  end
  end
- end
- end
- end
- 
- return bestMatch
+
+ return bestMatch or activeTitle
 end
 
 function Polar.World:GetQuestGiverCFrame(questName, index, enemyName)
@@ -2246,6 +3012,46 @@ local Sea1EnemyAliases = {
  {"magma admiral", "magma general"},
  {"wysper", "sky warlord"},
  {"mob leader", "mob boss"},
+ -- Sea 3 & Localization/Typo Aliases
+ {"posessed mummy", "possessed mummy"},
+ {"pirate millionaire", "pirata millonario"},
+ {"pistol billionaire", "pistolero multimillonario"},
+ {"dragon crew warrior", "guerrero de la tripulacion dragon"},
+ {"dragon crew archer", "arquero de la tripulacion dragon"},
+ {"forest pirate", "pirata del bosque"},
+ {"mythological pirate", "pirata mitologico"},
+ {"jungle pirate", "pirata de la jungla"},
+ {"musketeer pirate", "pirata mosquetero"},
+ {"reborn skeleton", "esqueleto renacido"},
+ {"living zombie", "zombi viviente"},
+ {"demonic soul", "alma demoniaca"},
+ {"posessed mummy", "momia poseida"},
+ {"peanut scout", "explorador de mani"},
+ {"peanut president", "presidente de mani"},
+ {"ice cream chef", "chef de helados"},
+ {"ice cream commander", "comandante de helados"},
+ {"cookie crafter", "creador de galletas"},
+ {"cake guard", "guardia del pastel"},
+ {"baking staff", "personal de panaderia"},
+ {"head baker", "jefe panadero"},
+ {"cocoa warrior", "guerrero del cacao"},
+ {"chocolate bar battler", "luchador de barra de chocolate"},
+ {"sweet thief", "ladron de dulces"},
+ {"candy rebel", "rebelde de caramelo"},
+ {"candy pirate", "pirata de caramelo"},
+ {"snow demon", "demonio de nieve"},
+ {"isle outlaw", "forajido de la isla"},
+ {"island boy", "chico de la isla"},
+ {"sun-kissed warrior", "guerrero bronceado"},
+ {"isle champion", "campeon de la isla"},
+ {"serpent hunter", "cazador de serpientes"},
+ {"skull slayer", "asesino de calaveras"},
+ {"reef bandit", "bandido del arrecife"},
+ {"coral pirate", "pirata de coral"},
+ {"sea chanter", "cantor del mar"},
+ {"ocean prophet", "profeta del oceano"},
+ {"high disciple", "alto discipulo"},
+ {"grand devotee", "gran devoto"}
 }
 
 local function MatchEnemyName(npcName, targetName)
@@ -2871,12 +3677,12 @@ local function ResolveLocationByName(islandName)
  local best = nil
  local bestDist = -1
  for _, v in ipairs(locs:GetChildren()) do
- if v.Name == islandName and v:IsA("BasePart") and v.Position.Y > -900 then
- if v.Position.Magnitude > bestDist then
- best = v
- bestDist = v.Position.Magnitude
- end
- end
+  if v.Name == islandName and v:IsA("BasePart") and (v.Position.Y > -900 or v.Name == "Submerged Island" or v.Name == "Hydra Island") then
+   if v.Position.Magnitude > bestDist then
+    best = v
+    bestDist = v.Position.Magnitude
+   end
+  end
  end
  return best
 end
@@ -2887,13 +3693,13 @@ local function ScanIslands()
  local origin = workspace:FindFirstChild("_WorldOrigin")
  local locs = origin and origin:FindFirstChild("Locations")
  if locs then
- for _, v in ipairs(locs:GetChildren()) do
- local lower = string.lower(v.Name)
- if v:IsA("BasePart") and lower ~= "sea" and v.Position.Y > -900 and not added[v.Name] then
- table.insert(islands, v.Name)
- added[v.Name] = true
- end
- end
+  for _, v in ipairs(locs:GetChildren()) do
+   local lower = string.lower(v.Name)
+   if v:IsA("BasePart") and lower ~= "sea" and (v.Position.Y > -900 or v.Name == "Submerged Island" or v.Name == "Hydra Island") and not added[v.Name] then
+    table.insert(islands, v.Name)
+    added[v.Name] = true
+   end
+  end
  end
  if #islands == 0 then table.insert(islands, "None") end
  table.sort(islands)
@@ -3605,14 +4411,7 @@ TabTeleport:AddButton({
 	Name = "Teleport to Island",
 	Callback = function()
 		if SelectedIsland ~= "" and SelectedIsland ~= "None" then
-			local islaObj = ResolveLocationByName(SelectedIsland)
-			if islaObj then
-				local p = islaObj.Position
-				local safeOffset = (p.Y < -50 or string.find(string.lower(SelectedIsland), "sewer") or string.find(string.lower(SelectedIsland), "fish") or string.find(string.lower(SelectedIsland), "underwater") or string.find(string.lower(SelectedIsland), "arena")) and 4 or 15
-				Polar.Teleport:To(CFrame.new(p.X, p.Y + safeOffset, p.Z))
-			else
-				Polar.Teleport:ToIsland(SelectedIsland)
-			end
+			Polar.Teleport:ToIsland(SelectedIsland)
 		end
 	end
 })

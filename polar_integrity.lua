@@ -96,10 +96,11 @@ end
 -- 2. GUI CONTROLS & BINDINGS REGISTRY (DUPLICATE & ORPHAN DETECTOR)
 -- ==============================================================================
 Polar.Registry = Polar.Registry or {}
-Polar.Registry.Controls = Polar.Registry.Controls or {}
-Polar.Registry.Bindings = Polar.Registry.Bindings or {}
-Polar.Registry.Duplicates = Polar.Registry.Duplicates or {}
-Polar.Registry.Orphans = Polar.Registry.Orphans or {}
+-- Reset per-load control tracking so hot-reloading Polar Hub in the same client does not emit stale duplicate warnings
+Polar.Registry.Controls = {}
+Polar.Registry.Bindings = {}
+Polar.Registry.Duplicates = {}
+Polar.Registry.Orphans = {}
 
 function Polar.Registry:RegisterControl(ctrlType, section, config, backendKey)
     local secName = (section and (section.Name or section.Title)) or "General"
