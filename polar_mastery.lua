@@ -91,8 +91,8 @@ PolarMastery.HealthMobThreshold = PolarMastery.HealthMobThreshold or 25
 
 -- Hold Times (Seconds)
 PolarMastery.HoldTimes = PolarMastery.HoldTimes or {
-    Z = 0.8,
-    X = 3.8,
+    Z = 0.4,
+    X = 0.6,
     C = 0.0,
     V = 0.0,
     F = 0.0
@@ -113,10 +113,10 @@ PolarMastery.MeleeKeys = {"Z", "X", "C"}
 PolarMastery.SwordKeys = {"Z", "X"}
 PolarMastery.GunKeys = {"Z", "X"}
 
--- Mechanics & Hover Lock (ALWAYS ABOVE MOBS AT 11.5 STUDS - SAFE FROM ALL DAMAGE)
+-- Mechanics & Hover Lock (Safe above melee reach while staying in hit range)
 PolarMastery.BringMonster = true
 PolarMastery.BringRadius = 250
-PolarMastery.HoverHeight = 12.5
+PolarMastery.HoverHeight = 16.5
 PolarMastery.FastAttackDelay = 0.10
 PolarMastery.PosMethod = "Above"
 
@@ -305,6 +305,111 @@ local function needsPortalOrDimensionJump(fromPos, toPos)
 end
 
 -- ==============================================================================
+-- NETWORK OWNERSHIP & CLEAN MOB STATE TRACKING
+-- ==============================================================================
+local savedMobStates = {}
+local unhittableUntil = {}
+local targetDamageWatch = {}
+
+local function isMobOwned(hrp)
+    if not hrp or not hrp.Parent then return false end
+    if isnetworkowner then
+        local ok, owned = pcall(isnetworkowner, hrp)
+        return ok and (owned == true)
+    end
+    local char = LocalPlayer.Character
+    local pRoot = char and char:FindFirstChild("HumanoidRootPart")
+    return (pRoot and (hrp.Position - pRoot.Position).Magnitude <= 35) or false
+end
+
+local function recordAndLockMobState(mob, hum)
+    local entry = savedMobStates[mob]
+    if not entry then
+        entry = {
+            hum = hum,
+            ws = (hum.WalkSpeed and hum.WalkSpeed > 0) and hum.WalkSpeed or 30,
+            jp = (hum.JumpPower and hum.JumpPower > 0) and hum.JumpPower or 50,
+            parts = {}
+        }
+        for _, part in ipairs(mob:GetChildren()) do
+            if part:IsA("BasePart") then
+                entry.parts[part] = part.CanCollide
+            end
+        end
+        savedMobStates[mob] = entry
+    end
+
+    for _, part in ipairs(mob:GetChildren()) do
+        if part:IsA("BasePart") then
+            if entry.parts[part] == nil then
+                entry.parts[part] = part.CanCollide
+            end
+            part.CanCollide = false
+            part.CanTouch = true
+            part.CanQuery = true
+        end
+    end
+
+    hum.WalkSpeed = 0
+    hum.JumpPower = 0
+end
+
+local function releaseMob(mob)
+    local entry = savedMobStates[mob]
+    savedMobStates[mob] = nil
+    if not mob or not mob.Parent then return end
+
+    local hum = (entry and entry.hum) or mob:FindFirstChildOfClass("Humanoid")
+    if hum and hum.Parent then
+        local targetWS = (entry and entry.ws and entry.ws > 0) and entry.ws or 30
+        local targetJP = (entry and entry.jp and entry.jp > 0) and entry.jp or 50
+        pcall(function()
+            hum.WalkSpeed = targetWS
+            hum.JumpPower = targetJP
+        end)
+    end
+
+    if entry and entry.parts then
+        for part, origCollide in pairs(entry.parts) do
+            if part and part.Parent then
+                pcall(function()
+                    part.CanCollide = (origCollide ~= nil) and origCollide or true
+                    part.CanTouch = true
+                    part.CanQuery = true
+                end)
+            end
+        end
+    else
+        for _, part in ipairs(mob:GetChildren()) do
+            if part:IsA("BasePart") then
+                pcall(function()
+                    part.CanCollide = true
+                    part.CanTouch = true
+                    part.CanQuery = true
+                end)
+            end
+        end
+    end
+end
+
+local function releaseAllTrackedMobs()
+    local toRelease = {}
+    for mob in pairs(savedMobStates) do
+        table.insert(toRelease, mob)
+    end
+    for _, mob in ipairs(toRelease) do
+        releaseMob(mob)
+    end
+    if PolarMastery.ActiveClusterMobs then
+        for _, mob in ipairs(PolarMastery.ActiveClusterMobs) do
+            releaseMob(mob)
+        end
+    end
+    PolarMastery.ActiveClusterMobs = {}
+    table.clear(targetDamageWatch)
+end
+
+-- ==============================================================================
 -- SAFE TELEPORTATION HELPER
 -- ==============================================================================
 function PolarMastery:TeleportTo(cf)
@@ -317,16 +422,17 @@ function PolarMastery:TeleportTo(cf)
     local crossDim = needsPortalOrDimensionJump(root.Position, cf.Position)
     if dist <= 4 and not crossDim then return end
 
-    -- Para distancias cortas en la misma dimension (<= 150 studs): snap directo
-    if dist <= 150 and not crossDim then
+    -- Solo snap directo para micro-ajustes locales (<= 40 studs) sin salir de rango de servidor
+    if dist <= 40 and not crossDim then
         root.CFrame = cf
         root.AssemblyLinearVelocity = Vector3.zero
         root.AssemblyAngularVelocity = Vector3.zero
         return
     end
 
-    -- Distancias largas o cambios de dimension/portal: delegar a Polar.Teleport:To
+    -- Distancias medianas/largas o cambios de dimension/portal: delegar al tween seguro de Polar.Teleport
     self.IsTraveling = true
+    self.TargetHoverCFrame = nil
     clearHoverInstances()
 
     local Polar = getgenv().Polar
@@ -353,7 +459,6 @@ function PolarMastery:StopAll()
     self.AutoKillAllBosses = false
     self.TargetHoverCFrame = nil
     self.ClusterCenterPos = nil
-    self.ActiveClusterMobs = {}
     self.CurrentTarget = nil
     self.CurrentTargetRoot = nil
     self.CurrentAimPos = nil
@@ -362,10 +467,10 @@ function PolarMastery:StopAll()
     getgenv().PolarAutoBonesEnabled = false
     getgenv().PolarFastAttackEnabled = false
 
-    
-    -- Limpieza instantánea sin plataformas ni esperas de 5 segundos
+    releaseAllTrackedMobs()
     clearHoverInstances()
-    
+    restoreHoverCharCollisions()
+
     pcall(function()
         local char = LocalPlayer.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -374,7 +479,8 @@ function PolarMastery:StopAll()
             root.AssemblyAngularVelocity = Vector3.zero
         end
     end)
-    
+
+    local Polar = getgenv().Polar
     local combat = (Polar and Polar.Combat) or getgenv().PolarCombat
     if combat then
         combat:ReleaseHover()
@@ -393,58 +499,71 @@ function PolarMastery:StopAll()
     end)
 end
 
--- Inmovilizador continuo de NPCs (Inmunidad total a retroceso de frutas)
+-- Inmovilizador continuo de NPCs (solo cuando el cliente tiene network ownership real)
 local function stabilizeClusterMobs()
     local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
-    if not isActive or not PolarMastery.ClusterCenterPos or not PolarMastery.ActiveClusterMobs then return end
+    if not isActive or not PolarMastery.ActiveClusterMobs then return end
+
+    -- Si CurrentTarget no tiene network ownership, seguir su posicion real en el servidor
+    local curTarget = PolarMastery.CurrentTarget
+    if curTarget and curTarget.Parent then
+        local cHum = curTarget:FindFirstChildOfClass("Humanoid")
+        local cRoot = curTarget:FindFirstChild("HumanoidRootPart")
+        if cHum and cHum.Health > 0 and cRoot and not isMobOwned(cRoot) then
+            PolarMastery.ClusterCenterPos = cRoot.Position
+            if PolarMastery.TargetHoverCFrame and not PolarMastery.IsTraveling then
+                PolarMastery.TargetHoverCFrame = CFrame.new(cRoot.Position + Vector3.new(0, PolarMastery.HoverHeight or 16.5, 0))
+            end
+        end
+    end
 
     local cluster = PolarMastery.ActiveClusterMobs
-    local count = #cluster
-    if count == 0 then return end
-
     local center = PolarMastery.ClusterCenterPos
+    if not center or #cluster == 0 then return end
 
-    for i, mob in ipairs(cluster) do
+    -- Filtrar primero los mobs que realmente poseen network ownership
+    local ownedMobs = {}
+    for _, mob in ipairs(cluster) do
         if mob and mob.Parent and mob:IsA("Model") then
             local hum = mob:FindFirstChildOfClass("Humanoid")
             local hrp = mob:FindFirstChild("HumanoidRootPart")
-            if hum and hrp and hum.Health > 0 then
-                -- 1. Destruir cualquier fuerza o constraint inyectada por habilidades de frutas (Gravedad, etc.)
-                for _, ch in ipairs(hrp:GetChildren()) do
-                    if ch:IsA("BodyVelocity") or ch:IsA("BodyPosition") or ch:IsA("BodyGyro") or ch:IsA("BodyThrust")
-                       or ch:IsA("LinearVelocity") or ch:IsA("VectorForce") or ch:IsA("AlignPosition") or ch:IsA("AlignOrientation") then
-                        pcall(function() ch:Destroy() end)
-                    end
-                end
-
-                -- 2. Anular velocidades fsicas e impulsos
-                hrp.AssemblyLinearVelocity = Vector3.zero
-                hrp.AssemblyAngularVelocity = Vector3.zero
-
-                -- 3. Fijar posicin ultra-compacta (0.75 studs) alrededor del centro esttico
-                local angle = (i - 1) * (2 * math.pi / math.max(1, count))
-                local offset = (count > 1) and Vector3.new(math.cos(angle) * 0.75, 0, math.sin(angle) * 0.75) or Vector3.zero
-                hrp.CFrame = CFrame.new(center + offset)
-
-                -- 4. Mantener CanCollide=false pero CanTouch y CanQuery activos para recibir dao
-                for _, part in ipairs(mob:GetChildren()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                        part.CanTouch = true
-                        part.CanQuery = true
-                    end
-                end
-
-                -- 5. Inmovilizar desplazamiento y evitar animaciones de cada
-                hum.WalkSpeed = 0
-                hum.JumpPower = 0
-                pcall(function()
-                    local st = hum:GetState()
-                    if st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Ragdoll or st == Enum.HumanoidStateType.Freefall then
-                        hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
-                    end
-                end)
+            if hum and hrp and hum.Health > 0 and isMobOwned(hrp) then
+                table.insert(ownedMobs, mob)
+            elseif savedMobStates[mob] then
+                releaseMob(mob)
             end
+        elseif savedMobStates[mob] then
+            releaseMob(mob)
+        end
+    end
+
+    local ownedCount = #ownedMobs
+    for i, mob in ipairs(ownedMobs) do
+        local hum = mob:FindFirstChildOfClass("Humanoid")
+        local hrp = mob:FindFirstChild("HumanoidRootPart")
+        if hum and hrp and hum.Health > 0 then
+            for _, ch in ipairs(hrp:GetChildren()) do
+                if ch:IsA("BodyVelocity") or ch:IsA("BodyPosition") or ch:IsA("BodyGyro") or ch:IsA("BodyThrust")
+                   or ch:IsA("LinearVelocity") or ch:IsA("VectorForce") or ch:IsA("AlignPosition") or ch:IsA("AlignOrientation") then
+                    pcall(function() ch:Destroy() end)
+                end
+            end
+
+            hrp.AssemblyLinearVelocity = Vector3.zero
+            hrp.AssemblyAngularVelocity = Vector3.zero
+
+            local angle = (i - 1) * (2 * math.pi / math.max(1, ownedCount))
+            local offset = (ownedCount > 1) and Vector3.new(math.cos(angle) * 0.75, 0, math.sin(angle) * 0.75) or Vector3.zero
+            hrp.CFrame = CFrame.new(center + offset)
+
+            recordAndLockMobState(mob, hum)
+
+            pcall(function()
+                local st = hum:GetState()
+                if st == Enum.HumanoidStateType.FallingDown or st == Enum.HumanoidStateType.Ragdoll or st == Enum.HumanoidStateType.Freefall then
+                    hum:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+                end
+            end)
         end
     end
 end
@@ -582,11 +701,10 @@ function PolarMastery:EquipWeapon(category)
 
     for _, tool in ipairs(backpack:GetChildren()) do
         if tool:IsA("Tool") then
-            if category == "Blox Fruit" and tool.ToolTip == "Blox Fruit" then
+            if (category == "Blox Fruit" and tool.ToolTip == "Blox Fruit")
+                or tool.ToolTip == category or tool.Name == category or tool:GetAttribute("WeaponType") == category then
                 hum:EquipTool(tool)
-                return tool
-            elseif tool.ToolTip == category or tool.Name == category or tool:GetAttribute("WeaponType") == category then
-                hum:EquipTool(tool)
+                task.wait(0.15)
                 return tool
             end
         end
@@ -632,15 +750,19 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
     end
 
     local hitPart = targetMob:FindFirstChild("Head") or targetMob:FindFirstChild("UpperTorso") or targetRoot
-    local hits = { {targetMob, hitPart} }
+    local hits = {}
+    if (targetRoot.Position - hrp.Position).Magnitude <= 55 then
+        table.insert(hits, {targetMob, hitPart})
+    end
 
-    -- 1. Incluir todos los NPCs del cluster activo (garantiza 2 a 4 NPCs golpeados simultneamente)
+    -- 1. Incluir otros NPCs del cluster activo que realmente esten dentro del alcance cuerpo a cuerpo
     if self.ActiveClusterMobs then
         for _, cMob in ipairs(self.ActiveClusterMobs) do
+            if #hits >= 6 then break end
             if cMob ~= targetMob and cMob:IsA("Model") and cMob.Parent then
                 local cHum = cMob:FindFirstChildOfClass("Humanoid")
                 local cRoot = cMob:FindFirstChild("HumanoidRootPart")
-                if cHum and cHum.Health > 0 and cRoot then
+                if cHum and cHum.Health > 0 and cRoot and (cRoot.Position - hrp.Position).Magnitude <= 55 then
                     local cPart = cMob:FindFirstChild("Head") or cMob:FindFirstChild("UpperTorso") or cRoot
                     table.insert(hits, {cMob, cPart})
                 end
@@ -673,18 +795,23 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
         end
     end
 
+    if #hits == 0 then return end
+
     self.AttackCombo = ((self.AttackCombo or 1) % 4) + 1
     local cd = math.max(delay, 0.12)
     local combo = self.AttackCombo
 
-    -- Despacho atmico multi-target: enva TODOS los hits en una sola llamada sin debounce de servidor
+    -- Despacho mediante CombatUtil/Global con token de sesion v3 (evitar RegisterHit crudo sin v3)
     pcall(function()
         if RegisterAttack then RegisterAttack:FireServer(cd, combo) end
-        if GlobalModule and GlobalModule.SendHitsToServer then GlobalModule.SendHitsToServer(hitPart, hits) end
-        if RegisterHit then RegisterHit:FireServer(hitPart, hits) end
+        if GlobalModule and GlobalModule.SendHitsToServer then
+            GlobalModule.SendHitsToServer(hits[1][2], hits)
+        elseif RegisterHit then
+            RegisterHit:FireServer(hits[1][2], hits)
+        end
     end)
 
-    -- Activación nativa del arma / M1 de fruta
+    -- Activacion nativa del arma / M1 de fruta
     local isFruit = tool.ToolTip == "Blox Fruit" or tool:GetAttribute("WeaponType") == "Demon Fruit"
     if isFruit then
         pcall(function()
@@ -704,51 +831,78 @@ function PolarMastery:PerformM1(targetMob, targetRoot)
         end)
     else
         pcall(function()
-            VirtualUser:CaptureController()
-            VirtualUser:ClickButton1(Vector2.new(0, 0))
+            if VirtualUser then
+                VirtualUser:CaptureController()
+                VirtualUser:ClickButton1(Vector2.new(0, 0))
+            end
             tool:Activate()
         end)
     end
 end
 
 -- ==============================================================================
--- SKILL EXECUTION WITH DECIMAL SECOND HOLD TIMES
+-- SKILL EXECUTION VIA MOVESET CLIENT RUNNER (SAFE NO-CAPABILITY FALLBACK)
 -- ==============================================================================
 function PolarMastery:CastKey(key, holdSeconds, targetRoot)
     local keyCode = Enum.KeyCode[key]
-    if not keyCode then return end
+    if not keyCode then return false end
 
+    local activated = false
     pcall(function()
         if targetRoot then
             self:SetAimTarget(targetRoot)
         end
 
-        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        local tool = self:GetEquippedTool()
+        if GlobalModule and type(GlobalModule.casFunc) == "function" and tool then
+            local ev = Instance.new("BindableEvent")
+            local fakeInput = {
+                UserInputState = Enum.UserInputState.Begin,
+                KeyCode = keyCode,
+                UserInputType = Enum.UserInputType.Keyboard,
+                Changed = ev.Event
+            }
 
-        local duration = holdSeconds or 0
-        if duration > 0 then
-            local startTime = os.clock()
-            while (os.clock() - startTime) < duration do
-                local center = self.ClusterCenterPos or (targetRoot and targetRoot.Parent and targetRoot.Position)
-                if center then
-                    self.TargetHoverCFrame = CFrame.new(center + Vector3.new(0, self.HoverHeight or 12.5, 0))
+            GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, fakeInput)
+            task.wait(0.08)
+            activated = (GlobalModule.busy ~= nil and GlobalModule.busy ~= false)
+
+            local duration = math.min(holdSeconds or 0, 0.8)
+            if activated and duration > 0.08 then
+                local startTime = os.clock()
+                while (os.clock() - startTime) < duration and GlobalModule.busy do
+                    local center = self.ClusterCenterPos or (targetRoot and targetRoot.Parent and targetRoot.Position)
+                    if center then
+                        self.TargetHoverCFrame = CFrame.new(center + Vector3.new(0, self.HoverHeight or 16.5, 0))
+                    end
+                    if hoverVelocity and hoverVelocity.Parent then
+                        hoverVelocity.Velocity = Vector3.zero
+                    end
+                    task.wait(0.04)
                 end
-                if hoverVelocity and hoverVelocity.Parent then
-                    hoverVelocity.Velocity = Vector3.zero
-                end
-                task.wait(0.04)
             end
+
+            fakeInput.UserInputState = Enum.UserInputState.End
+            pcall(function() ev:Fire("UserInputState") end)
+            pcall(function() GlobalModule.casFunc("DevilFruit", Enum.UserInputState.End, fakeInput) end)
+            ev:Destroy()
         else
-            task.wait(0.04)
+            pcall(function()
+                VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+                task.wait(math.min(holdSeconds or 0.05, 0.3))
+                VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
+                activated = true
+            end)
         end
 
-        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
         if GlobalModule then
             GlobalModule.tapCooldown = 0
             GlobalModule.busy = nil
             GlobalModule.castTimer = 0
         end
     end)
+
+    return activated
 end
 
 -- Verificacin en tiempo real de cooldown de habilidades
@@ -792,8 +946,21 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
         local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
         if not tRoot then return end
 
-        -- 1. Equipar objetivo de maestra
-        self:EquipWeapon(self.MasteryTarget)
+        local now = os.clock()
+        if (now - (self.LastSkillBurstAttempt or 0)) < 1.2 then
+            self:EquipWeapon(self.PrimaryWeapon)
+            self:PerformM1(targetMob, tRoot)
+            return
+        end
+        self.LastSkillBurstAttempt = now
+
+        -- 1. Equipar objetivo de maestria brevemente
+        local masteryTool = self:EquipWeapon(self.MasteryTarget)
+        if not masteryTool then
+            self:EquipWeapon(self.PrimaryWeapon)
+            self:PerformM1(targetMob, tRoot)
+            return
+        end
 
         -- 2. Seleccionar teclas correspondientes
         local keys = self.BloxFruitKeys
@@ -804,35 +971,27 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
 
         local delay = self.SkillDelays[self.MasteryTarget] or 0
 
-        -- Detectar habilidades que están fuera de cooldown
-        local readyKeys = {}
+        -- Intentar a lo sumo 1 habilidad lista para no bloquear M1 durante segundos
+        local launchedAny = false
         for _, key in ipairs(keys) do
+            local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
+            if not hum or hum.Health <= 0 or not targetMob.Parent then break end
+
             if self:IsSkillReady(key) then
-                table.insert(readyKeys, key)
+                local holdSec = self.HoldTimes[key] or 0
+                local okCast = self:CastKey(key, holdSec, tRoot)
+                if okCast then
+                    launchedAny = true
+                    if delay > 0 then task.wait(delay) end
+                    break
+                end
             end
         end
 
-        if #readyKeys == 0 then
-            -- MODO M1 CONTINUO: Si todas las habilidades están en cooldown, disparar ráfaga rápida de M1 de la fruta sin perder tiempo
-            for _ = 1, 3 do
-                local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
-                if not hum or hum.Health <= 0 or not targetMob.Parent then break end
-                self:PerformM1(targetMob, tRoot)
-                task.wait(0.06)
-            end
-        else
-            -- Lanzar habilidades listas intercalando M1 de fruta en cada intervalo
-            for _, key in ipairs(readyKeys) do
-                local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
-                if not hum or hum.Health <= 0 or not targetMob.Parent then break end
-
-                local holdSec = self.HoldTimes[key] or 0
-                self:CastKey(key, holdSec, tRoot)
-                self:PerformM1(targetMob, tRoot)
-
-                if delay > 0 then task.wait(delay) else task.wait(0.04) end
-            end
-            -- Continuar presionando con M1 de la fruta
+        -- Re-equipar arma primaria y rematar inmediatamente con M1 si el NPC sigue vivo
+        local hum = targetMob and targetMob:FindFirstChildOfClass("Humanoid")
+        if hum and hum.Health > 0 and targetMob.Parent then
+            self:EquipWeapon(self.PrimaryWeapon)
             self:PerformM1(targetMob, tRoot)
         end
     end)
@@ -939,31 +1098,51 @@ function PolarMastery:ClusterMobs(pivotPos, targetMobName)
     local cluster = {}
     if self.CurrentTarget and self.CurrentTarget.Parent then
         local cHum = self.CurrentTarget:FindFirstChildOfClass("Humanoid")
-        if cHum and cHum.Health > 0 then
+        local cHrp = self.CurrentTarget:FindFirstChild("HumanoidRootPart")
+        if cHum and cHum.Health > 0 and cHrp and isMobOwned(cHrp) then
             table.insert(cluster, self.CurrentTarget)
+        elseif savedMobStates[self.CurrentTarget] then
+            releaseMob(self.CurrentTarget)
         end
     end
 
-    local maxTotal = 4 -- Estrictamente 3 a 4 mobs en total
-    local targetLower = string.lower(targetMobName)
+    local maxTotal = 4 -- Estrictamente 3 a 4 mobs en total con ownership real
 
     if self.BringMonster then
+        local nowCluster = os.clock()
         for _, mob in ipairs(enemies:GetChildren()) do
             if #cluster >= maxTotal then break end
-            if mob ~= self.CurrentTarget and mob:IsA("Model") then
+            if mob ~= self.CurrentTarget and mob:IsA("Model") and (unhittableUntil[mob] or 0) <= nowCluster then
                 if MatchesEnemyName(mob.Name, targetMobName) then
                     local hum = mob:FindFirstChildOfClass("Humanoid")
                     local hrp = mob:FindFirstChild("HumanoidRootPart")
                     if hum and hum.Health > 0 and hrp then
                         local yDiff = math.abs(hrp.Position.Y - pivotPos.Y)
                         local dist = (hrp.Position - pivotPos).Magnitude
-                        if yDiff < 45 and dist <= (self.BringRadius or 250) then
+                        if yDiff < 45 and dist <= (self.BringRadius or 250) and isMobOwned(hrp) then
                             table.insert(cluster, mob)
+                        elseif savedMobStates[mob] then
+                            releaseMob(mob)
                         end
                     end
                 end
             end
         end
+    end
+
+    -- Liberar mobs que ya salieron del cluster activo para evitar NPCs congelados/desincronizados
+    local inCluster = {}
+    for _, mob in ipairs(cluster) do
+        inCluster[mob] = true
+    end
+    local stale = {}
+    for mob in pairs(savedMobStates) do
+        if not inCluster[mob] then
+            table.insert(stale, mob)
+        end
+    end
+    for _, mob in ipairs(stale) do
+        releaseMob(mob)
     end
 
     self.ActiveClusterMobs = cluster
@@ -1046,6 +1225,119 @@ end
 -- ==============================================================================
 -- MAIN ADAPTIVE COMBAT & FARM STEP
 -- ==============================================================================
+local function findNearestMob(enemiesFolder, originPos, maxDist, enemyName)
+    local now = os.clock()
+    local bestFresh, minFreshDist = nil, maxDist
+    local bestFallback, minFallbackDist = nil, maxDist
+
+    for _, mob in ipairs(enemiesFolder:GetChildren()) do
+        local mHum = mob:FindFirstChildOfClass("Humanoid")
+        local mRoot = mob:FindFirstChild("HumanoidRootPart")
+        if mHum and mRoot and mHum.Health > 0 then
+            local matches = true
+            if enemyName then
+                matches = MatchesEnemyName(mob.Name, enemyName)
+            end
+            if matches then
+                local d = (originPos - mRoot.Position).Magnitude
+                if (unhittableUntil[mob] or 0) > now then
+                    if d < minFallbackDist then
+                        minFallbackDist = d
+                        bestFallback = mob
+                    end
+                elseif d < minFreshDist then
+                    minFreshDist = d
+                    bestFresh = mob
+                end
+            end
+        end
+    end
+
+    if bestFresh then return bestFresh end
+    return bestFallback
+end
+
+local function engageCombatTarget(targetMob, root, clusterName, useClustering)
+    local tHum = targetMob:FindFirstChildOfClass("Humanoid")
+    local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
+    if not tHum or not tRoot or tHum.Health <= 0 then return end
+
+    local prevTarget = PolarMastery.CurrentTarget
+    PolarMastery.CurrentTarget = targetMob
+    PolarMastery.CurrentTargetRoot = tRoot
+    local targetPos = tRoot.Position
+
+    local owned = isMobOwned(tRoot)
+    if useClustering then
+        if not owned then
+            PolarMastery.ClusterCenterPos = targetPos
+        elseif not PolarMastery.ClusterCenterPos or (prevTarget ~= targetMob) or (PolarMastery.ClusterCenterPos - targetPos).Magnitude > 30 then
+            PolarMastery.ClusterCenterPos = targetPos
+        end
+        PolarMastery:ClusterMobs(PolarMastery.ClusterCenterPos, clusterName or targetMob.Name)
+    else
+        if owned then
+            recordAndLockMobState(targetMob, tHum)
+            if not PolarMastery.ClusterCenterPos or (prevTarget ~= targetMob) or (PolarMastery.ClusterCenterPos - targetPos).Magnitude > 30 then
+                PolarMastery.ClusterCenterPos = targetPos
+            end
+            PolarMastery.ActiveClusterMobs = { targetMob }
+        else
+            if savedMobStates[targetMob] then
+                releaseMob(targetMob)
+            end
+            PolarMastery.ClusterCenterPos = targetPos
+            PolarMastery.ActiveClusterMobs = {}
+        end
+    end
+
+    local hoverY = PolarMastery.HoverHeight or 16.5
+    local desiredHover = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, hoverY, 0))
+    local distToTarget = (root.Position - desiredHover.Position).Magnitude
+    if distToTarget > 6 then
+        PolarMastery:TeleportTo(desiredHover)
+        if not targetMob.Parent or tHum.Health <= 0 then return end
+        PolarMastery.ClusterCenterPos = tRoot.Position
+        desiredHover = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, hoverY, 0))
+        distToTarget = (root.Position - desiredHover.Position).Magnitude
+    end
+    PolarMastery.TargetHoverCFrame = desiredHover
+
+    -- Anti-stall guard: if an NPC takes 0 damage for 2.5s of active hits (phantom/desynced), skip it
+    local now = os.clock()
+    if distToTarget <= 24 and not PolarMastery.IsTraveling then
+        local watch = targetDamageWatch[targetMob]
+        if not watch or prevTarget ~= targetMob then
+            targetDamageWatch[targetMob] = { lastHp = tHum.Health, stallSince = now }
+        elseif tHum.Health < (watch.lastHp - 0.5) then
+            watch.lastHp = tHum.Health
+            watch.stallSince = now
+        elseif (now - watch.stallSince) >= 2.5 then
+            unhittableUntil[targetMob] = now + 18
+            targetDamageWatch[targetMob] = nil
+            releaseMob(targetMob)
+            PolarMastery.TargetHoverCFrame = nil
+            PolarMastery.ClusterCenterPos = nil
+            PolarMastery.CurrentTarget = nil
+            PolarMastery.CurrentTargetRoot = nil
+            PolarMastery.CurrentAimPos = nil
+            return
+        end
+    else
+        targetDamageWatch[targetMob] = { lastHp = tHum.Health, stallSince = now }
+    end
+
+    PolarMastery:SetAimTarget(tRoot)
+
+    local hpPercent = (tHum.Health / tHum.MaxHealth) * 100
+    if PolarMastery.EnableMastery and hpPercent <= PolarMastery.HealthMobThreshold then
+        PolarMastery:ExecuteSkillBurst(targetMob)
+    else
+        PolarMastery:EquipWeapon(PolarMastery.PrimaryWeapon)
+        PolarMastery:PerformM1(targetMob, tRoot)
+    end
+end
+
 local function runMasteryCombatStep()
     local isActive = PolarMastery.AutoBones or PolarMastery.AutoFarm or PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses
     if not isActive then
@@ -1154,27 +1446,13 @@ PolarMastery.IsTraveling = false
         end
 
         -- Find specific quest mob
-        local targetMob = nil
-        local targetLower = string.lower(targetMobName)
-        local minDist = 2500
-
-        for _, mob in ipairs(enemies:GetChildren()) do
-            local mHum = mob:FindFirstChildOfClass("Humanoid")
-            local mRoot = mob:FindFirstChild("HumanoidRootPart")
-            if mHum and mRoot and mHum.Health > 0 then
-                if MatchesEnemyName(mob.Name, targetMobName) then
-                    local d = (root.Position - mRoot.Position).Magnitude
-                    if d < minDist then
-                        minDist = d
-                        targetMob = mob
-                    end
-                end
-            end
-        end
+        local targetMob = findNearestMob(enemies, root.Position, 2500, targetMobName)
 
         if not targetMob then
             PolarMastery.TargetHoverCFrame = nil
             clearHoverInstances()
+            releaseAllTrackedMobs()
+            PolarMastery.ClusterCenterPos = nil
             PolarMastery.CurrentTarget = nil
             PolarMastery.CurrentTargetRoot = nil
             PolarMastery.CurrentAimPos = nil
@@ -1183,40 +1461,7 @@ PolarMastery.IsTraveling = false
             return
         end
 
-        local tHum = targetMob:FindFirstChildOfClass("Humanoid")
-        local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
-        if not tHum or not tRoot or tHum.Health <= 0 then return end
-
-        PolarMastery.CurrentTarget = targetMob
-        PolarMastery.CurrentTargetRoot = tRoot
-        local targetPos = tRoot.Position
-
-        -- Mantener anclaje de suelo esttico e inmutable para el combate
-        if not PolarMastery.ClusterCenterPos or (PolarMastery.CurrentTarget ~= targetMob) or (PolarMastery.ClusterCenterPos - targetPos).Magnitude > 30 then
-            PolarMastery.ClusterCenterPos = targetPos
-        end
-
-        -- Safe Mob Clustering (estrictamente 3 a 4 mobs)
-        PolarMastery:ClusterMobs(PolarMastery.ClusterCenterPos, targetMobName)
-
-        -- ALTURA DE COMBATE: Anclada firmemente erguida sobre el centro esttico (sin inclinación ni volteo de cámara)
-        PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
-
-        -- Instant Snap if far
-        local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
-        if distToTarget > 6 then
-            PolarMastery:TeleportTo(PolarMastery.TargetHoverCFrame)
-        end
-
-        PolarMastery:SetAimTarget(tRoot)
-
-        local hpPercent = (tHum.Health / tHum.MaxHealth) * 100
-        if PolarMastery.EnableMastery and hpPercent <= PolarMastery.HealthMobThreshold then
-            PolarMastery:ExecuteSkillBurst(targetMob)
-        else
-            PolarMastery:EquipWeapon(PolarMastery.PrimaryWeapon)
-            PolarMastery:PerformM1(targetMob, tRoot)
-        end
+        engageCombatTarget(targetMob, root, targetMobName, true)
         return
     end
 
@@ -1264,40 +1509,11 @@ PolarMastery.IsTraveling = false
                 end
             end
 
-            local tRoot = boss.HumanoidRootPart
-            local tHum = boss.Humanoid
-            PolarMastery.CurrentTarget = boss
-            PolarMastery.CurrentTargetRoot = tRoot
-            local targetPos = tRoot.Position
-            
-            for _, p in ipairs(boss:GetDescendants()) do
-                if p:IsA("BasePart") then p.CanCollide = false end
-            end
-            tHum.WalkSpeed = 0
-
-            if not PolarMastery.ClusterCenterPos or (PolarMastery.CurrentTarget ~= boss) or (PolarMastery.ClusterCenterPos - targetPos).Magnitude > 30 then
-                PolarMastery.ClusterCenterPos = targetPos
-            end
-            PolarMastery.ActiveClusterMobs = { boss }
-
-            PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
-
-            local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
-            if distToTarget > 6 then
-                SafeMasteryTeleport(PolarMastery.TargetHoverCFrame, root)
-            end
-
-            PolarMastery:SetAimTarget(tRoot)
-
-            local hpPercent = (tHum.Health / tHum.MaxHealth) * 100
-            if PolarMastery.EnableMastery and hpPercent <= PolarMastery.HealthMobThreshold then
-                PolarMastery:ExecuteSkillBurst(boss)
-            else
-                PolarMastery:EquipWeapon(PolarMastery.PrimaryWeapon)
-                PolarMastery:PerformM1(boss, tRoot)
-            end
+            engageCombatTarget(boss, root, boss.Name, false)
         elseif not PolarMastery.AutoKillAllBosses and bData and bData.pos then
             PolarMastery.TargetHoverCFrame = nil
+            releaseAllTrackedMobs()
+            PolarMastery.ClusterCenterPos = nil
             local waitCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
             if (root.Position - bData.pos).Magnitude > 300 or needsPortalOrDimensionJump(root.Position, bData.pos) then
                 SafeMasteryTeleport(waitCF, root)
@@ -1350,69 +1566,26 @@ PolarMastery.IsTraveling = false
             end
         end
 
-        -- Find Target Mob
-        local minDist = PolarMastery.NearestDistance or 1500
-        for _, mob in ipairs(enemies:GetChildren()) do
-            local mHum = mob:FindFirstChildOfClass("Humanoid")
-            local mRoot = mob:FindFirstChild("HumanoidRootPart")
-            if mHum and mRoot and mHum.Health > 0 then
-                local matches = true
-                if targetEnemyName then
-                    matches = MatchesEnemyName(mob.Name, targetEnemyName)
-                end
-
-                if matches then
-                    local d = (root.Position - mRoot.Position).Magnitude
-                    if d < minDist then
-                        minDist = d
-                        targetMob = mob
-                    end
-                end
-            end
-        end
+        -- Find Target Mob (saltando automaticamente NPCs que no reciben dano)
+        targetMob = findNearestMob(enemies, root.Position, PolarMastery.NearestDistance or 1500, targetEnemyName)
 
         if not targetMob and bestQuest and bestQuest.island then
             local Polar = getgenv().Polar
             if Polar and Polar.Teleport and Polar.Teleport.ToIsland then
                 PolarMastery.TargetHoverCFrame = nil
+                releaseAllTrackedMobs()
+                PolarMastery.ClusterCenterPos = nil
                 Polar.Teleport:ToIsland(bestQuest.island)
                 return
             end
         end
 
         if targetMob then
-            local tHum = targetMob:FindFirstChildOfClass("Humanoid")
-            local tRoot = targetMob:FindFirstChild("HumanoidRootPart")
-            if tHum and tRoot and tHum.Health > 0 then
-                PolarMastery.CurrentTarget = targetMob
-                PolarMastery.CurrentTargetRoot = tRoot
-                local targetPos = tRoot.Position
-
-                -- Mantener anclaje de suelo esttico
-                if not PolarMastery.ClusterCenterPos or (PolarMastery.CurrentTarget ~= targetMob) or (PolarMastery.ClusterCenterPos - targetPos).Magnitude > 30 then
-                    PolarMastery.ClusterCenterPos = targetPos
-                end
-
-                PolarMastery:ClusterMobs(PolarMastery.ClusterCenterPos, targetMob.Name)
-
-                -- ALTURA DE COMBATE: Anclada firmemente sobre el centro esttico
-                PolarMastery.TargetHoverCFrame = CFrame.new(PolarMastery.ClusterCenterPos + Vector3.new(0, PolarMastery.HoverHeight or 12.5, 0))
-
-                local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
-                if distToTarget > 6 then
-                    PolarMastery:TeleportTo(PolarMastery.TargetHoverCFrame)
-                end
-
-                PolarMastery:SetAimTarget(tRoot)
-
-                local hpPercent = (tHum.Health / tHum.MaxHealth) * 100
-                if PolarMastery.EnableMastery and hpPercent <= PolarMastery.HealthMobThreshold then
-                    PolarMastery:ExecuteSkillBurst(targetMob)
-                else
-                    PolarMastery:EquipWeapon(PolarMastery.PrimaryWeapon)
-                    PolarMastery:PerformM1(targetMob, tRoot)
-                end
-            end
+            engageCombatTarget(targetMob, root, targetMob.Name, true)
+        else
+            PolarMastery.TargetHoverCFrame = nil
+            releaseAllTrackedMobs()
+            PolarMastery.ClusterCenterPos = nil
         end
         return
     end
@@ -1430,9 +1603,12 @@ task.spawn(function()
             pcall(runMasteryCombatStep)
         else
             clearHoverInstances()
+            if next(savedMobStates) or (PolarMastery.ActiveClusterMobs and #PolarMastery.ActiveClusterMobs > 0) then
+                releaseAllTrackedMobs()
+            end
         end
     end
 end)
 
-print("[Polar Hub] [OK] Motor PolarMastery (Hover 11.5 studs, Silent Aim, Safe Clustering) cargado con exito.")
+print("[Polar Hub] [OK] Motor PolarMastery (Safe Hover, Ownership Sync, Silent Aim) cargado con exito.")
 return PolarMastery

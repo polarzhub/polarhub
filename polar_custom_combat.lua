@@ -36,7 +36,7 @@ PolarCombat.__index = PolarCombat
 -- State & Configuration
 PolarCombat.Enabled = false
 PolarCombat.FastAttackDelay = 0.10
-PolarCombat.HoverHeight = 12.5
+PolarCombat.HoverHeight = 16.5
 PolarCombat.Combo = 1
 PolarCombat.LastAttackTime = 0
 PolarCombat.CurrentTarget = nil
@@ -138,7 +138,7 @@ local hoverPlatform = nil
 local hoverVelocity = nil
 
 function PolarCombat:MaintainHover(targetRoot, height)
-    height = height or self.HoverHeight or 12.5
+    height = height or self.HoverHeight or 16.5
     local char = LocalPlayer.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChildOfClass("Humanoid")
@@ -260,15 +260,14 @@ function PolarCombat:ExecuteAttack(targetMob, targetHitPart)
         end
     end
 
-    -- 6. Dual-Dispatch Hits to Server for Entire Cluster at once (Multi-Target Atomic Dispatch)
+    -- 6. Dispatch Hits to Server through CombatUtil/Global session token v3 (never raw RegisterHit without v3)
     pcall(function()
         if RegisterAttack then
             RegisterAttack:FireServer(cd, combo)
         end
         if GlobalModule and GlobalModule.SendHitsToServer then
             GlobalModule.SendHitsToServer(hitPart, cluster)
-        end
-        if RegisterHit then
+        elseif RegisterHit then
             RegisterHit:FireServer(hitPart, cluster)
         end
     end)
@@ -317,23 +316,51 @@ function PolarCombat:CastKey(key, holdSeconds, targetRoot)
             self:SetAimTarget(tPart)
         end
 
-        VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+        if GlobalModule and type(GlobalModule.casFunc) == "function" then
+            local ev = Instance.new("BindableEvent")
+            local fakeInput = {
+                UserInputState = Enum.UserInputState.Begin,
+                KeyCode = keyCode,
+                UserInputType = Enum.UserInputType.Keyboard,
+                Changed = ev.Event
+            }
+            GlobalModule.casFunc("DevilFruit", Enum.UserInputState.Begin, fakeInput)
+            task.wait(0.08)
 
-        local duration = holdSeconds or 0
-        if duration > 0 then
-            local startTime = os.clock()
-            while (os.clock() - startTime) < duration do
-                if targetRoot and targetRoot.Parent then
-                    self:SetAimTarget(targetRoot)
-                    self:MaintainHover(targetRoot, self.HoverHeight)
+            local duration = math.min(holdSeconds or 0, 0.8)
+            if GlobalModule.busy and duration > 0.08 then
+                local startTime = os.clock()
+                while (os.clock() - startTime) < duration and GlobalModule.busy do
+                    if targetRoot and targetRoot.Parent then
+                        self:SetAimTarget(targetRoot)
+                        self:MaintainHover(targetRoot, self.HoverHeight)
+                    end
+                    task.wait(0.05)
                 end
+            end
+
+            fakeInput.UserInputState = Enum.UserInputState.End
+            pcall(function() ev:Fire("UserInputState") end)
+            pcall(function() GlobalModule.casFunc("DevilFruit", Enum.UserInputState.End, fakeInput) end)
+            ev:Destroy()
+        else
+            VirtualInputManager:SendKeyEvent(true, keyCode, false, game)
+            local duration = math.min(holdSeconds or 0, 0.8)
+            if duration > 0 then
+                local startTime = os.clock()
+                while (os.clock() - startTime) < duration do
+                    if targetRoot and targetRoot.Parent then
+                        self:SetAimTarget(targetRoot)
+                        self:MaintainHover(targetRoot, self.HoverHeight)
+                    end
+                    task.wait(0.05)
+                end
+            else
                 task.wait(0.05)
             end
-        else
-            task.wait(0.05)
+            VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
         end
 
-        VirtualInputManager:SendKeyEvent(false, keyCode, false, game)
         self:ResetDebounces()
     end)
 end

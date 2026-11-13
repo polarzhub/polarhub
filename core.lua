@@ -3571,8 +3571,11 @@ task.spawn(function()
 					if GlobalModule then GlobalModule.tapCooldown = 0 end
 					local cd = math.max(delay, 0.12)
 					if RegisterAttack then RegisterAttack:FireServer(cd, FastAttackCombo) end
-					SendHitsToServer(targetPart, {{targetMob, targetPart}})
-					if RegisterHit then RegisterHit:FireServer(targetPart, {{targetMob, targetPart}}) end
+					if SendHitsToServer then
+						SendHitsToServer(targetPart, {{targetMob, targetPart}})
+					elseif RegisterHit then
+						RegisterHit:FireServer(targetPart, {{targetMob, targetPart}})
+					end
 					FastAttackCombo = (FastAttackCombo % 4) + 1
 					currentTool:Activate()
 				end)
@@ -3859,8 +3862,8 @@ Polar.Registry:BindSlider(SecMainFarm, {
 Polar.Registry:BindSlider(SecMainFarm, {
 	Name = "Hover Height",
 	Min = 4.0,
-	Max = 15.0,
-	Default = (PolarMastery and PolarMastery.HoverHeight) or 12.5,
+	Max = 24.0,
+	Default = (PolarMastery and PolarMastery.HoverHeight) or 16.5,
 	Step = 0.5,
 	Decimals = 1,
 	Callback = function(Value)
