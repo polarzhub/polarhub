@@ -120,8 +120,12 @@ local function LoadScriptFile(fileName)
 	end)
 end
 
+getgenv().PolarLoadScript = LoadScriptFile
+getgenv().PolarBaseURL = baseURL
+getgenv().PolarCacheBuster = cacheBuster
+
 -- Cargar Motor de Integridad y Diagnosticos V2.0
-print("[Polar Hub] 🛡️ Cargando motor de integridad y diagnosticos...")
+print("[Polar Hub] Cargando motor de integridad y diagnosticos...")
 LoadScriptFile("polar_integrity.lua")
 
 -- Cargar Core Base primero

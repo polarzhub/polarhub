@@ -34,6 +34,7 @@ Polar.Diagnostics.ErrorLog = Polar.Diagnostics.ErrorLog or {}
 Polar.Diagnostics.MaxLogEntries = 100
 Polar.Diagnostics.Status = "Operational"
 Polar.Diagnostics.LastAuditResult = nil
+Polar.Diagnostics._IntegrityV2 = true
 
 function Polar.Diagnostics:LogError(source, err, category, severity)
     local timestamp = os.date("%H:%M:%S")
@@ -56,7 +57,7 @@ function Polar.Diagnostics:LogError(source, err, category, severity)
             local PolarUI = getgenv().PolarUI
             if PolarUI and PolarUI.Notify then
                 PolarUI:Notify({
-                    Title = "⚠️ Critical Error Captured",
+                    Title = "Critical Error Captured",
                     Content = string.format("[%s]: %s", entry.source, tostring(err):sub(1, 75)),
                     Duration = 5
                 })
@@ -104,6 +105,8 @@ function Polar.Registry:RegisterControl(ctrlType, section, config, backendKey)
     local secName = (section and (section.Name or section.Title)) or "General"
     local ctrlName = config.Name or ("Unnamed" .. ctrlType)
     local controlKey = secName .. "/" .. ctrlName
+    backendKey = backendKey or (type(config) == "table" and (config.BackendKey or config.Flag)) or nil
+    local hasCallback = type(config) == "table" and type(config.Callback) == "function"
 
     -- 1. Check for Duplicate Key Collision
     local isDuplicateKey = false
@@ -143,19 +146,20 @@ function Polar.Registry:RegisterControl(ctrlType, section, config, backendKey)
         default = config.Default,
         lastValue = config.Default,
         errorCount = 0,
-        connected = (backendKey ~= nil and backendKey ~= ""),
+        connected = ((backendKey ~= nil and backendKey ~= "") or hasCallback),
+        hasCallback = hasCallback,
         isDuplicate = isDuplicateKey,
         registeredAt = os.date("%X")
     }
 
     self.Controls[controlKey] = entry
 
-    if entry.connected then
+    if backendKey and backendKey ~= "" then
         self.Bindings[backendKey] = self.Bindings[backendKey] or {}
         table.insert(self.Bindings[backendKey], controlKey)
-    else
+    elseif not entry.connected then
         table.insert(self.Orphans, controlKey)
-        warn(string.format("[Polar Registry] [ORPHAN CONTROL] %s '%s' in '%s' has NO backendKey!", ctrlType, ctrlName, secName))
+        warn(string.format("[Polar Registry] [ORPHAN CONTROL] %s '%s' in '%s' has NO backendKey or Callback!", ctrlType, ctrlName, secName))
     end
 
     -- Wrap callback with error logger
@@ -262,7 +266,7 @@ function Polar.Registry:HookUILibrary(uiLib)
             return instance
         end
     end
-    print("[Polar Registry] 🪝 Redz / Polar UI Library hooked successfully for automatic duplicate & error detection.")
+    print("[Polar Registry] Redz / Polar UI Library hooked successfully for automatic duplicate & error detection.")
 end
 
 -- ==============================================================================
@@ -382,13 +386,13 @@ function Polar.Diagnostics:PurgeLeaks()
         end
     end
 
-    print(string.format("[Polar Integrity] 🧹 Purged %d leaked physics movers and platforms.", purgedCount))
+    print(string.format("[Polar Integrity] Purged %d leaked physics movers and platforms.", purgedCount))
     pcall(function()
         local PolarUI = getgenv().PolarUI
         if PolarUI and PolarUI.Notify then
             PolarUI:Notify({
-                Title = "🧹 Purga de Física Completada",
-                Content = string.format("Se eliminaron %d instancias residuales con éxito.", purgedCount),
+                Title = "Purga de Fisica Completada",
+                Content = string.format("Se eliminaron %d instancias residuales con exito.", purgedCount),
                 Duration = 3
             })
         end
@@ -638,5 +642,5 @@ function Polar.Diagnostics:RunAudit()
     return audit
 end
 
-print("[Polar Hub] 🛡️ Motor de Integridad y Diagnosticos V2.0 cargado e inicializado con exito.")
+print("[Polar Hub] Motor de Integridad y Diagnosticos V2.0 cargado e inicializado con exito.")
 return Polar.Diagnostics

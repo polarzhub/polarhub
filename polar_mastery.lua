@@ -778,8 +778,48 @@ function PolarMastery:ExecuteSkillBurst(targetMob)
 end
 
 -- ==============================================================================
--- SAFE MOB CLUSTERING (NO PHYSICS GLITCH, NO PLATFORM STAND, CIRCULAR SPREAD)
+-- SAFE MOB CLUSTERING & SEA 1 ALIASES
 -- ==============================================================================
+local MASTERY_ENEMY_ALIASES = {
+    {"chef", "bobby"},
+    {"magma admiral", "magma general"},
+    {"wysper", "sky warlord"},
+    {"mob leader", "mob boss"},
+}
+
+local function MatchesEnemyName(mobName, targetName)
+    if not mobName or not targetName then return false end
+    if mobName == targetName then return true end
+    local mobLower = string.lower(mobName)
+    local targetLower = string.lower(targetName)
+    if string.find(mobLower, targetLower, 1, true) then
+        if targetLower == "gorilla" and string.find(mobLower, "king", 1, true) then return false end
+        if targetLower == "bandit" and (string.find(mobLower, "desert", 1, true) or string.find(mobLower, "snow", 1, true) or string.find(mobLower, "sky", 1, true)) then return false end
+        if targetLower == "prisoner" and (string.find(mobLower, "dangerous", 1, true) or string.find(mobLower, "ruthless", 1, true)) then return false end
+        if targetLower == "warden" and (string.find(mobLower, "chief", 1, true) or string.find(mobLower, "ruthless", 1, true)) then return false end
+        if targetLower == "pirate" and (string.find(mobLower, "galley", 1, true) or string.find(mobLower, "beautiful", 1, true)) then return false end
+        return true
+    end
+    for _, pair in ipairs(MASTERY_ENEMY_ALIASES) do
+        if (targetLower == pair[1] and string.find(mobLower, pair[2], 1, true))
+            or (targetLower == pair[2] and string.find(mobLower, pair[1], 1, true))
+            or (string.find(targetLower, pair[1], 1, true) and string.find(mobLower, pair[2], 1, true))
+            or (string.find(targetLower, pair[2], 1, true) and string.find(mobLower, pair[1], 1, true)) then
+            return true
+        end
+    end
+    return false
+end
+
+local function SafeMasteryTeleport(cf, root)
+    local Polar = getgenv().Polar
+    if Polar and Polar.Teleport and Polar.Teleport.To and root and ((root.Position.X > 50000) ~= (cf.Position.X > 50000) or (root.Position.Z > 25000) ~= (cf.Position.Z > 25000)) then
+        Polar.Teleport:To(cf)
+    else
+        PolarMastery:TeleportTo(cf)
+    end
+end
+
 function PolarMastery:ClusterMobs(pivotPos, targetMobName)
     if not targetMobName or not pivotPos then return end
     local now = os.clock()
@@ -814,8 +854,7 @@ function PolarMastery:ClusterMobs(pivotPos, targetMobName)
         for _, mob in ipairs(enemies:GetChildren()) do
             if #cluster >= maxTotal then break end
             if mob ~= self.CurrentTarget and mob:IsA("Model") then
-                local mobNameLower = string.lower(mob.Name)
-                if string.find(mobNameLower, targetLower) or string.find(targetLower, mobNameLower) then
+                if MatchesEnemyName(mob.Name, targetMobName) then
                     local hum = mob:FindFirstChildOfClass("Humanoid")
                     local hrp = mob:FindFirstChild("HumanoidRootPart")
                     if hum and hum.Health > 0 and hrp then
@@ -992,8 +1031,7 @@ PolarMastery.IsTraveling = false
             local mHum = mob:FindFirstChildOfClass("Humanoid")
             local mRoot = mob:FindFirstChild("HumanoidRootPart")
             if mHum and mRoot and mHum.Health > 0 then
-                local mNameLower = string.lower(mob.Name)
-                if string.find(mNameLower, targetLower) or string.find(targetLower, mNameLower) then
+                if MatchesEnemyName(mob.Name, targetMobName) then
                     local d = (root.Position - mRoot.Position).Magnitude
                     if d < minDist then
                         minDist = d
@@ -1055,27 +1093,46 @@ PolarMastery.IsTraveling = false
     -- MODE 2: AUTO FARM BOSS / ALL BOSSES
     -- ==========================================================================
     if PolarMastery.AutoFarmBoss or PolarMastery.AutoKillAllBosses then
+        local Polar = getgenv().Polar
+        local BS = Polar and Polar.BossSystem
         local targetBossName = PolarMastery.SelectedBoss
         if PolarMastery.AutoKillAllBosses then
-            local Polar = getgenv().Polar
             if Polar and Polar.Data and Polar.Data.Bosses then
                 for _, b in ipairs(Polar.Data.Bosses) do
-                    if b.q or b.name == "Longma" then
-                        local BS = Polar.BossSystem
-                        local bObj = (BS and BS.FindLiveBoss and BS.FindLiveBoss(b.name)) or enemies:FindFirstChild(b.name) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(b.name))
-                        if bObj and bObj:FindFirstChild("HumanoidRootPart") and bObj:FindFirstChildOfClass("Humanoid") and bObj.Humanoid.Health > 0 then
-                            targetBossName = b.name
-                            break
-                        end
+                    local bObj = (BS and BS.FindLiveBoss and BS.FindLiveBoss(b.name)) or enemies:FindFirstChild(b.name) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(b.name))
+                    if bObj and bObj:FindFirstChild("HumanoidRootPart") and bObj:FindFirstChildOfClass("Humanoid") and bObj.Humanoid.Health > 0 then
+                        targetBossName = b.name
+                        break
                     end
                 end
             end
         end
 
-        local Polar = getgenv().Polar
-        local BS = Polar and Polar.BossSystem
+        local bData = BS and BS.FindBossData and BS.FindBossData(targetBossName)
         local boss = (BS and BS.FindLiveBoss and BS.FindLiveBoss(targetBossName)) or enemies:FindFirstChild(targetBossName) or (workspace:FindFirstChild("Characters") and workspace.Characters:FindFirstChild(targetBossName))
         if boss and boss:FindFirstChild("HumanoidRootPart") and boss:FindFirstChildOfClass("Humanoid") and boss.Humanoid.Health > 0 then
+            if PolarMastery.GetBossQuest and bData and bData.q and Polar and Polar.Quest and not Polar.Quest:HasQuest() then
+                local giverCF = (Polar.World and Polar.World.GetQuestGiverCFrame and Polar.World:GetQuestGiverCFrame(bData.q, bData.ql, bData.name))
+                    or (bData.giver and Polar.World and Polar.World.FindNPC and Polar.World:FindNPC(bData.giver))
+                if giverCF then
+                    PolarMastery.TargetHoverCFrame = nil
+                    local distG = (root.Position - giverCF.Position).Magnitude
+                    if distG > 15 then
+                        SafeMasteryTeleport(giverCF, root)
+                        task.wait(0.3)
+                        return
+                    else
+                        root.CFrame = giverCF
+                        root.AssemblyLinearVelocity = Vector3.zero
+                        if CommF then
+                            pcall(function() CommF:InvokeServer("StartQuest", bData.q, bData.ql or 1) end)
+                        end
+                        task.wait(0.3)
+                        return
+                    end
+                end
+            end
+
             local tRoot = boss.HumanoidRootPart
             local tHum = boss.Humanoid
             PolarMastery.CurrentTarget = boss
@@ -1096,7 +1153,7 @@ PolarMastery.IsTraveling = false
 
             local distToTarget = (root.Position - PolarMastery.TargetHoverCFrame.Position).Magnitude
             if distToTarget > 6 then
-                PolarMastery:TeleportTo(PolarMastery.TargetHoverCFrame)
+                SafeMasteryTeleport(PolarMastery.TargetHoverCFrame, root)
             end
 
             PolarMastery:SetAimTarget(tRoot)
@@ -1108,6 +1165,12 @@ PolarMastery.IsTraveling = false
                 PolarMastery:EquipWeapon(PolarMastery.PrimaryWeapon)
                 PolarMastery:PerformM1(boss, tRoot)
             end
+        elseif not PolarMastery.AutoKillAllBosses and bData and bData.pos then
+            PolarMastery.TargetHoverCFrame = nil
+            local waitCF = CFrame.new(bData.pos + Vector3.new(0, 15, 0))
+            if (root.Position - bData.pos).Magnitude > 300 or ((root.Position.X > 50000) ~= (bData.pos.X > 50000)) then
+                SafeMasteryTeleport(waitCF, root)
+            end
         end
         return
     end
@@ -1118,10 +1181,11 @@ PolarMastery.IsTraveling = false
     if PolarMastery.AutoFarm then
         local targetMob = nil
         local targetEnemyName = nil
+        local bestQuest = nil
 
         if PolarMastery.FarmMethod == "Quest" then
             local Polar = getgenv().Polar
-            local bestQuest = Polar and Polar.Quest and Polar.Quest:GetBestQuest()
+            bestQuest = Polar and Polar.Quest and Polar.Quest:GetBestQuest()
             if bestQuest then
                 targetEnemyName = bestQuest.enemyName
 
@@ -1130,11 +1194,15 @@ PolarMastery.IsTraveling = false
                 if PolarMastery.TakeQuest and not hasQuest then
                     PolarMastery.TargetHoverCFrame = nil
                     local giverName = bestQuest.giverName
-                    local giverCF = bestQuest.pos or (Polar.NPCCache and Polar.NPCCache[giverName])
+                    local giverCF = bestQuest.pos
+                        or (Polar.World and Polar.World.GetQuestGiverCFrame and Polar.World:GetQuestGiverCFrame(bestQuest.qName, bestQuest.index, bestQuest.enemyName))
+                        or (Polar.World and Polar.World.FindNPC and Polar.World:FindNPC(giverName))
+                        or (Polar.Data and Polar.Data.NPCCache and Polar.Data.NPCCache[giverName])
+                        or (Polar.NPCCache and Polar.NPCCache[giverName])
                     if giverCF then
                         local dist = (root.Position - giverCF.Position).Magnitude
                         if dist > 15 then
-                            PolarMastery:TeleportTo(giverCF)
+                            SafeMasteryTeleport(giverCF, root)
                             task.wait(0.3)
                             return
                         else
@@ -1159,9 +1227,7 @@ PolarMastery.IsTraveling = false
             if mHum and mRoot and mHum.Health > 0 then
                 local matches = true
                 if targetEnemyName then
-                    local mNameLower = string.lower(mob.Name)
-                    local tLower = string.lower(targetEnemyName)
-                    matches = string.find(mNameLower, tLower) or string.find(tLower, mNameLower)
+                    matches = MatchesEnemyName(mob.Name, targetEnemyName)
                 end
 
                 if matches then
@@ -1171,6 +1237,15 @@ PolarMastery.IsTraveling = false
                         targetMob = mob
                     end
                 end
+            end
+        end
+
+        if not targetMob and bestQuest and bestQuest.island then
+            local Polar = getgenv().Polar
+            if Polar and Polar.Teleport and Polar.Teleport.ToIsland then
+                PolarMastery.TargetHoverCFrame = nil
+                Polar.Teleport:ToIsland(bestQuest.island)
+                return
             end
         end
 

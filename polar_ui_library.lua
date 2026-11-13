@@ -2860,6 +2860,19 @@ function PolarUI:AddDropdown(cfg, opt, def, cb, overrideParent)
             options = newOptions
             rebuildOptions(newOptions)
         end,
+        Refresh = function(_, newOptions, optDefault)
+            if type(newOptions) == "table" then
+                options = newOptions
+                rebuildOptions(newOptions)
+                if type(optDefault) == "string" or type(optDefault) == "number" then
+                    selectedVal = optDefault
+                    valLabel.Text = tostring(optDefault)
+                elseif newOptions[1] ~= nil and (optDefault == true or selectedVal == nil or not table.find(newOptions, selectedVal)) then
+                    selectedVal = newOptions[1]
+                    valLabel.Text = tostring(newOptions[1])
+                end
+            end
+        end,
         GetValue = function(_) return selectedVal end
     }
     return dropdownObj

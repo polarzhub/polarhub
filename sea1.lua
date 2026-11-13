@@ -83,7 +83,7 @@ Polar.Data.QuestInfo = {
  {lvl = 20, q = "JungleQuest", ql = 3, name = "Gorilla King", giver = "Adventurer", island = "Jungle", isBoss = true},
  {lvl = 30, q = "BuggyQuest1", ql = 1, name = "Pirate", giver = "Pirate Adventurer", island = "Pirate"},
  {lvl = 40, q = "BuggyQuest1", ql = 2, name = "Brute", giver = "Pirate Adventurer", island = "Pirate"},
- {lvl = 55, q = "BuggyQuest1", ql = 3, name = "Bobby", giver = "Pirate Adventurer", island = "Pirate", isBoss = true},
+ {lvl = 55, q = "BuggyQuest1", ql = 3, name = "Chef", giver = "Pirate Adventurer", island = "Pirate", isBoss = true},
  {lvl = 60, q = "DesertQuest", ql = 1, name = "Desert Bandit", giver = "Desert Adventurer", island = "Desert"},
  {lvl = 75, q = "DesertQuest", ql = 2, name = "Desert Officer", giver = "Desert Adventurer", island = "Desert"},
  {lvl = 90, q = "SnowQuest", ql = 1, name = "Snow Bandit", giver = "Villager", island = "Snow"},
@@ -95,16 +95,16 @@ Polar.Data.QuestInfo = {
  {lvl = 175, q = "SkyQuest", ql = 2, name = "Dark Master", giver = "Sky Adventurer", island = "Sky"},
  {lvl = 190, q = "PrisonerQuest", ql = 1, name = "Prisoner", giver = "Jail Keeper", island = "Prison"},
  {lvl = 210, q = "PrisonerQuest", ql = 2, name = "Dangerous Prisoner", giver = "Jail Keeper", island = "Prison"},
- {lvl = 220, q = "ImpelQuest", ql = 1, name = "Warden", giver = "Head Jailer", island = "Prison", isBoss = true},
- {lvl = 230, q = "ImpelQuest", ql = 2, name = "Chief Warden", giver = "Head Jailer", island = "Prison", isBoss = true},
- {lvl = 240, q = "ImpelQuest", ql = 3, name = "Swan", giver = "Head Jailer", island = "Prison", isBoss = true},
+ {lvl = 225, q = "ImpelQuest", ql = 1, name = "Ruthless Prisoner", giver = "Head Jailer", island = "Prison"},
+ {lvl = 230, q = "ImpelQuest", ql = 2, name = "Warden", giver = "Head Jailer", island = "Prison", isBoss = true},
  {lvl = 250, q = "ColosseumQuest", ql = 1, name = "Toga Warrior", giver = "Colosseum Quest Giver", island = "Colosseum"},
  {lvl = 275, q = "ColosseumQuest", ql = 2, name = "Gladiator", giver = "Colosseum Quest Giver", island = "Colosseum"},
  {lvl = 300, q = "MagmaQuest", ql = 1, name = "Military Soldier", giver = "The Mayor", island = "Magma"},
  {lvl = 325, q = "MagmaQuest", ql = 2, name = "Military Spy", giver = "The Mayor", island = "Magma"},
- {lvl = 375, q = "FishmanQuest", ql = 1, name = "Fishman Warrior", giver = "Neptune", island = "Fishman"},
- {lvl = 400, q = "FishmanQuest", ql = 2, name = "Fishman Commando", giver = "Neptune", island = "Fishman"},
- {lvl = 425, q = "FishmanQuest", ql = 3, name = "Fishman Lord", giver = "Neptune", island = "Fishman", isBoss = true},
+ {lvl = 350, q = "MagmaQuest", ql = 3, name = "Magma Admiral", giver = "The Mayor", island = "Magma", isBoss = true},
+ {lvl = 375, q = "FishmanQuest", ql = 1, name = "Fishman Warrior", giver = "King Neptune", island = "Fishman"},
+ {lvl = 400, q = "FishmanQuest", ql = 2, name = "Fishman Commando", giver = "King Neptune", island = "Fishman"},
+ {lvl = 425, q = "FishmanQuest", ql = 3, name = "Fishman Lord", giver = "King Neptune", island = "Fishman", isBoss = true},
  {lvl = 450, q = "SkyExp1Quest", ql = 1, name = "God\'s Guard", giver = "Mole", island = "Sky"},
  {lvl = 475, q = "SkyExp1Quest", ql = 2, name = "Shanda", giver = "Mole", island = "Sky"},
  {lvl = 500, q = "SkyExp1Quest", ql = 3, name = "Wysper", giver = "Mole", island = "Sky", isBoss = true},
@@ -117,23 +117,19 @@ Polar.Data.QuestInfo = {
 }
 
 Polar.Data.Bosses = {
- {name = "Gorilla King", q = "JungleQuest", ql = 3, giver = "Adventurer", island = "Jungle", lvl = 25, cd = 120, pos = Vector3.new(-1193.9, 15.7, -549.8)},
- {name = "Bobby", q = "BuggyQuest1", ql = 3, giver = "Pirate Adventurer", island = "Pirate", lvl = 55, cd = 300, pos = Vector3.new(-1120.5, 54.7, 4121.2)},
+ {name = "Gorilla King", q = "JungleQuest", ql = 3, giver = "Adventurer", island = "Jungle", lvl = 25, cd = 120, pos = Vector3.new(-1193.9, 10.7, -549.8)},
+ {name = "Chef", q = "BuggyQuest1", ql = 3, giver = "Pirate Adventurer", island = "Pirate", lvl = 55, cd = 300, pos = Vector3.new(-1120.5, 54.7, 4121.2)},
  {name = "Yeti", q = "SnowQuest", ql = 3, giver = "Villager", island = "Snow", lvl = 110, cd = 300, pos = Vector3.new(1181.7, 104.0, -1616.9)},
- {name = "Mob Leader", q = nil, ql = nil, giver = nil, island = "Pirate", lvl = 120, cd = 300, pos = Vector3.new(-2880.7, 11.7, 5430.9)},
+ {name = "Mob Boss", q = nil, ql = nil, giver = nil, island = "Bandit Village", lvl = 120, cd = 300, pos = Vector3.new(-2880.7, 6.7, 5430.9)},
  {name = "Vice Admiral", q = "MarineQuest2", ql = 2, giver = "Marine", island = "Marine", lvl = 130, cd = 600, pos = Vector3.new(-5010.8, 15.1, 4383.7)},
- {name = "Warden", q = "ImpelQuest", ql = 1, giver = "Head Jailer", island = "Prison", lvl = 220, cd = 300, pos = Vector3.new(4853, 5, 743)},
- {name = "Chief Warden", q = "ImpelQuest", ql = 2, giver = "Head Jailer", island = "Prison", lvl = 230, cd = 300, pos = Vector3.new(5080, 5, 680)},
- {name = "Swan", q = "ImpelQuest", ql = 3, giver = "Head Jailer", island = "Prison", lvl = 240, cd = 600, pos = Vector3.new(5230, 4, 750)},
- {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350, cd = 600, pos = Vector3.new(-5625.7, 55.4, 8623.0)},
- {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "Neptune", island = "Fishman", lvl = 425, cd = 600, pos = Vector3.new(61352.9, 67.2, 1029.1)},
- {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 500, cd = 900, pos = Vector3.new(-6271.6, 5472.8, 1887.8)},
- {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Adventurer", island = "Sky", lvl = 575, cd = 900, pos = Vector3.new(-7125.4, 5596.1, 111.5)},
- {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Fountain Quest Giver", island = "Fountain", lvl = 675, cd = 900, pos = Vector3.new(6252.4, 9.3, 4941.4)},
- {name = "Ice Admiral", q = nil, ql = nil, giver = nil, island = "Snow", lvl = 700, cd = 1200, pos = Vector3.new(1212.4, 20.4, -1429.6)},
  {name = "Saber Expert", q = nil, ql = nil, giver = nil, island = "Jungle", lvl = 200, cd = 1200, pos = Vector3.new(-1527.2, 34.1, -33.2)},
- {name = "The Saw", q = nil, ql = nil, giver = nil, island = "Town", lvl = 100, cd = 4500, pos = Vector3.new(-773.4, 13.2, 1604.9)},
- {name = "Greybeard", q = nil, ql = nil, giver = nil, island = "Marine", lvl = 750, cd = 21600, pos = Vector3.new(-4953.1, 18.9, 4159.8)}
+ {name = "Warden", q = "ImpelQuest", ql = 2, giver = "Head Jailer", island = "Prison", lvl = 230, cd = 300, pos = Vector3.new(5623.2, 1.4, 733.8)},
+ {name = "Magma Admiral", q = "MagmaQuest", ql = 3, giver = "The Mayor", island = "Magma", lvl = 350, cd = 600, pos = Vector3.new(-5625.7, 55.4, 8623.0)},
+ {name = "Fishman Lord", q = "FishmanQuest", ql = 3, giver = "King Neptune", island = "Fishman", lvl = 425, cd = 600, pos = Vector3.new(61352.9, 67.2, 1029.1)},
+ {name = "Wysper", q = "SkyExp1Quest", ql = 3, giver = "Mole", island = "Sky", lvl = 500, cd = 900, pos = Vector3.new(-6271.6, 5472.8, 1887.8)},
+ {name = "Thunder God", q = "SkyExp2Quest", ql = 3, giver = "Sky Quest Giver 2", island = "Upper Sky", lvl = 575, cd = 900, pos = Vector3.new(-7125.4, 5596.1, 111.5)},
+ {name = "Cyborg", q = "FountainQuest", ql = 3, giver = "Freezeburg Quest Giver", island = "Fountain", lvl = 675, cd = 900, pos = Vector3.new(6252.4, 9.3, 4941.4)},
+ {name = "Ice Admiral", q = nil, ql = nil, giver = nil, island = "Snow", lvl = 700, cd = 1200, pos = Vector3.new(1212.4, 20.4, -1429.6)}
 }
 
 for _, q in ipairs(Polar.Data.QuestInfo) do
@@ -589,19 +585,21 @@ local function AutoSecondSea()
  end)
 end
 
--- ==================== BUCLE AUTO BUSO HAKI ====================
-local AutoHakiEnabled = true
-task.spawn(function()
- while true do
- task.wait(1)
- if AutoHakiEnabled and CommF then
- local char = LocalPlayer.Character
- if char and not char:FindFirstChild("HasBuso") then
- pcall(function() CommF:InvokeServer("Buso") end)
- end
- end
- end
-end)
+-- ==================== BUCLE AUTO BUSO HAKI (SINCRONIZADO) ====================
+if not getgenv().PolarBusoLoopRunning then
+ getgenv().PolarBusoLoopRunning = true
+ task.spawn(function()
+  while true do
+   task.wait(1)
+   if getgenv().PolarAutoBusoEnabled and CommF then
+    local char = LocalPlayer.Character
+    if char and not char:FindFirstChild("HasBuso") then
+     pcall(function() CommF:InvokeServer("Buso") end)
+    end
+   end
+  end
+ end)
+end
 
 -- ==================== TAB STATUS: RADAR Y TEMPORIZADORES OFICIALES DEL JUEGO ====================
 -- Delegates to Polar.BossSystem (core engine) for all boss detection, markers, and status cards
@@ -759,41 +757,10 @@ task.spawn(function()
 end)
 
 
--- ==================== TAB FARM BOSSES ====================
-TabFarm:AddSection("Sea 1 Boss Hunter")
-
-TabFarm:AddDropdown({
-	Name = "Select Boss",
-	Options = BossNamesList,
-	Default = "Gorilla King",
-	Callback = function(Value)
-		getgenv().PolarSelectedBossToFarm = Value
-	end
-})
-
-TabFarm:AddToggle({
-	Name = "Farm Selected Boss",
-	Desc = "Farms only the selected boss",
-	Callback = function(Value)
-		getgenv().PolarAutoFarmBossEnabled = Value
-	end
-})
-
-TabFarm:AddToggle({
-	Name = "Farm All Bosses",
-	Desc = "Scans and farms all alive bosses",
-	Callback = function(Value)
-		getgenv().PolarAutoFarmAllBossesEnabled = Value
-		getgenv().PolarLastBossCheckedIndex = 1
-	end
-})
-
-TabFarm:AddToggle({
-	Name = "Take Boss Quest",
-	Callback = function(Value)
-		getgenv().PolarBossWithQuest = Value
-	end
-})
+-- ==================== TAB FARM BOSSES (UNIFICADO CON CORE) ====================
+if Polar.SetBossList then
+	Polar.SetBossList(BossNamesList, "Gorilla King")
+end
 
 -- ==================== TAB QUEST: SABER PUZZLE ====================
 TabQuest:AddSection("Saber Puzzle")
@@ -813,11 +780,10 @@ task.spawn(function()
 					for i = 1, 5 do if prog.Plates[i] then pCount = pCount + 1 end end
 				end
 				local text = string.format(
-					"Plates: %d/5 | Torch: %s | Cup: %s\nSick Man: %s | Rich Son: %s | Mob Leader: %s\nRelic: %s | Shanks: %s",
+					"Plates: %d/5 | Torch: %s | Cup/Sick Man: %s\nRich Son: %s | Mob Boss: %s\nRelic: %s | Shanks: %s",
 					pCount,
 					prog.UsedTorch and "[OK]" or "[PENDING]",
 					prog.UsedCup and "[OK]" or "[PENDING]",
-					prog.TalkedSon and "[OK]" or "[PENDING]",
 					prog.TalkedSon and "[OK]" or "[PENDING]",
 					prog.KilledMob and "[OK]" or "[PENDING]",
 					prog.UsedRelic and "[OK]" or "[PENDING]",
@@ -845,25 +811,30 @@ TabQuest:AddButton({
 })
 
 -- ==================== TAB QUEST: SECRETS MASTER & COMBAT ====================
--- ==================== TAB QUEST: SECRET LEVELS (LV. 2800 -> 3000) & AWAKENED BOSSES ====================
+-- ==================== TAB QUEST: SECRET LEVELS (39 SECRETOS) & AWAKENED BOSSES ====================
 TabQuest:AddSection("Niveles Secretos")
 
 local PolarSecrets = getgenv().PolarSecrets
+if not PolarSecrets and type(getgenv().PolarLoadScript) == "function" then
+	pcall(function()
+		local ok, res = getgenv().PolarLoadScript("polar_secret_levels.lua")
+		if ok then PolarSecrets = res or getgenv().PolarSecrets end
+	end)
+end
+if not PolarSecrets and readfile then
+	for _, p in ipairs({"polar_secret_levels.lua", "polarhub_repo/polar_secret_levels.lua"}) do
+		pcall(function()
+			PolarSecrets = loadstring(readfile(p))()
+		end)
+		if PolarSecrets then break end
+	end
+end
 if not PolarSecrets then
 	pcall(function()
-		local url = "https://raw.githubusercontent.com/polarzhub/polarhub/main/polar_secret_levels.lua?t=" .. tostring(os.time())
-		PolarSecrets = loadstring(game:HttpGet(url))()
+		local base = getgenv().PolarBaseURL or "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+		local buster = getgenv().PolarCacheBuster or ("?t=" .. tostring(os.time()))
+		PolarSecrets = loadstring(game:HttpGet(base .. "polar_secret_levels.lua" .. buster))()
 	end)
-	if not PolarSecrets then
-		pcall(function()
-			PolarSecrets = loadstring(readfile("polar_secret_levels.lua"))()
-		end)
-	end
-	if not PolarSecrets then
-		pcall(function()
-			PolarSecrets = loadstring(readfile("c:/SCRIPT_LUA/polar_secret_levels.lua"))()
-		end)
-	end
 end
 
 local SecretsProgressPara = TabQuest:AddParagraph({
@@ -1071,7 +1042,7 @@ TabQuest:AddButton({
 			elseif r == 2 then
 				Notify("Info", "Advanced Combat ya equipado.", 4)
 			else
-				Notify("Bloqueado", "Completa los 40 secretos primero.", 4)
+				Notify("Bloqueado", "Completa los 39 secretos primero.", 4)
 			end
 		end
 	end
@@ -1093,42 +1064,9 @@ TabQuest:AddButton({
 	end
 })
 
--- ==================== TAB SHOP: HAKI & FIGHTING STYLES SEA 1 ====================
+-- ==================== TAB SHOP: SEA 1 EXCLUSIVES (NO DUPLICATES WITH CORE) ====================
 if TabShop then
-	TabShop:AddSection("Haki Trainers")
-	
-	TabShop:AddButton({ 
-		Name = "Buy Geppo - $10k", 
-		Callback = function() 
-			SafeBuy("BuyHaki", "Geppo", nil, "Ability Teacher") 
-		end 
-	})
-	
-	TabShop:AddButton({ 
-		Name = "Buy Buso - $25k", 
-		Callback = function() 
-			SafeBuy("BuyHaki", "Buso", nil, "Ability Teacher") 
-		end 
-	})
-	
-	TabShop:AddButton({ 
-		Name = "Buy Soru - $100k", 
-		Callback = function() 
-			SafeBuy("BuyHaki", "Soru", nil, "Ability Teacher") 
-		end 
-	})
-	
-	TabShop:AddButton({ 
-		Name = "Buy Ken Haki - $750k", 
-		Callback = function() 
-			local lvl = Polar.Player and Polar.Player:GetLevel() or 1
-			if lvl >= 200 then
-				SafeBuy("KenTalk", "Buy", nil, "Instinct Teacher")
-			else
-				Notify("[ERROR] Level Requirement", "Requires Level 200+ and defeated Shanks.", 5)
-			end
-		end 
-	})
+	TabShop:AddSection("Sea 1 Haki Check & Swords")
 
 	TabShop:AddButton({
 		Name = "Check Ken Haki",
@@ -1140,28 +1078,89 @@ if TabShop then
 		end
 	})
 
-	TabShop:AddSection("Sea 1 Fighting Styles")
-	
-	TabShop:AddButton({ 
-		Name = "Buy Dark Step - $150k", 
-		Callback = function() 
-			SafeBuy("BuyBlackLeg", nil, nil, "Dark Step Teacher") 
-		end 
+	TabShop:AddButton({
+		Name = "Buy Cutlass - $1k",
+		Callback = function()
+			SafeBuy("BuyItem", "Cutlass", nil, "Sword Dealer of the West")
+		end
 	})
-	
-	TabShop:AddButton({ 
-		Name = "Buy Electro - $500k", 
-		Callback = function() 
-			SafeBuy("BuyElectro", nil, nil, "Mad Scientist") 
-		end 
+
+	TabShop:AddButton({
+		Name = "Buy Dual-Headed Blade - $400k",
+		Callback = function()
+			SafeBuy("BuyItem", "Dual-Headed Blade", nil, "Master Sword Dealer")
+		end
 	})
-	
-	TabShop:AddButton({ 
-		Name = "Buy Water Kung Fu - $750k", 
-		Callback = function() 
-			SafeBuy("BuyFishmanKarate", nil, nil, "Water Kung-fu Teacher") 
-		end 
+
+	TabShop:AddSection("Sea 1 Extra Guns & Accessories")
+
+	TabShop:AddButton({
+		Name = "Buy Refined Slingshot - $30k",
+		Callback = function()
+			SafeBuy("BuyItem", "Refined Slingshot", nil, "Advanced Weapon Dealer")
+		end
 	})
+
+	TabShop:AddButton({
+		Name = "Buy Dual Flintlock - $65k",
+		Callback = function()
+			SafeBuy("BuyItem", "Dual Flintlock", nil, "Advanced Weapon Dealer")
+		end
+	})
+
+	TabShop:AddButton({
+		Name = "Buy Cannon - $100k",
+		Callback = function()
+			SafeBuy("BuyItem", "Cannon", nil, "Advanced Weapon Dealer")
+		end
+	})
+
+	TabShop:AddButton({
+		Name = "Buy Black Cape - $50k",
+		Callback = function()
+			SafeBuy("BuyItem", "Black Cape", nil, "Parlus")
+		end
+	})
+
+	TabShop:AddButton({
+		Name = "Buy Swordsman Hat - $150k",
+		Callback = function()
+			SafeBuy("BuyItem", "Swordsman Hat", nil, nil)
+		end
+	})
+
+	TabShop:AddButton({
+		Name = "Buy Tomoe Ring - $500k",
+		Callback = function()
+			SafeBuy("BuyItem", "Tomoe Ring", nil, "Yoshi")
+		end
+	})
+end
+
+-- ==================== TAB TELEPORT: PORTALES Y ZONAS CLAVE SEA 1 ====================
+if Polar and Polar.TabTeleport then
+	Polar.TabTeleport:AddSection("Sea 1 Portals & Secret Zones")
+	local sea1Spots = {
+		{ name = "Middle Town", cf = CFrame.new(-655.0, 15.0, 1550.0) },
+		{ name = "Jungle", cf = CFrame.new(-1679.8, 48.7, 175.6) },
+		{ name = "Marine Fortress", cf = CFrame.new(-4699.3, 15.0, 4227.6) },
+		{ name = "Magma Village", cf = CFrame.new(-5308.9, 20.0, 8482.7) },
+		{ name = "Underwater City (Portal)", cf = CFrame.new(61163.9, 15.0, 1819.8) },
+		{ name = "Lower Skylands", cf = CFrame.new(-5406.3, 410.1, -694.0) },
+		{ name = "Upper Sky (SkyArea2)", cf = CFrame.new(-7033.1, 5590.6, 1353.1) },
+		{ name = "Sewers (Underground)", cf = CFrame.new(-196.8, -545.6, 106.8) },
+		{ name = "DapperJack Arena", cf = CFrame.new(-627.5, -10988.0, 1630.5) },
+	}
+	for _, spot in ipairs(sea1Spots) do
+		Polar.TabTeleport:AddButton({
+			Name = spot.name,
+			Callback = function()
+				if Polar.Teleport and Polar.Teleport.To then
+					Polar.Teleport:To(spot.cf)
+				end
+			end
+		})
+	end
 end
 
 -- Asegurar que todos los contenedores inicien en la parte superior (0, 0)

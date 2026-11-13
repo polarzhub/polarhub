@@ -131,16 +131,34 @@ getgenv().PolarTabMisc = TabMisc
 
 -- ==================== POLAR INTEGRITY & DIAGNOSTICS ENGINE ====================
 local function LoadPolarIntegrity()
+	if Polar.Diagnostics and Polar.Diagnostics._IntegrityV2 then
+		if PolarUI and Polar and Polar.Registry and type(Polar.Registry.HookUILibrary) == "function" then
+			pcall(function() Polar.Registry:HookUILibrary(PolarUI) end)
+		end
+		return true
+	end
 	local integrityLoaded = false
-	pcall(function()
-		if isfile and isfile("polar_integrity.lua") then
-			loadstring(readfile("polar_integrity.lua"))()
+	if type(getgenv().PolarLoadScript) == "function" then
+		local ok = pcall(function()
+			integrityLoaded = getgenv().PolarLoadScript("polar_integrity.lua") and true or false
+		end)
+		if ok and Polar.Diagnostics and Polar.Diagnostics._IntegrityV2 then
 			integrityLoaded = true
 		end
-	end)
+	end
 	if not integrityLoaded then
 		pcall(function()
-			loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_integrity.lua?t=" .. tostring(os.time())))()
+			if isfile and isfile("polar_integrity.lua") then
+				loadstring(readfile("polar_integrity.lua"))()
+				integrityLoaded = true
+			end
+		end)
+	end
+	if not integrityLoaded then
+		pcall(function()
+			local base = getgenv().PolarBaseURL or "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+			local buster = getgenv().PolarCacheBuster or ("?t=" .. tostring(os.time()))
+			loadstring(game:HttpGet(base .. "polar_integrity.lua" .. buster))()
 			integrityLoaded = true
 		end)
 	end
@@ -316,9 +334,10 @@ Polar.Data = Polar.Data or {
 }
 
 -- ==============================================================================
--- POLAR HUB DIAGNOSTICS & SELF-HEALING ARCHITECTURE
+-- POLAR HUB DIAGNOSTICS & SELF-HEALING ARCHITECTURE (FALLBACK IF V2 NOT LOADED)
 -- Real-time validation, Orphan Toggle Detection, Error Logger & Live Telemetry
 -- ==============================================================================
+if not (Polar.Diagnostics and Polar.Diagnostics._IntegrityV2) then
 Polar.Diagnostics = Polar.Diagnostics or {}
 Polar.Diagnostics.ErrorLog = Polar.Diagnostics.ErrorLog or {}
 Polar.Diagnostics.MaxLogEntries = Polar.Diagnostics.MaxLogEntries or 50
@@ -544,7 +563,7 @@ function Polar.Diagnostics:RunAudit()
  -- 4. Sea & Place Detection
  local pId = game.PlaceId
  local seaName = "Sea 1"
- if pId == 4442272183 or pId == 7449423635 then seaName = "Sea 2"
+ if pId == 4442272183 then seaName = "Sea 2"
  elseif pId == 7449423635 or pId == 100117331123089 or pId == 100117331123088 then seaName = "Sea 3" end
  check("World", "Blox Fruits Sea Identification", true, string.format("PlaceId: %d (%s)", pId, seaName))
  
@@ -564,6 +583,7 @@ function Polar.Diagnostics:RunAudit()
  self.LastAuditResult = audit
  return audit
 end
+end -- if not Polar.Diagnostics._IntegrityV2
 
 -- Módulo de Jugador
 Polar.Player = Polar.Player or {}
@@ -1092,16 +1112,76 @@ function Polar.Teleport:To(targetCFrame)
  local hrp = char and char:FindFirstChild("HumanoidRootPart")
  if not hrp then return end
  
- -- Teletransporte especial para Sea 1 / Sea 2 (Isla Submarina, Barco Maldito)
+ -- Teletransporte especial para Sea 1 Underwater City (X > 50000)
  if targetCFrame.Position.X > 50000 and hrp.Position.X < 50000 then
- local whirlpool = workspace.Map:FindFirstChild("Whirlpool", true) or workspace:FindFirstChild("Whirlpool", true)
- local wpPos = whirlpool and (whirlpool:IsA("Model") and whirlpool:GetModelCFrame().Position or whirlpool.Position) or Vector3.new(3864.68, 6.73, -1926.92)
- local dist2D = Vector2.new(hrp.Position.X - wpPos.X, hrp.Position.Z - wpPos.Z).Magnitude
- if dist2D > 100 then
- targetCFrame = CFrame.new(wpPos.X, math.max(hrp.Position.Y, 150), wpPos.Z)
- else
- targetCFrame = CFrame.new(wpPos)
+  local mapFolder = workspace:FindFirstChild("Map")
+  local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
+  local portal = (tpSpawn and (tpSpawn:FindFirstChild("Entrance") or tpSpawn:FindFirstChild("Whirlpool")))
+   or (mapFolder and mapFolder:FindFirstChild("Whirlpool", true))
+   or workspace:FindFirstChild("Whirlpool", true)
+  local portalCF = portal and (portal:IsA("Model") and portal:GetPivot() or portal.CFrame) or CFrame.new(4050.3, 4.0, -1814.1)
+  local dist2D = Vector2.new(hrp.Position.X - portalCF.Position.X, hrp.Position.Z - portalCF.Position.Z).Magnitude
+  if dist2D > 12 then
+   MoveDirectly(portalCF + Vector3.new(0, 3, 0))
+  end
+  for i = 1, 8 do
+   local cChar = LocalPlayer.Character
+   local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+   if cHrp and cHrp.Position.X > 50000 then break end
+   if portal and portal:IsA("BasePart") and cHrp then
+    pcall(function()
+     firetouchinterest(cHrp, portal, 0)
+     task.wait(0.05)
+     firetouchinterest(cHrp, portal, 1)
+    end)
+   end
+   task.wait(0.25)
+  end
+  local cChar = LocalPlayer.Character
+  local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+  if not cHrp or cHrp.Position.X < 50000 then
+   return
+  end
  end
+
+ -- Salida de Sea 1 Underwater City hacia el mapa principal
+ if targetCFrame.Position.X < 50000 and hrp.Position.X > 50000 then
+  local mapFolder = workspace:FindFirstChild("Map")
+  local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
+  local exitPortal = tpSpawn and (tpSpawn:FindFirstChild("Exit") or tpSpawn:FindFirstChild("ExitPoint"))
+  local exitCF = exitPortal and (exitPortal:IsA("Model") and exitPortal:GetPivot() or exitPortal.CFrame) or CFrame.new(61170.0, 5.0, 1952.8)
+  local dist2D = Vector2.new(hrp.Position.X - exitCF.Position.X, hrp.Position.Z - exitCF.Position.Z).Magnitude
+  if dist2D > 12 then
+   MoveDirectly(exitCF + Vector3.new(0, 3, 0))
+  end
+  for i = 1, 8 do
+   local cChar = LocalPlayer.Character
+   local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+   if cHrp and cHrp.Position.X < 50000 then break end
+   if exitPortal and exitPortal:IsA("BasePart") and cHrp then
+    pcall(function()
+     firetouchinterest(cHrp, exitPortal, 0)
+     task.wait(0.05)
+     firetouchinterest(cHrp, exitPortal, 1)
+    end)
+   end
+   task.wait(0.25)
+  end
+  local cChar = LocalPlayer.Character
+  local cHrp = cChar and cChar:FindFirstChild("HumanoidRootPart")
+  if cHrp and cHrp.Position.X > 50000 then
+   pcall(function()
+    local modNet = ReplicatedStorage:FindFirstChild("Modules") and ReplicatedStorage.Modules:FindFirstChild("Net")
+    local exitRem = modNet and modNet:FindFirstChild("RE/FishmenBubbleExit")
+    if exitRem then exitRem:FireServer() end
+   end)
+   task.wait(0.5)
+  end
+  local aChar = LocalPlayer.Character
+  local aHrp = aChar and aChar:FindFirstChild("HumanoidRootPart")
+  if not aHrp or aHrp.Position.X > 50000 then
+   return
+  end
  end
  
  -- Cursed Ship (Acceso al sub-lugar desde el Mar 2 Principal)
@@ -1216,19 +1296,31 @@ function Polar.Teleport:ToIsland(islandName)
  -- Fallbacks absolutos de islas
  if not pos then
  local fallbacks = {
- ["town"] = Vector3.new(-1000, 15, 1000),
- ["jungle"] = Vector3.new(-1461, 30, -51),
- ["pirate"] = Vector3.new(-1134, 14, 3880),
- ["desert"] = Vector3.new(1094, 20, 4344),
- ["snow"] = Vector3.new(1384, 90, -1300),
- ["marine"] = Vector3.new(-3122, 10, 4048),
- ["sky"] = Vector3.new(-1643, 368, -52),
- ["prison"] = Vector3.new(4875, 5, 743),
- ["colosseum"] = Vector3.new(-1500, 7, 2500),
- ["magma"] = Vector3.new(-5259, 37, 4050),
- ["fishman"] = Vector3.new(3864, 6, -1926),
- ["upper sky"] = Vector3.new(-7904, 5634, -1640),
- ["fountain"] = Vector3.new(5259, 37, 4050),
+ ["bandit"] = Vector3.new(1051.8, 16.0, 1557.7),
+ ["starter island"] = Vector3.new(1051.8, 16.0, 1557.7),
+ ["town"] = Vector3.new(-655.0, 15.0, 1550.0),
+ ["middle town"] = Vector3.new(-655.0, 15.0, 1550.0),
+ ["jungle"] = Vector3.new(-1461.0, 30.0, -51.0),
+ ["pirate"] = Vector3.new(-1151.6, 14.0, 3863.1),
+ ["pirate village"] = Vector3.new(-1151.6, 14.0, 3863.1),
+ ["desert"] = Vector3.new(1066.8, 16.0, 4430.1),
+ ["snow"] = Vector3.new(1400.6, 80.0, -1311.3),
+ ["frozen village"] = Vector3.new(1400.6, 80.0, -1311.3),
+ ["bandit village"] = Vector3.new(-2880.7, 15.0, 5430.9),
+ ["marine"] = Vector3.new(-4699.3, 15.0, 4227.6),
+ ["marine fortress"] = Vector3.new(-4699.3, 15.0, 4227.6),
+ ["sky"] = Vector3.new(-5406.3, 410.1, -694.0),
+ ["skylands"] = Vector3.new(-5406.3, 410.1, -694.0),
+ ["prison"] = Vector3.new(5208.3, 16.0, 736.6),
+ ["colosseum"] = Vector3.new(-1342.3, 15.0, -2928.6),
+ ["magma"] = Vector3.new(-5308.9, 20.0, 8482.7),
+ ["magma village"] = Vector3.new(-5308.9, 20.0, 8482.7),
+ ["fishman"] = Vector3.new(61163.9, 15.0, 1819.8),
+ ["underwater city"] = Vector3.new(61163.9, 15.0, 1819.8),
+ ["upper sky"] = Vector3.new(-7033.1, 5590.6, 1353.1),
+ ["fountain"] = Vector3.new(5263.5, 75.0, 4087.6),
+ ["fountain city"] = Vector3.new(5263.5, 75.0, 4087.6),
+ ["sewers"] = Vector3.new(-196.8, -545.6, 106.8),
  ["kingdom of rose"] = Vector3.new(-429, 73, 299),
  ["green zone"] = Vector3.new(-2840, 73, -2990),
  ["graveyard"] = Vector3.new(-5154, 8, -714),
@@ -1252,28 +1344,61 @@ function Polar.Teleport:ToIsland(islandName)
  end
  
  if pos then
- print("[Polar Hub] [TP] Volando hacia isla: " .. islandName)
- Polar.Teleport:To(CFrame.new(pos.X, pos.Y + 250, pos.Z))
- task.wait(1.5) -- Pausa para que carguen los assets (streaming enabled bypass)
+ print("[Polar Hub] [TP] Viajando hacia isla: " .. islandName)
+ local safeY = (pos.Y < -50 or string.find(string.lower(islandName), "sewer") or string.find(string.lower(islandName), "fish") or string.find(string.lower(islandName), "underwater")) and (pos.Y + 4) or (pos.Y + 12)
+ Polar.Teleport:To(CFrame.new(pos.X, safeY, pos.Z))
+ task.wait(0.8) -- Pausa breve para streaming
  end
 end
 
 -- ==================== SYSTEM DETECTION ENGINE (DETECCION ABSURDA DE NPCS Y OBJETOS) ====================
 local FallbackPositions = {
- -- Sea 1 Quest Givers
- ["Bandit Quest Giver"] = Vector3.new(1060, 16, 1548),
- ["Jungle Quest Giver"] = Vector3.new(-1600, 37, 153),
- ["Pirate Quest Giver"] = Vector3.new(-1140, 4, 3828),
- ["Desert Quest Giver"] = Vector3.new(897, 6, 4388),
- ["Snow Quest Giver"] = Vector3.new(1386, 87, -1298),
- ["Marine Quest Giver"] = Vector3.new(-2900, 7, 5350),
- ["Sky Quest Giver"] = Vector3.new(-4840, 718, -2620),
- ["Prison Quest Giver"] = Vector3.new(4850, 5, 730),
- ["Colosseum Quest Giver"] = Vector3.new(-1580, 7, 2720),
- ["Magma Quest Giver"] = Vector3.new(-5310, 8, 8530),
- ["Fishman Quest Giver"] = Vector3.new(61120, 18, 1568),
- ["Upper Sky Quest Giver"] = Vector3.new(-7900, 5635, -1410),
- ["Fountain Quest Giver"] = Vector3.new(5259, 38, 4050),
+ -- Sea 1 Quest Givers & NPCs (Verificados en vivo)
+ ["Bandit Quest Giver"] = Vector3.new(1051.8, 11.0, 1557.7),
+ ["Marine Leader"] = Vector3.new(-2655.3, 30.6, 2113.7),
+ ["Adventurer"] = Vector3.new(-1679.8, 48.7, 175.6),
+ ["Jungle Quest Giver"] = Vector3.new(-1679.8, 48.7, 175.6),
+ ["Pirate Adventurer"] = Vector3.new(-1151.6, 13.6, 3863.1),
+ ["Pirate Quest Giver"] = Vector3.new(-1151.6, 13.6, 3863.1),
+ ["Desert Adventurer"] = Vector3.new(897.0, 6.0, 4388.0),
+ ["Desert Quest Giver"] = Vector3.new(897.0, 6.0, 4388.0),
+ ["Villager"] = Vector3.new(1400.6, 77.4, -1311.3),
+ ["Snow Quest Giver"] = Vector3.new(1400.6, 77.4, -1311.3),
+ ["Marine"] = Vector3.new(-4699.3, 4.7, 4227.6),
+ ["Sky Adventurer"] = Vector3.new(-5406.3, 410.1, -694.0),
+ ["Sky Quest Giver"] = Vector3.new(-5406.3, 410.1, -694.0),
+ ["Jail Keeper"] = Vector3.new(5208.3, 15.9, 736.6),
+ ["Prison Quest Giver"] = Vector3.new(5208.3, 15.9, 736.6),
+ ["Head Jailer"] = Vector3.new(5320.7, 18.9, 856.3),
+ ["Colosseum Quest Giver"] = Vector3.new(-1342.3, 11.2, -2928.6),
+ ["The Mayor"] = Vector3.new(-5308.9, 17.0, 8482.7),
+ ["Magma Quest Giver"] = Vector3.new(-5308.9, 17.0, 8482.7),
+ ["King Neptune"] = Vector3.new(61406.2, 24.5, 1626.8),
+ ["Neptune"] = Vector3.new(61406.2, 24.5, 1626.8),
+ ["Fishman Quest Giver"] = Vector3.new(61406.2, 24.5, 1626.8),
+ ["Mole"] = Vector3.new(-4309.4, 1085.8, -556.3),
+ ["Sky Quest Giver 2"] = Vector3.new(-7033.1, 5590.6, 1353.1),
+ ["Upper Sky Quest Giver"] = Vector3.new(-7033.1, 5590.6, 1353.1),
+ ["Freezeburg Quest Giver"] = Vector3.new(5263.5, 74.9, 4087.6),
+ ["Fountain Quest Giver"] = Vector3.new(5263.5, 74.9, 4087.6),
+ ["Ability Teacher"] = Vector3.new(1445.5, 22.3, -1404.3),
+ ["Instinct Teacher"] = Vector3.new(-7374.4, 5791.7, 383.2),
+ ["Dark Step Teacher"] = Vector3.new(-990.7, 26.0, 4025.7),
+ ["Mad Scientist"] = Vector3.new(-4628.9, 12.1, -355.7),
+ ["Water Kung-fu Teacher"] = Vector3.new(61715.2, 53.0, 871.9),
+ ["Water Kung Fu Teacher"] = Vector3.new(61715.2, 53.0, 871.9),
+ ["Sword Dealer"] = Vector3.new(897.4, 13.2, 1454.9),
+ ["Weapon Dealer"] = Vector3.new(-628.8, 3.6, 1512.5),
+ ["Sword Dealer of the West"] = Vector3.new(-1275.3, 26.0, 4031.7),
+ ["Sword Dealer of the East"] = Vector3.new(1395.6, 76.7, -1256.1),
+ ["Master Sword Dealer"] = Vector3.new(-4913.7, 926.1, -804.5),
+ ["Advanced Weapon Dealer"] = Vector3.new(-4687.0, 4.8, 4070.4),
+ ["Living Skeleton"] = Vector3.new(-5564.2, 13.2, 8781.4),
+ ["Parlus"] = Vector3.new(-4832.3, 234.1, 3850.9),
+ ["Yoshi"] = Vector3.new(-4819.3, 923.7, -895.1),
+ ["Military Detective"] = Vector3.new(4875.6, 9.2, 715.2),
+ ["Sick Man"] = Vector3.new(1503.4, 77.3, -1297.6),
+ ["Rich Man"] = Vector3.new(-939.3, 26.0, 4114.8),
 
  -- Sea 2 Quest Givers
  ["Area 1 Quest Giver"] = Vector3.new(-429, 73, 299),
@@ -1352,14 +1477,52 @@ function Polar.Detection:FindNPC(npcName)
  return Polar.Data.NPCCache[npcName]
  end
 
- -- 2. Búsqueda directa en workspace.NPCs
+ local lowerTarget = string.lower(npcName)
+
+ -- 2. Búsqueda directa en workspace.NPCs (coincidencia exacta primero, luego FuzzyMatch)
  local npcsFolder = workspace:FindFirstChild("NPCs")
  if npcsFolder then
  for _, npc in ipairs(npcsFolder:GetChildren()) do
+ if string.lower(npc.Name) == lowerTarget then
+ local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildOfClass("BasePart")
+ local cf = part and part.CFrame or (npc:IsA("Model") and npc:GetPivot() or nil)
+ if cf then
+ Polar.Data.NPCCache[npcName] = cf
+ if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+ return cf
+ end
+ end
+ end
+ for _, npc in ipairs(npcsFolder:GetChildren()) do
  if self:FuzzyMatch(npc.Name, npcName) then
  local part = npc:FindFirstChild("HumanoidRootPart") or npc:FindFirstChild("Head") or npc:FindFirstChildOfClass("BasePart")
- if part then
- local cf = part.CFrame
+ local cf = part and part.CFrame or (npc:IsA("Model") and npc:GetPivot() or nil)
+ if cf then
+ Polar.Data.NPCCache[npcName] = cf
+ if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+ return cf
+ end
+ end
+ end
+ end
+
+ -- 2b. Búsqueda en ReplicatedStorage.NPCs (Modelos con Pivot sin necesitar Streaming cercano)
+ local repNPCs = ReplicatedStorage:FindFirstChild("NPCs")
+ if repNPCs then
+ for _, npc in ipairs(repNPCs:GetChildren()) do
+ if string.lower(npc.Name) == lowerTarget then
+ local cf = npc:IsA("Model") and npc:GetPivot() or (npc:IsA("BasePart") and npc.CFrame or nil)
+ if cf and cf.Position.Magnitude > 5 then
+ Polar.Data.NPCCache[npcName] = cf
+ if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
+ return cf
+ end
+ end
+ end
+ for _, npc in ipairs(repNPCs:GetChildren()) do
+ if self:FuzzyMatch(npc.Name, npcName) then
+ local cf = npc:IsA("Model") and npc:GetPivot() or (npc:IsA("BasePart") and npc.CFrame or nil)
+ if cf and cf.Position.Magnitude > 5 then
  Polar.Data.NPCCache[npcName] = cf
  if getgenv().PolarNPCCache then getgenv().PolarNPCCache[npcName] = cf end
  return cf
@@ -1380,7 +1543,7 @@ function Polar.Detection:FindNPC(npcName)
  for _, folder in ipairs(containers) do
  if folder then
  for _, child in ipairs(folder:GetChildren()) do
- if child:IsA("Model") and self:FuzzyMatch(child.Name, npcName) then
+ if child:IsA("Model") and (string.lower(child.Name) == lowerTarget or self:FuzzyMatch(child.Name, npcName)) then
  local part = child:FindFirstChild("HumanoidRootPart") or child:FindFirstChild("Head") or child:FindFirstChildOfClass("BasePart")
  if part then
  local cf = part.CFrame
@@ -2078,16 +2241,33 @@ local function ServerHopBestPing()
  end
 end
 
+local Sea1EnemyAliases = {
+ {"chef", "bobby"},
+ {"magma admiral", "magma general"},
+ {"wysper", "sky warlord"},
+ {"mob leader", "mob boss"},
+}
+
 local function MatchEnemyName(npcName, targetName)
+ if not npcName or not targetName then return false end
  if npcName == targetName then return true end
  local lowerNpc = string.lower(npcName)
  local lowerTarget = string.lower(targetName)
- if string.find(lowerNpc, lowerTarget) then
- if lowerTarget == "gorilla" and string.find(lowerNpc, "king") then return false end
- if lowerTarget == "bandit" and string.find(lowerNpc, "desert") then return false end
- if lowerTarget == "bandit" and string.find(lowerNpc, "snow") then return false end
- if lowerTarget == "bandit" and string.find(lowerNpc, "sky") then return false end
+ if string.find(lowerNpc, lowerTarget, 1, true) then
+ if lowerTarget == "gorilla" and string.find(lowerNpc, "king", 1, true) then return false end
+ if lowerTarget == "bandit" and (string.find(lowerNpc, "desert", 1, true) or string.find(lowerNpc, "snow", 1, true) or string.find(lowerNpc, "sky", 1, true)) then return false end
+ if lowerTarget == "prisoner" and (string.find(lowerNpc, "dangerous", 1, true) or string.find(lowerNpc, "ruthless", 1, true)) then return false end
+ if lowerTarget == "warden" and (string.find(lowerNpc, "chief", 1, true) or string.find(lowerNpc, "ruthless", 1, true)) then return false end
+ if lowerTarget == "pirate" and (string.find(lowerNpc, "galley", 1, true) or string.find(lowerNpc, "beautiful", 1, true)) then return false end
  return true
+ end
+ for _, pair in ipairs(Sea1EnemyAliases) do
+ if (lowerTarget == pair[1] and string.find(lowerNpc, pair[2], 1, true))
+ or (lowerTarget == pair[2] and string.find(lowerNpc, pair[1], 1, true))
+ or (string.find(lowerTarget, pair[1], 1, true) and string.find(lowerNpc, pair[2], 1, true))
+ or (string.find(lowerTarget, pair[2], 1, true) and string.find(lowerNpc, pair[1], 1, true)) then
+ return true
+ end
  end
  return false
 end
@@ -2200,7 +2380,7 @@ task.spawn(function()
  for _, npc in ipairs(enemiesFolder:GetChildren()) do
  local nHrp = npc:FindFirstChild("HumanoidRootPart")
  local nHum = GetValidHumanoid(npc)
- if nHrp and nHum and nHrp.Position.Y > 0 then
+ if nHrp and nHum and nHrp.Position.Y > -50000 then
  local d = (nHrp.Position - hrp.Position).Magnitude
  if d < minDist then
  minDist = d
@@ -2333,13 +2513,15 @@ task.spawn(function()
  if currentQuestTarget and expectedTarget and not MatchEnemyName(currentQuestTarget, expectedTarget) and not MatchEnemyName(expectedTarget, currentQuestTarget) then
  pcall(function() CommF:InvokeServer("AbandonQuest") end)
  Polar.Data.CurrentState = "GETTING_QUEST"
- getgenv().PolarCurrentBotState = "GETTING_QUEST"QuestTryCount = 0
+ getgenv().PolarCurrentBotState = "GETTING_QUEST"
+ QuestTryCount = 0
  task.wait(0.4)
  continue
  end
  else
  Polar.Data.CurrentState = "GETTING_QUEST"
- getgenv().PolarCurrentBotState = "GETTING_QUEST"QuestTryCount = 0
+ getgenv().PolarCurrentBotState = "GETTING_QUEST"
+ QuestTryCount = 0
  continue
  end
  end
@@ -2353,7 +2535,7 @@ task.spawn(function()
  if MatchEnemyName(npc.Name, targetEnemyName) then
  local nHrp = npc:FindFirstChild("HumanoidRootPart")
  local nHum = GetValidHumanoid(npc)
- if nHrp and nHum and nHrp.Position.Y > 0 then
+ if nHrp and nHum and nHrp.Position.Y > -50000 then
  local d = (nHrp.Position - hrp.Position).Magnitude
  if d < minDist then
  minDist = d
@@ -2461,7 +2643,7 @@ task.spawn(function()
  if MatchEnemyName(npc.Name, targetEnemyName) then
  local nHrp = npc:FindFirstChild("HumanoidRootPart")
  local nHum = GetValidHumanoid(npc)
- if nHrp and nHum and nHrp.Position.Y > 0 then
+ if nHrp and nHum and nHrp.Position.Y > -50000 then
  enemySpawned = true
  break
  end
@@ -2682,6 +2864,23 @@ end)
 
 -- ==================== UTILS ====================
 
+local function ResolveLocationByName(islandName)
+ local origin = workspace:FindFirstChild("_WorldOrigin")
+ local locs = origin and origin:FindFirstChild("Locations")
+ if not locs or not islandName then return nil end
+ local best = nil
+ local bestDist = -1
+ for _, v in ipairs(locs:GetChildren()) do
+ if v.Name == islandName and v:IsA("BasePart") and v.Position.Y > -900 then
+ if v.Position.Magnitude > bestDist then
+ best = v
+ bestDist = v.Position.Magnitude
+ end
+ end
+ end
+ return best
+end
+
 local function ScanIslands()
  local islands = {}
  local added = {}
@@ -2689,7 +2888,8 @@ local function ScanIslands()
  local locs = origin and origin:FindFirstChild("Locations")
  if locs then
  for _, v in ipairs(locs:GetChildren()) do
- if not added[v.Name] then
+ local lower = string.lower(v.Name)
+ if v:IsA("BasePart") and lower ~= "sea" and v.Position.Y > -900 and not added[v.Name] then
  table.insert(islands, v.Name)
  added[v.Name] = true
  end
@@ -2753,6 +2953,12 @@ if setthreadidentity then pcall(setthreadidentity, 8) end
 
 -- Cargar motor unconstrained de combate
 local PolarCombat = getgenv().PolarCombat
+if not PolarCombat and type(getgenv().PolarLoadScript) == "function" then
+	pcall(function()
+		local ok, res = getgenv().PolarLoadScript("polar_custom_combat.lua")
+		if ok then PolarCombat = res or getgenv().PolarCombat end
+	end)
+end
 if not PolarCombat then
 	pcall(function()
 		if isfile and isfile("polar_custom_combat.lua") then
@@ -2762,7 +2968,9 @@ if not PolarCombat then
 end
 if not PolarCombat then
 	pcall(function()
-		PolarCombat = loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_custom_combat.lua?t=" .. tostring(os.time())))()
+		local base = getgenv().PolarBaseURL or "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+		local buster = getgenv().PolarCacheBuster or ("?t=" .. tostring(os.time()))
+		PolarCombat = loadstring(game:HttpGet(base .. "polar_custom_combat.lua" .. buster))()
 	end)
 end
 if PolarCombat then
@@ -2772,6 +2980,12 @@ end
 
 -- Cargar motor de Auto Mastery
 local PolarMastery = getgenv().PolarMastery
+if not PolarMastery and type(getgenv().PolarLoadScript) == "function" then
+	pcall(function()
+		local ok, res = getgenv().PolarLoadScript("polar_mastery.lua")
+		if ok then PolarMastery = res or getgenv().PolarMastery end
+	end)
+end
 if not PolarMastery then
 	pcall(function()
 		if isfile and isfile("polar_mastery.lua") then
@@ -2781,7 +2995,9 @@ if not PolarMastery then
 end
 if not PolarMastery then
 	pcall(function()
-		PolarMastery = loadstring(game:HttpGet("https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/polar_mastery.lua?t=" .. tostring(os.time())))()
+		local base = getgenv().PolarBaseURL or "https://raw.githubusercontent.com/polarzhub/polarhub/refs/heads/main/"
+		local buster = getgenv().PolarCacheBuster or ("?t=" .. tostring(os.time()))
+		PolarMastery = loadstring(game:HttpGet(base .. "polar_mastery.lua" .. buster))()
 	end)
 end
 if not PolarMastery then
@@ -3112,6 +3328,26 @@ local BossStatusBar = SecBossFarm:AddParagraph({
 })
 Polar.BossStatusBar = BossStatusBar
 
+function Polar.SetBossList(bossOptions, defaultBossChoice)
+	if type(bossOptions) ~= "table" or #bossOptions == 0 then return end
+	local chosen = defaultBossChoice or bossOptions[1]
+	if Polar.BossDropdown then
+		pcall(function()
+			if Polar.BossDropdown.Refresh then
+				Polar.BossDropdown:Refresh(bossOptions, chosen)
+			elseif Polar.BossDropdown.SetValues then
+				Polar.BossDropdown:SetValues(bossOptions)
+				if Polar.BossDropdown.Set then Polar.BossDropdown:Set(chosen) end
+			end
+		end)
+	end
+	getgenv().PolarSelectedBossToFarm = chosen
+	if PolarMastery then PolarMastery.SelectedBoss = chosen end
+	if Polar.UpdateBossHunterStatus then
+		pcall(function() Polar.UpdateBossHunterStatus(chosen) end)
+	end
+end
+
 function Polar.UpdateBossHunterStatus(bossName)
 	local target = bossName or (Polar.BossDropdown and Polar.BossDropdown.GetValue and Polar.BossDropdown:GetValue()) or getgenv().PolarSelectedBossToFarm or (PolarMastery and PolarMastery.SelectedBoss) or "Stone"
 	if not Polar.BossStatusBar then return end
@@ -3123,20 +3359,20 @@ function Polar.UpdateBossHunterStatus(bossName)
 
 	if info.status == "ALIVE" then
 		Polar.BossStatusBar:SetTitle("Estado: " .. target)
-		Polar.BossStatusBar:SetDesc(string.format("🟢 Vivo (%d%% HP) | Isla: %s", info.hpPercent or 100, info.island or "Desconocida"))
+		Polar.BossStatusBar:SetDesc(string.format("[Vivo] (%d%% HP) | Isla: %s", info.hpPercent or 100, info.island or "Desconocida"))
 	elseif info.status == "DEAD" then
 		if info.remainingSeconds and info.remainingSeconds > 0 then
 			local m = math.floor(info.remainingSeconds / 60)
 			local s = info.remainingSeconds % 60
 			Polar.BossStatusBar:SetTitle("Estado: " .. target)
-			Polar.BossStatusBar:SetDesc(string.format("🔴 Muerto | Faltan: %02d:%02d (%d min %d s)\nIsla: %s", m, s, m, s, info.island or "Desconocida"))
+			Polar.BossStatusBar:SetDesc(string.format("[Muerto] Faltan: %02d:%02d (%d min %d s)\nIsla: %s", m, s, m, s, info.island or "Desconocida"))
 		else
 			Polar.BossStatusBar:SetTitle("Estado: " .. target)
-			Polar.BossStatusBar:SetDesc(string.format("🔴 Muerto | Faltan: %s\nIsla: %s", tostring(info.timerText or "00:00"), info.island or "Desconocida"))
+			Polar.BossStatusBar:SetDesc(string.format("[Muerto] Faltan: %s\nIsla: %s", tostring(info.timerText or "00:00"), info.island or "Desconocida"))
 		end
 	else
 		Polar.BossStatusBar:SetTitle("Estado: " .. target)
-		Polar.BossStatusBar:SetDesc(string.format("🟡 Listo para aparecer | Faltan: 0s\nIsla: %s", info.island or "Desconocida"))
+		Polar.BossStatusBar:SetDesc(string.format("[Listo] Listo para aparecer | Faltan: 0s\nIsla: %s", info.island or "Desconocida"))
 	end
 end
 
@@ -3177,7 +3413,7 @@ Polar.Registry:BindToggle(SecBossFarm, {
 						if PolarUI and PolarUI.Notify then
 							PolarUI:Notify({
 								Title = "Boss Hunter",
-								Content = string.format("✅ ¡%s está VIVO (%d%% HP)!\n⚔️ Farmeando en %s...", target, info.hpPercent or 100, info.island or "Isla"),
+								Content = string.format("%s esta VIVO (%d%% HP).\nFarmeando en %s...", target, info.hpPercent or 100, info.island or "Isla"),
 								Duration = 4
 							})
 						end
@@ -3191,7 +3427,7 @@ Polar.Registry:BindToggle(SecBossFarm, {
 						if PolarUI and PolarUI.Notify then
 							PolarUI:Notify({
 								Title = "Boss Hunter",
-								Content = string.format("❌ %s NO está disponible.\n⏳ %s.\n📍 Isla: %s", target, timeMsg, info.island or "Isla"),
+								Content = string.format("%s no esta disponible.\n%s.\nIsla: %s", target, timeMsg, info.island or "Isla"),
 								Duration = 5
 							})
 						end
@@ -3199,7 +3435,7 @@ Polar.Registry:BindToggle(SecBossFarm, {
 						if PolarUI and PolarUI.Notify then
 							PolarUI:Notify({
 								Title = "Boss Hunter",
-								Content = string.format("⚠️ %s no está generado actualmente.\n⏳ Estado: Listo para reaparecer (0s).\n📍 Isla: %s", target, info.island or "Isla"),
+								Content = string.format("%s no esta generado actualmente.\nEstado: Listo para reaparecer (0s).\nIsla: %s", target, info.island or "Isla"),
 								Duration = 4
 							})
 						end
@@ -3284,25 +3520,17 @@ Polar.Registry:BindToggle(SecSpecialFarm, {
 
 -- ==================== TAB FARM (BOSS SECTION) ====================
 -- ===== TAB STATS =====
-TabStats:AddSection("Player Enhancements")
+local SecStatsEnh = TabStats:AddSection("Player Enhancements")
 
-TabStats:AddToggle({
+Polar.Registry:BindToggle(SecStatsEnh, {
 	Name = "Player & Mob ESP",
 	Callback = function(Value)
 		ESPEnabled = Value
 		if UpdateESPState then UpdateESPState() end
 	end
-})
+}, "ESPEnabled")
 
-TabStats:AddToggle({
-	Name = "Auto Buso Haki",
-	Default = true,
-	Callback = function(Value)
-		AutoHakiEnabled = Value
-	end
-})
-
-TabStats:AddSection("Distribute Stats")
+local SecDistStats = TabStats:AddSection("Distribute Stats")
 
 local function ToggleStat(statName, value)
 	if value then
@@ -3342,7 +3570,7 @@ TabShop:AddButton({ Name = "Buy Ken Haki - $750k", Callback = function() BuyItem
 TabShop:AddSection("Fighting Styles")
 TabShop:AddButton({ Name = "Dark Step - $150k", Callback = function() BuyItem("BuyBlackLeg", nil, nil, "Dark Step Teacher") end })
 TabShop:AddButton({ Name = "Electro - $500k", Callback = function() BuyItem("BuyElectro", nil, nil, "Mad Scientist") end })
-TabShop:AddButton({ Name = "Water Kung Fu - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung Fu Teacher") end })
+TabShop:AddButton({ Name = "Water Kung Fu - $750k", Callback = function() BuyItem("BuyFishmanKarate", nil, nil, "Water Kung-fu Teacher") end })
 
 TabShop:AddSection("Swords")
 TabShop:AddButton({ Name = "Katana - $1k", Callback = function() BuyItem("BuyItem", "Katana", nil, "Sword Dealer") end })
@@ -3376,11 +3604,15 @@ TabTeleport:AddDropdown({
 TabTeleport:AddButton({
 	Name = "Teleport to Island",
 	Callback = function()
-		local origin = workspace:FindFirstChild("_WorldOrigin")
-		local locs = origin and origin:FindFirstChild("Locations")
-		if locs and SelectedIsland ~= "" and SelectedIsland ~= "None" then
-			local islaObj = locs:FindFirstChild(SelectedIsland)
-			if islaObj then Polar.Teleport:To(islaObj.CFrame * CFrame.new(0, 80, 0)) end
+		if SelectedIsland ~= "" and SelectedIsland ~= "None" then
+			local islaObj = ResolveLocationByName(SelectedIsland)
+			if islaObj then
+				local p = islaObj.Position
+				local safeOffset = (p.Y < -50 or string.find(string.lower(SelectedIsland), "sewer") or string.find(string.lower(SelectedIsland), "fish") or string.find(string.lower(SelectedIsland), "underwater") or string.find(string.lower(SelectedIsland), "arena")) and 4 or 15
+				Polar.Teleport:To(CFrame.new(p.X, p.Y + safeOffset, p.Z))
+			else
+				Polar.Teleport:ToIsland(SelectedIsland)
+			end
 		end
 	end
 })
@@ -3391,10 +3623,11 @@ TabTeleport:AddButton({
 -- =========================================================
 
 
-TabCombat:AddSection("Combat Enhancements")
-TabCombat:AddToggle({ Name = "Auto Buso Haki", Default = false, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end })
-TabCombat:AddToggle({ Name = "Auto Ken Haki", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end })
-TabCombat:AddToggle({ Name = "Auto Skills", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end })
+local SecCombatEnh = TabCombat:AddSection("Combat Enhancements")
+getgenv().PolarAutoBusoEnabled = getgenv().PolarAutoBusoEnabled ~= false
+Polar.Registry:BindToggle(SecCombatEnh, { Name = "Auto Buso Haki", Default = true, Callback = function(v) getgenv().PolarAutoBusoEnabled = v end }, "PolarAutoBusoEnabled")
+Polar.Registry:BindToggle(SecCombatEnh, { Name = "Auto Ken Haki", Default = false, Callback = function(v) getgenv().PolarAutoKenEnabled = v end }, "PolarAutoKenEnabled")
+Polar.Registry:BindToggle(SecCombatEnh, { Name = "Auto Skills", Default = false, Callback = function(v) getgenv().PolarAutoSkillsEnabled = v end }, "PolarAutoSkillsEnabled")
 
 TabCombat:AddSection("Bounty Hunter Tracker")
 

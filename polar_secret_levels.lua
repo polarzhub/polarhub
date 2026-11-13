@@ -140,31 +140,54 @@ end
 
 -- Transiciones seguras entre dimensiones (Underwater City y Volcano Cave)
 local function HandleDimensionCrossings(targetPos, hrp)
-    -- 1. Transición a Underwater City (Fishman Island)
+    -- 1. Transicion a Underwater City (Fishman Island, X > 50000)
     if targetPos.X > 50000 and hrp.Position.X < 50000 then
-        local entryRemote = Net and Net:FindFirstChild("RE/FishmenCaveEntry")
-        if entryRemote then
-            entryRemote:FireServer()
-            task.wait(1.5)
+        local mapFolder = workspace:FindFirstChild("Map")
+        local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
+        local entrance = tpSpawn and (tpSpawn:FindFirstChild("Entrance") or tpSpawn:FindFirstChild("Whirlpool"))
+        local portalCF = entrance and (entrance:IsA("Model") and entrance:GetPivot() or entrance.CFrame) or CFrame.new(4050.3, 4.0, -1814.1)
+        if getgenv().Polar and getgenv().Polar.Teleport and getgenv().Polar.Teleport.To then
+            getgenv().Polar.Teleport:To(CFrame.new(targetPos))
         else
-            local wpPos = Vector3.new(4078.9, -10, -1814.9)
-            hrp.CFrame = CFrame.new(wpPos)
+            hrp.CFrame = portalCF + Vector3.new(0, 3, 0)
+            if entrance and entrance:IsA("BasePart") and firetouchinterest then
+                pcall(function()
+                    firetouchinterest(hrp, entrance, 0)
+                    task.wait(0.05)
+                    firetouchinterest(hrp, entrance, 1)
+                end)
+            end
             task.wait(1.5)
         end
-    -- 2. Transición de salida de Underwater City al mapa principal
+    -- 2. Transicion de salida de Underwater City al mapa principal
     elseif targetPos.X < 50000 and hrp.Position.X > 50000 then
-        local exitRemote = Net and Net:FindFirstChild("RE/FishmenBubbleExit")
-        if exitRemote then
-            exitRemote:FireServer()
-            task.wait(1.5)
+        local mapFolder = workspace:FindFirstChild("Map")
+        local tpSpawn = mapFolder and mapFolder:FindFirstChild("TeleportSpawn")
+        local exitPortal = tpSpawn and (tpSpawn:FindFirstChild("Exit") or tpSpawn:FindFirstChild("ExitPoint"))
+        local exitCF = exitPortal and (exitPortal:IsA("Model") and exitPortal:GetPivot() or exitPortal.CFrame) or CFrame.new(61170.0, 5.0, 1952.8)
+        if getgenv().Polar and getgenv().Polar.Teleport and getgenv().Polar.Teleport.To then
+            getgenv().Polar.Teleport:To(CFrame.new(targetPos))
+        else
+            hrp.CFrame = exitCF + Vector3.new(0, 3, 0)
+            if exitPortal and exitPortal:IsA("BasePart") and firetouchinterest then
+                pcall(function()
+                    firetouchinterest(hrp, exitPortal, 0)
+                    task.wait(0.05)
+                    firetouchinterest(hrp, exitPortal, 1)
+                end)
+            end
+            task.wait(1.0)
+            local exitRemote = Net and Net:FindFirstChild("RE/FishmenBubbleExit")
+            if exitRemote then pcall(function() exitRemote:FireServer() end) end
+            task.wait(1.0)
         end
     end
 
-    -- 3. Transición a Volcano Cave interior
+    -- 3. Transicion a Volcano Cave interior
     if targetPos.X < -60000 and hrp.Position.X > -60000 then
         local elevRemote = Net and Net:FindFirstChild("RE/MagmaCaveElevatorFade")
         if elevRemote then
-            elevRemote:FireServer()
+            pcall(function() elevRemote:FireServer() end)
             task.wait(1.2)
         end
     end
@@ -1082,7 +1105,7 @@ PolarSecrets.Solvers["Sea1/SkyArea2/The Tyrant Awakens"] = function()
 
     FireMoment("The Tyrant Awakens", "Challenge")
     local enemiesFolder = workspace:FindFirstChild("Enemies")
-    local boss = enemiesFolder and (enemiesFolder:FindFirstChild("Wysper") or enemiesFolder:FindFirstChild("Thunder God"))
+    local boss = enemiesFolder and (enemiesFolder:FindFirstChild("Wysper") or enemiesFolder:FindFirstChild("Sky Warlord") or enemiesFolder:FindFirstChild("Thunder God"))
     if boss and boss:FindFirstChild("Humanoid") and boss.Humanoid.Health > 0 then
         KillTarget(boss, 60)
     else
@@ -1242,6 +1265,45 @@ function PolarSecrets.StopInstantSpeedrun()
 end
 
 -- ==================== AUTO-HUNT DE JEFE DESPERTADO ACTIVO ====================
+local AWAKENED_BOSS_LOCATIONS = {
+    { key = "gorilla", names = {"Gorilla King", "The Gorilla King"}, cf = CFrame.new(-1193.9, 25.0, -549.8), smashTerrain = true },
+    { key = "chef", names = {"Chef", "Bobby"}, cf = CFrame.new(-1120.5, 65.0, 4121.2) },
+    { key = "bobby", names = {"Chef", "Bobby"}, cf = CFrame.new(-1120.5, 65.0, 4121.2) },
+    { key = "yeti", names = {"Yeti"}, cf = CFrame.new(1181.7, 114.0, -1616.9) },
+    { key = "mob", names = {"Mob Boss", "Mob Leader"}, cf = CFrame.new(-2880.7, 25.0, 5430.9) },
+    { key = "vice admiral", names = {"Vice Admiral"}, cf = CFrame.new(-5010.8, 30.0, 4383.7) },
+    { key = "warden", names = {"Warden", "Chief Warden"}, cf = CFrame.new(5623.2, 20.0, 733.8) },
+    { key = "magma", names = {"Magma General", "Magma Admiral"}, cf = CFrame.new(-5625.7, 65.0, 8623.0) },
+    { key = "fishman", names = {"Fishman Lord"}, cf = CFrame.new(61352.9, 75.0, 1029.1) },
+    { key = "warlord", names = {"Sky Warlord", "Wysper"}, cf = CFrame.new(-6271.6, 5485.0, 1887.8) },
+    { key = "wysper", names = {"Wysper", "Sky Warlord"}, cf = CFrame.new(-6271.6, 5485.0, 1887.8) },
+    { key = "thunder", names = {"Thunder God"}, cf = CFrame.new(-7125.4, 5610.0, 111.5) },
+    { key = "cyborg", names = {"Cyborg"}, cf = CFrame.new(6252.4, 25.0, 4941.4) },
+    { key = "ice admiral", names = {"Ice Admiral"}, cf = CFrame.new(1212.4, 30.0, -1429.6) },
+    { key = "saber", names = {"Saber Expert"}, cf = CFrame.new(-1527.2, 45.0, -33.2) },
+}
+
+local function FindMatchingEnemyInWorld(names)
+    local enemies = workspace:FindFirstChild("Enemies")
+    if not enemies then return nil end
+    for _, name in ipairs(names) do
+        local exact = enemies:FindFirstChild(name)
+        if exact and exact:FindFirstChildOfClass("Humanoid") and exact:FindFirstChildOfClass("Humanoid").Health > 0 then
+            return exact
+        end
+    end
+    for _, enemy in ipairs(enemies:GetChildren()) do
+        local eLower = string.lower(enemy.Name)
+        for _, name in ipairs(names) do
+            if string.find(eLower, string.lower(name), 1, true) then
+                local hum = enemy:FindFirstChildOfClass("Humanoid")
+                if hum and hum.Health > 0 then return enemy end
+            end
+        end
+    end
+    return nil
+end
+
 function PolarSecrets.HuntCurrentAwakenedBoss()
     local hint = PolarSecrets.GetRaidHint()
     if not hint then return end
@@ -1253,37 +1315,32 @@ function PolarSecrets.HuntCurrentAwakenedBoss()
 
     Notify("Auto-Hunt", string.format("Viajando a %s para cazar a %s...", tostring(hint.Island), tostring(hint.Boss)), 4)
 
-    -- 1. Gorilla King (Jungle)
-    if hint.Boss and hint.Boss:find("Gorilla") then
-        local treeCF = CFrame.new(-1600.0, 37.0, 153.0)
-        SafeTeleport(treeCF)
-        task.wait(1)
-        for i = 1, 10 do
-            AttackInstance(workspace.Terrain, 0.4)
-            task.wait(0.2)
+    local bossLower = string.lower(tostring(hint.Boss or ""))
+    local matched = nil
+    for _, entry in ipairs(AWAKENED_BOSS_LOCATIONS) do
+        if string.find(bossLower, entry.key, 1, true) then
+            matched = entry
+            break
         end
-        local boss = workspace:FindFirstChild("Enemies") and (workspace.Enemies:FindFirstChild("Gorilla King") or workspace.Enemies:FindFirstChild("The Gorilla King"))
-        if boss then KillTarget(boss, 90) end
+    end
 
-    -- 2. Yeti (Frozen Village)
-    elseif hint.Boss and hint.Boss:find("Yeti") then
-        local iceCaveCF = CFrame.new(1181.7, 104.0, -1616.9)
-        SafeTeleport(iceCaveCF)
+    if matched then
+        SafeTeleport(matched.cf)
         task.wait(1)
-        local boss = workspace:FindFirstChild("Enemies") and workspace.Enemies:FindFirstChild("Yeti")
+        if matched.smashTerrain then
+            for i = 1, 10 do
+                AttackInstance(workspace.Terrain, 0.4)
+                task.wait(0.2)
+            end
+        end
+        local boss = FindMatchingEnemyInWorld(matched.names)
         if boss then KillTarget(boss, 90) end
-
-    -- 3. Vice Admiral (Marine Fortress)
-    elseif hint.Boss and hint.Boss:find("Admiral") then
-        local fortCF = CFrame.new(-5010.8, 45.0, 4383.7)
-        SafeTeleport(fortCF)
-        task.wait(1)
-        local boss = workspace:FindFirstChild("Enemies") and workspace.Enemies:FindFirstChild("Vice Admiral")
-        if boss then KillTarget(boss, 90) end
-
-    -- 4. Otros jefes
     else
-        Notify("Auto-Hunt", "Buscando jefe en su isla...", 4)
+        local Polar = getgenv().Polar
+        if hint.Island and Polar and Polar.Teleport and Polar.Teleport.ToIsland then
+            Polar.Teleport:ToIsland(hint.Island)
+        end
+        Notify("Auto-Hunt", "Buscando jefe en " .. tostring(hint.Island or "su isla") .. "...", 4)
     end
 end
 
